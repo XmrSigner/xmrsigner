@@ -41,7 +41,7 @@ class TxOverviewScreen(ButtonListScreen):
     num_self_transfer_outputs: int = 0
     num_change_outputs: int = 0
     destination_addresses: List[str] = None
-    
+
 
     def __post_init__(self):
         # Customize defaults
@@ -103,7 +103,6 @@ class TxOverviewScreen(ButtonListScreen):
         association_line_width = 3*ssf
         curve_steps = 4
         chart_font_color = "#ddd"
-        
         # First calculate how wide the inputs col will be
         inputs_column = []
         if self.num_inputs == 1:
@@ -135,11 +134,10 @@ class TxOverviewScreen(ButtonListScreen):
                 center_bar_width + \
                     curve_width + int(GUIConstants.COMPONENT_PADDING*ssf/4) + \
                         GUIConstants.EDGE_PADDING*ssf)
-        
         # if self.num_inputs == 1:
         #     # Use up more of the space on the input side
         #     max_destination_col_width += curve_width
-        
+
         # Now let's maximize the actual destination col by adjusting our addr truncation
         def calculate_destination_col_width(truncate_at: int = 0):
             def truncate_destination_addr(addr):
@@ -147,13 +145,10 @@ class TxOverviewScreen(ButtonListScreen):
                     # No point in truncating
                     return addr
                 return f"{addr[:truncate_at]}..."
-            
             destination_column = []
-
             if len(self.destination_addresses) + self.num_self_transfer_outputs <= 3:
                 for addr in self.destination_addresses:
                     destination_column.append(truncate_destination_addr(addr))
-
                 for i in range(0, self.num_self_transfer_outputs):
                     destination_column.append(truncate_destination_addr("self-transfer"))
             else:
@@ -172,9 +167,7 @@ class TxOverviewScreen(ButtonListScreen):
             for destination in destination_column:
                 tw, th = get_font_size(font, destination)
                 max_destination_text_width = max(tw, max_destination_text_width)
-            
             return (max_destination_text_width, destination_column)
-        
         if len(self.destination_addresses) + self.num_self_transfer_outputs > 3:
             # We're not going to display any destination addrs so truncation doesn't matter
             (destination_text_width, destination_column) = calculate_destination_col_width()

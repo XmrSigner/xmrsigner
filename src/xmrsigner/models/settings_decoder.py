@@ -14,7 +14,7 @@ class SettingsQrDecoder(BaseSingleFrameQrDecoder):
         """
         if not segment.startswith("settings::"):
             raise Exception("Invalid SettingsQR data")
-        
+
         # Leave any other parsing or validation up to the Settings class itself.
         # SettingsQR are just ascii data to hand it over as-is.
         self.data = segment

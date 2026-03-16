@@ -149,17 +149,17 @@ class SettingsConstants:
     }
 
     MONERO_SUPPORTED_LANGUAGES = [
-        WORDLIST_LANGUAGE__ENGLISH, 
+        WORDLIST_LANGUAGE__ENGLISH,
         # WORDLIST_LANGUAGE__CHINESE_SIMPLIFIED, # disabled because of font
         WORDLIST_LANGUAGE__DUTCH,
-        WORDLIST_LANGUAGE__ESPERANTO, 
-        WORDLIST_LANGUAGE__FRENCH, 
-        WORDLIST_LANGUAGE__GERMAN, 
-        WORDLIST_LANGUAGE__ITALIAN, 
+        WORDLIST_LANGUAGE__ESPERANTO,
+        WORDLIST_LANGUAGE__FRENCH,
+        WORDLIST_LANGUAGE__GERMAN,
+        WORDLIST_LANGUAGE__ITALIAN,
         # WORDLIST_LANGUAGE__JAPANESE, # disabled because of font
-        WORDLIST_LANGUAGE__LOJBAN, 
-        WORDLIST_LANGUAGE__PORTUGUESE, 
-        WORDLIST_LANGUAGE__RUSSIAN, 
+        WORDLIST_LANGUAGE__LOJBAN,
+        WORDLIST_LANGUAGE__PORTUGUESE,
+        WORDLIST_LANGUAGE__RUSSIAN,
         WORDLIST_LANGUAGE__SPANISH
     ]
 
@@ -189,7 +189,7 @@ class SettingsConstants:
     @property
     def POLYSEED_LANGUAGE_NAMES(cls) -> List[Tuple[str, str]]:
         return [(lang, cls.ALL_WORDLIST_LANGUAGE_NAMES[lang]) for lang in cls.POLYSEED_SUPPORTED_LANGUAGES]
-    
+
     # Individual SettingsEntry attr_names
     SETTING__LANGUAGE = "language"
     SETTING__MONERO_WORDLIST_LANGUAGE = "monero_wordlist_language"
@@ -250,7 +250,7 @@ class SettingsEntry:
     * category: Mostly for organizational purposes when displaying options in the
         SettingsQR UI. Potentially an additional sub-level breakout in the menus
         on the device itself, too.
-    
+
     * selection_options: May be specified as a List(Any) or List(tuple(Any, str)).
         The tuple form is to provide a human-readable display_name. Probably all
         entries should shift to using the tuple form.
@@ -275,7 +275,7 @@ class SettingsEntry:
         elif self.type == SettingsConstants.TYPE__ENABLED_DISABLED_PROMPT_REQUIRED:
             self.selection_options = SettingsConstants.ALL_OPTIONS
 
-        # Account for List[tuple] and tuple formats as default_value        
+        # Account for List[tuple] and tuple formats as default_value
         if type(self.default_value) == list and type(self.default_value[0]) == tuple:
             self.default_value = [v[0] for v in self.default_value]
         elif type(self.default_value) == tuple:
@@ -299,7 +299,7 @@ class SettingsEntry:
         if type(value) == tuple:
             value = value[0]
         return value
-    
+
     def get_selection_option_display_name_by_value(self, value) -> str:
         for option in self.selection_options:
             if type(option) == tuple:
@@ -498,7 +498,7 @@ class SettingsDefinition:
                       display_name="Show dire warnings",
                       visibility=SettingsConstants.VISIBILITY__ADVANCED,
                       default_value=SettingsConstants.OPTION__ENABLED),
- 
+
         SettingsEntry(category=SettingsConstants.CATEGORY__FEATURES,
                       attr_name=SettingsConstants.SETTING__QR_BRIGHTNESS_TIPS,
                       display_name="Show QR brightness tips",
@@ -511,7 +511,7 @@ class SettingsDefinition:
                       display_name="Show partner logos",
                       visibility=SettingsConstants.VISIBILITY__ADVANCED,
                       default_value=SettingsConstants.OPTION__DISABLED),
-        
+
         # "Hidden" settings with no UI interaction
         SettingsEntry(category=SettingsConstants.CATEGORY__SYSTEM,
                       attr_name=SettingsConstants.SETTING__QR_BRIGHTNESS,
@@ -566,9 +566,7 @@ class SettingsDefinition:
         }
         for settings_entry in cls.settings_entries:
             output["settings_entries"].append(settings_entry.to_dict())
-        
         return output
-
 
 
 if __name__ == "__main__":

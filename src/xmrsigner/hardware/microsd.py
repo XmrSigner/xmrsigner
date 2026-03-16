@@ -22,7 +22,7 @@ class MicroSD(Singleton, BaseThread):
 
             # explicitly call BaseThread __init__ since multiple class inheritance
             BaseThread.__init__(microsd)
-    
+
         return cls._instance
 
 

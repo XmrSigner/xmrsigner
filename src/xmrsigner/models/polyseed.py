@@ -68,11 +68,11 @@ class PolyseedSeed(Seed):
             self.height = MoneroTime(str(Network.ensure(self.network))).getBlockchainHeight(ps.get_birthday())
         except Exception as e:
             raise InvalidSeedException(repr(e))
-    
+
     def to_monero_seed(self, password: Optional[str]) -> Seed:
         return Seed.from_key(hexlify(self.seed_bytes), password, self.wordlist_language_code, self.height, self.network)
 
-    ### override operators    
+    ### override operators
     def __eq__(self, other: Seed):
         if isinstance(other, Seed):
             return self.seed_bytes == other.seed_bytes

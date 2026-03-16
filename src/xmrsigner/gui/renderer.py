@@ -83,7 +83,3 @@ class Renderer(ConfigurableSingleton):
     def display_blank_screen(self):
         self.draw.rectangle((0, 0, self.canvas_width, self.canvas_height), outline=0, fill=0)
         self.show_image()
-
-
-
-

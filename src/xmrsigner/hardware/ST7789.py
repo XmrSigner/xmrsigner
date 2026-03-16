@@ -5,7 +5,6 @@ from array import array
 from PIL import Image
 
 
-
 class ST7789(object):
     """class for ST7789  240*240 1.3inch OLED displays."""
 
@@ -17,7 +16,7 @@ class ST7789(object):
         self._dc = 22
         self._rst = 13
         self._bl = 18
- 
+
         GPIO.setmode(GPIO.BOARD)
         GPIO.setwarnings(False)
         GPIO.setup(self._dc,GPIO.OUT)
@@ -42,13 +41,13 @@ class ST7789(object):
         self._spi.writebytes([val])
 
     def init(self):
-        """Initialize dispaly"""    
+        """Initialize dispaly"""
         self.reset()
 
         self.command(0x36)
         self.data(0x70)                 #self.data(0x00)
 
-        self.command(0x3A) 
+        self.command(0x3A)
         self.data(0x05)
 
         self.command(0xB2)
@@ -59,7 +58,7 @@ class ST7789(object):
         self.data(0x33)
 
         self.command(0xB7)
-        self.data(0x35) 
+        self.data(0x35)
 
         self.command(0xBB)
         self.data(0x19)
@@ -71,13 +70,13 @@ class ST7789(object):
         self.data(0x01)
 
         self.command(0xC3)
-        self.data(0x12)   
+        self.data(0x12)
 
         self.command(0xC4)
         self.data(0x20)
 
         self.command(0xC6)
-        self.data(0x0F) 
+        self.data(0x0F)
 
         self.command(0xD0)
         self.data(0xA4)
@@ -114,11 +113,8 @@ class ST7789(object):
         self.data(0x1F)
         self.data(0x20)
         self.data(0x23)
-        
         self.command(0x21)
-
         self.command(0x11)
-
         self.command(0x29)
 
     def reset(self):
@@ -129,15 +125,15 @@ class ST7789(object):
         sleep(0.01)
         GPIO.output(self._rst,GPIO.HIGH)
         sleep(0.01)
-        
+
     def SetWindows(self, x_start, y_start, x_end, y_end):
         #set the X coordinates
         self.command(0x2A)
         self.data(0x00)               #Set the horizontal starting point to the high octet
         self.data(x_start & 0xff)      #Set the horizontal starting point to the low octet
         self.data(0x00)               #Set the horizontal end to the high octet
-        self.data((x_end - 1) & 0xff) #Set the horizontal end to the low octet 
-        
+        self.data((x_end - 1) & 0xff) #Set the horizontal end to the low octet
+
         #set the Y coordinates
         self.command(0x2B)
         self.data(0x00)
@@ -145,8 +141,8 @@ class ST7789(object):
         self.data(0x00)
         self.data((y_end - 1) & 0xff )
 
-        self.command(0x2C)    
-    
+        self.command(0x2C)
+
     def ShowImage(self,image: Image.Image,x_start,y_start):
         """Set buffer to value of Python Imaging Library image."""
         """Write display buffer to physical display"""
@@ -161,7 +157,7 @@ class ST7789(object):
         self.SetWindows ( 0, 0, self.width, self.height)
         GPIO.output(self._dc,GPIO.HIGH)
         self._spi.writebytes2(pix)
-        
+
     def clear(self):
         """Clear contents of image buffer"""
         _buffer = [0xff]*(self.width * self.height * 2)

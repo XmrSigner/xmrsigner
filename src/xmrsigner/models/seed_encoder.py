@@ -10,7 +10,6 @@ class SeedQrEncoder(BaseStaticQrEncoder):
         super().__init__()
         self.seed_phrase = seed_phrase
         self.wordlist = wordlist
-        
         if self.wordlist == None:
             raise Exception('Wordlist Required')
 
@@ -32,10 +31,8 @@ class CompactSeedQrEncoder(SeedQrEncoder):
         seed_phrase = self.seed_phrase.copy()
         if len(seed_phrase) in (13, 25):  # monero seed with checksum word, remove checksum word at the end
             del seed_phrase[-1]
-
         if len(seed_phrase) not in (12, 16, 24):  # results in (16, 22, 32) bytes per seed
             raise Exception('Neither a monero seed nor a polyseed!')
-
         return CompactSeed(self.wordlist).bytes(seed_phrase)
 
     def get_qr_type(self):

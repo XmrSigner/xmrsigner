@@ -70,7 +70,7 @@ class ScanScreen(BaseScreen):
             self.renderer = renderer
             self.instructions_text = instructions_text
             if render_rect:
-                self.render_rect = render_rect            
+                self.render_rect = render_rect
             else:
                 self.render_rect = (0, 0, self.renderer.canvas_width, self.renderer.canvas_height)
             self.render_width = self.render_rect[2] - self.render_rect[0]

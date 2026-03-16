@@ -39,7 +39,7 @@ class SeedJar:
 
     def num_seeds(self):
         return len(self.seeds)
-    
+
     @property
     def pending_mnemonic(self) -> List[str]:
         # Always return a copy so that the internal List can't be altered
@@ -61,7 +61,7 @@ class SeedJar:
         if index >= len(self._pending_mnemonic):
             raise Exception(f"index {index} is too high")
         self._pending_mnemonic[index] = word
-    
+
     def get_pending_mnemonic_word(self, index: int) -> str:
         if index < len(self._pending_mnemonic):
             return self._pending_mnemonic[index]

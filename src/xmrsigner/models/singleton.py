@@ -1,5 +1,6 @@
 from typing import Optional
 
+
 class Singleton:
 
     _instance: Optional['Singleton'] = None

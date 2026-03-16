@@ -83,7 +83,7 @@ class Seed:
     @property
     def mnemonic_display_str(self) -> str:
         return normalize("NFC", " ".join(self._mnemonic))
-    
+
     @property
     def mnemonic_display_list(self) -> List[str]:
         return normalize("NFC", " ".join(self._mnemonic)).split()

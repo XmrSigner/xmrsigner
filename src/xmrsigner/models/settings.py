@@ -35,7 +35,7 @@ class Settings(Singleton):
                 with open(Settings.SETTINGS_FILENAME) as settings_file:
                     settings.update(load(settings_file))
         return cls._instance
- 
+
     @classmethod
     def parse_settingsqr(cls, data: str) -> Tuple[str, Dict]:
         """
@@ -80,7 +80,7 @@ class Settings(Singleton):
             for v in values:
                 if v not in [opt[0] for opt in settings_entry.selection_options]:
                     if settings_entry.attr_name == SettingsConstants.SETTING__PERSISTENT_SETTINGS and v == SettingsConstants.OPTION__ENABLED:
-                        # Special case: trying to enable Persistent Settings when 
+                        # Special case: trying to enable Persistent Settings when
                         # DISABLED is the only option allowed (because the SD card is not
                         # inserted. Explicitly set to DISABLED.
                         value = SettingsConstants.OPTION__DISABLED
@@ -164,7 +164,7 @@ class Settings(Singleton):
         """
         Figures out the mapping from value to display_name for the current value's
         tuple(value, display_name) definition, if it's defined that way.
-        
+
         If the selection_options are defined as simple strings, we just return the
         string.
 
@@ -205,7 +205,7 @@ class Settings(Singleton):
     @property
     def debug(self) -> bool:
         return self._data[SettingsConstants.SETTING__DEBUG] == SettingsConstants.OPTION__ENABLED
- 
+
     def handle_microsd_state_change(action: str):
         """
         Enables/Disables the Persistent Settings option based on the MicroSD card state.

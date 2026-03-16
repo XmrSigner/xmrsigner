@@ -230,7 +230,7 @@ class TxAddressDetailsView(View):
             address=str(txd.recipients[self.address_num].address),
             amount=str(txd.recipients[self.address_num].amount),
         )
-        
+
         if selected_menu_num == RET_CODE__BACK_BUTTON:
             return Destination(BackStackView)
         if self.address_num < len(txd.recipients) - 1:
@@ -348,7 +348,7 @@ class SignedQRDisplayView(View):
         from xmrsigner.gui.screens.screen import LoadingScreenThread
         self.loading_screen = LoadingScreenThread(text=f'Sign Tx for seed {self.seed.fingerprint}...')
         self.loading_screen.start()
-    
+
     def run(self):
         try:
             signed_tx: str = WalletRpcWrapper(self.wallet).sign_transfer(self.controller.transaction)

@@ -159,7 +159,7 @@ class Controller(Singleton):
 
         # Other behavior constants
         controller.screensaver_activation_ms = 2 * MICROSECONDS_PER_MINUTE
-    
+
         return cls._instance
 
 
@@ -292,7 +292,7 @@ class Controller(Singleton):
                 if next_destination.View_cls == MainMenuView:
                     # Home always wipes the back_stack
                     self.clear_back_stack()
-                    
+
                     # Home always wipes the back_stack/state of temp vars
                     self.resume_main_flow = None
                     self.unverified_address = None
@@ -301,7 +301,7 @@ class Controller(Singleton):
                     self.outputs = None
                     self.transaction = None
                     self.tx_description = None
-                
+
                 print(f'back_stack: {self.back_stack}')
 
                 try:
@@ -341,7 +341,7 @@ class Controller(Singleton):
                     self.back_stack.append(next_destination)
                 else:
                     print(f'NOT appending {next_destination}')
-                
+
                 print('-' * 30)
 
         finally:
@@ -392,7 +392,7 @@ class Controller(Singleton):
             if ", line " in traceback_line:
                 line_info = traceback_line.split("/")[-1].replace("\"", "").replace("line ", "")
                 break
-        
+
         error = [
             exception_type,
             line_info,

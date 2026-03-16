@@ -7,7 +7,7 @@ logger = logging.getLogger(__name__)
 class BaseThread(Thread):
     def __init__(self):
         super().__init__(daemon=True)
-    
+
     def start(self):
         logger.debug(f"{self.__class__.__name__} STARTING")
         self.keep_running = True
@@ -16,7 +16,7 @@ class BaseThread(Thread):
     def stop(self):
         logger.debug(f"{self.__class__.__name__} EXITING")
         self.keep_running = False
-    
+
     def run(self):
         while self.keep_running:
             # Do something

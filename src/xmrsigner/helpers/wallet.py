@@ -88,7 +88,7 @@ class MoneroWalletRPCManager:
         network = Network.ensure(network)
         if str(network) not in self.networks:
             raise ValueError(f"Invalid network: {network}")
-        
+
         if self.is_daemon_running(network):
             return True
 
@@ -137,7 +137,6 @@ class MoneroWalletRPCManager:
         network = Network.ensure(network)
         if str(network) not in self.networks:
             raise ValueError(f"Invalid network: {network}")
-        
         process = self.processes.get(network)
         if process:
             return process.poll() is None
@@ -150,7 +149,7 @@ class MoneroWalletRPCManager:
         network = Network.ensure(network)
         if not self.is_daemon_running(network):
             return None
-        
+
         process = Process(self.processes[network].pid)
         return {
             'cpu_percent': process.cpu_percent(interval=1),

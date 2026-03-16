@@ -532,7 +532,7 @@ class IconTextLine(BaseComponent):
                 allow_text_overflow=False
             )
         else:
-            self.label_textarea = None        
+            self.label_textarea = None
         value_textarea_screen_y = self.screen_y
         if self.label_text:
             label_padding_y = int(GUIConstants.COMPONENT_PADDING / 2)

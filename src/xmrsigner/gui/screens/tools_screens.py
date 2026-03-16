@@ -153,7 +153,7 @@ class ToolsDiceEntropyEntryScreen(KeyboardScreen):
 
         # Now initialize the parent class
         super().__post_init__()
-    
+
 
     def update_title(self) -> bool:
         self.title = f"Dice Roll {self.cursor_position + 1}/{self.return_after_n_chars}"
@@ -192,7 +192,7 @@ class ToolsCoinFlipEntryScreen(KeyboardScreen):
 
         # Now initialize the parent class
         super().__post_init__()
-    
+
         self.components.append(TextArea(
             text="Heads = 1",
             screen_y = self.keyboard.rect[3] + 4*GUIConstants.COMPONENT_PADDING,

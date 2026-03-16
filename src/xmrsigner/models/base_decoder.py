@@ -49,7 +49,7 @@ class BaseAnimatedQrDecoder(BaseQrDecoder):
 
     def parse_segment(self, segment) -> str:
         raise Exception("Not implemented in child class")
-    
+
     @property
     def is_valid(self) -> bool:
         return True

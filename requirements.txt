@@ -1,3 +1,4 @@
+-e git+https://github.com:MoneroSDK/ots-python.git#egg=ots
 -e git+https://github.com/DiosDelRayo/monero-python.git#egg=monero
 -e git+https://github.com/DiosDelRayo/polyseed-python.git#egg=polyseed
 numpy==1.21.1

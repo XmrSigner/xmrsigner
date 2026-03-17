@@ -1,26 +1,26 @@
 import setuptools
 
-with open("README.md", "r", encoding="utf-8") as fh:
+with open('README.md', 'r', encoding='utf-8') as fh:
     long_description = fh.read()
 
 setuptools.setup(
-    name="XmrSigner",
+    name='XmrSigner',
     version='0.9.2',
-    author="XmrSigner",
-    author_email="author@example.com",
-    description="Build an offline, airgapped Monero signing device for less than $50!",
+    author='XmrSigner',
+    author_email='no@spam',
+    description='Build an offline, airgapped Monero signing device for less than $50!',
     long_description=long_description,
-    long_description_content_type="text/markdown",
-    url="https://github.com/DiosDelRayo/MoneroSigner",
+    long_description_content_type='text/markdown',
+    url='https://github.com/XmrSigner/xmrsigner',
     project_urls={
-        "Bug Tracker": "https://github.com/DiosDelRayo/MoneroSigner/issues",
+        'Bug Tracker': 'https://github.com/XmrSigner/xmrsigner/issues',
     },
     classifiers=[
-        "Programming Language :: Python :: 3",
-        "License :: OSI Approved :: MIT License",
-        "Operating System :: OS Independent",
+        'Programming Language :: Python :: 3',
+        'License :: OSI Approved :: MIT License',
+        'Operating System :: OS Independent',
     ],
-    package_dir={"": "src"},
-    packages=setuptools.find_packages(where="src"),
-    python_requires=">=3.6",
+    package_dir={'': 'src'},
+    packages=setuptools.find_packages(where='src'),
+    python_requires='>=3.6',
 )

@@ -1,7 +1,7 @@
-SSH_PRIVATE_KEY=${PWD}/xmrsigner_dev_ssh
-SRC_DIR=${PWD}/src
-DEV_DEVICE_IP=''
-DEV_DEVICE_WIFI_IP='192.168.4.1'
+SSH_PRIVATE_KEY := $(PWD)/xmrsigner_dev_ssh
+SRC_DIR := $(PWD)/src
+DEV_DEVICE_IP := ''
+DEV_DEVICE_WIFI_IP := '192.168.4.1'
 
 default:
 	true
@@ -94,29 +94,29 @@ dev-device-show-ip: dev-device-ip
 
 dev-device-sync: dev-device-ip clean
 	@echo 'Sync via scp...'
-	@scp -r -i ${SSH_PRIVATE_KEY} ${SRC_DIR}/xmrsigner xmrsigner@${DEV_DEVICE_IP}:/opt/xmrsigner/
+	@scp -r -i $(SSH_PRIVATE_KEY) $(SRC_DIR)/xmrsigner xmrsigner@$(DEV_DEVICE_IP):/opt/xmrsigner/
 
 dev-device-rsync: dev-device-ip clean
 	@echo 'Sync via rsync...'
-	@rsync -az --info=progress2 -e "ssh -i ${SSH_PRIVATE_KEY}" ${SRC_DIR}/xmrsigner xmrsigner@${DEV_DEVICE_IP}:/opt/xmrsigner/
+	@rsync -az --info=progress2 -e "ssh -i $(SSH_PRIVATE_KEY)" $(SRC_DIR)/xmrsigner xmrsigner@$(DEV_DEVICE_IP):/opt/xmrsigner/
 
 dev-device-shell: dev-device-ip
-	ssh -i ${SSH_PRIVATE_KEY} xmrsigner@${DEV_DEVICE_IP}
+	ssh -i $(SSH_PRIVATE_KEY) xmrsigner@$(DEV_DEVICE_IP)
 
 dev-device-log: dev-device-ip
-	ssh -i ${SSH_PRIVATE_KEY} xmrsigner@${DEV_DEVICE_IP} 'tail -f /var/log/xmrsigner.log'
+	ssh -i $(SSH_PRIVATE_KEY) xmrsigner@$(DEV_DEVICE_IP) 'tail -f /var/log/xmrsigner.log'
 
 dev-device-shutdown: dev-device-ip
-	@ssh -t -i ${SSH_PRIVATE_KEY} xmrsigner@${DEV_DEVICE_IP} 'sudo halt'
+	@ssh -t -i $(SSH_PRIVATE_KEY) xmrsigner@$(DEV_DEVICE_IP) 'sudo halt'
 
 dev-device-reboot: dev-device-ip
-	@ssh -t -i ${SSH_PRIVATE_KEY} xmrsigner@${DEV_DEVICE_IP} 'sudo reboot'
+	@ssh -t -i $(SSH_PRIVATE_KEY) xmrsigner@$(DEV_DEVICE_IP) 'sudo reboot'
 
 dev-device-wifi-shell:
-	ssh -i ${SSH_PRIVATE_KEY} xmrsigner@${DEV_DEVICE_WIFI_IP}
+	ssh -i $(SSH_PRIVATE_KEY) xmrsigner@$(DEV_DEVICE_WIFI_IP)
 
 dev-device-wifi-shell-reatach:
-	ssh -t -i ${SSH_PRIVATE_KEY} xmrsigner@${DEV_DEVICE_WIFI_IP} 'screen -r'
+	ssh -t -i $(SSH_PRIVATE_KEY) xmrsigner@$(DEV_DEVICE_WIFI_IP) 'screen -r'
 
 dev-device-time-sync: dev-device-ip
-	date +'%s %Z' | ssh -t -i ${SSH_PRIVATE_KEY} xmrsigner@${DEV_DEVICE_IP} 'read -r ts tz; sudo date -s @${ts}; echo $tz | sudo tee /etc/timezone; sudo dpkg-reconfigure -f noninteractive tzdata'
+	date +'%s %Z' | ssh -t -i $(SSH_PRIVATE_KEY) xmrsigner@$(DEV_DEVICE_IP) 'read -r ts tz; sudo date -s @${ts}; echo $tz | sudo tee /etc/timezone; sudo dpkg-reconfigure -f noninteractive tzdata'

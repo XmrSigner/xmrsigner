@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+
 from xmrsigner.gui.screens.screen import ButtonListScreen
 from xmrsigner.gui.components import (
     IconConstants,
@@ -13,7 +14,6 @@ class WalletOptionsScreen(ButtonListScreen):
     fingerprint: str = None
     polyseed: bool = False
     my_monero: bool = False
-    has_passphrase: bool = False
 
     def __post_init__(self):
         self.top_nav_icon_name = IconConstants.FINGERPRINT

@@ -1,34 +1,45 @@
 from logging import getLogger
- 
+
 from xmrsigner.gui.button_data import ButtonData
-from xmrsigner.gui.components import FontAwesomeIconConstants, IconConstants
+from xmrsigner.gui.components import (
+    FontAwesomeIconConstants,
+    IconConstants
+)
 from xmrsigner.models.decode_qr import DecodeQR
-from xmrsigner.views.view import View, Destination, MainMenuView
+from xmrsigner.views.view import (
+    View,
+    Destination,
+    MainMenuView
+)
 from xmrsigner.gui.screens import (
     RET_CODE__BACK_BUTTON,
     ButtonListScreen,
     settings_screens
 )
-from xmrsigner.models.settings import SettingsConstants, SettingsDefinition
+from xmrsigner.models.settings import (
+    SettingsDefinition,
+    Setting,
+    Visibility
+)
 from xmrsigner.hardware.microsd import MicroSD
-from xmrsigner.views.wallet_views import WalletRpcView
 from xmrsigner.views.monero_views import DateOrBlockHeightView
 
+
 logger = getLogger(__name__)
+
 
 class SettingsMenuView(View):
 
     IO_TEST = ButtonData('I/O test')
     DONATE = ButtonData('Donate')
-    WALLET_RPC = ButtonData('Wallet RPC')
     ABOUT = ButtonData('About')
 
-    def __init__(self, visibility: str = SettingsConstants.VISIBILITY__GENERAL, selected_attr: str = None, initial_scroll: int = 0):
+    def __init__(self, visibility: Visibility = Visibility.GENERAL, selected_attr: Setting|None = None, initial_scroll: int = 0):
         super().__init__()
-        self.visibility = visibility
-        self.selected_attr = selected_attr
+        self.visibility: Visibility = visibility
+        self.selected_attr: Setting = selected_attr
         # Used to preserve the rendering position in the list
-        self.initial_scroll = initial_scroll
+        self.initial_scroll: int = initial_scroll
 
     def run(self):
         settings_entries = SettingsDefinition.get_settings_entries(
@@ -36,29 +47,23 @@ class SettingsMenuView(View):
         )
         button_data=[e.display_name for e in settings_entries]
 
-        selected_button = 0
+        selected_button: int = 0
         if self.selected_attr:
             for i, entry in enumerate(settings_entries):
-                if entry.attr_name == self.selected_attr:
+                if entry.attr == self.selected_attr:
                     selected_button = i
                     break
-
-        if self.visibility == SettingsConstants.VISIBILITY__GENERAL:
-            title = "Settings"
-
+        if self.visibility == Visibility.GENERAL:
+            title = 'Settings'
             # Set up the next nested level of menuing
-            button_data.append(("Advanced", None, None, None, IconConstants.CHEVRON_RIGHT))
-            next_destination = Destination(SettingsMenuView, view_args={"visibility": SettingsConstants.VISIBILITY__ADVANCED})
- 
+            button_data.append(('Advanced', None, None, None, IconConstants.CHEVRON_RIGHT))
+            next_destination = Destination(SettingsMenuView, view_args={'visibility': Visibility.ADVANCED})
             button_data.append(self.DONATE)
             button_data.append(self.ABOUT)
-
-        elif self.visibility == SettingsConstants.VISIBILITY__ADVANCED:
-            title = "Advanced"
+        elif self.visibility == Visibility.ADVANCED:
+            title = 'Advanced'
             next_destination = None
             button_data.append(self.IO_TEST)
-            button_data.append(self.WALLET_RPC)
-
         selected_menu_num = self.run_screen(
             ButtonListScreen,
             title=title,
@@ -69,25 +74,21 @@ class SettingsMenuView(View):
         )
         # Preserve our scroll position in this Screen so we can return
         initial_scroll = self.screen.buttons[0].scroll_y
-
         if selected_menu_num == RET_CODE__BACK_BUTTON:
-            if self.visibility == SettingsConstants.VISIBILITY__GENERAL:
+            if self.visibility == Visibility.GENERAL:
                 return Destination(MainMenuView)
-            if self.visibility == SettingsConstants.VISIBILITY__ADVANCED:
+            if self.visibility == Visibility.ADVANCED:
                 return Destination(SettingsMenuView)
-            return Destination(SettingsMenuView, view_args={"visibility": SettingsConstants.VISIBILITY__ADVANCED})
+            return Destination(SettingsMenuView, view_args={'visibility': Visibility.ADVANCED})
         if selected_menu_num == len(settings_entries):
             return next_destination
         if len(button_data) > selected_menu_num and button_data[selected_menu_num] == self.IO_TEST:
             return Destination(IOTestView)
         if len(button_data) > selected_menu_num and button_data[selected_menu_num] == self.DONATE:
             return Destination(DonateView)
-        if len(button_data) > selected_menu_num and button_data[selected_menu_num] == self.WALLET_RPC:
-            return Destination(WalletRpcView)
         if len(button_data) > selected_menu_num and button_data[selected_menu_num] == self.ABOUT:
             return Destination(AboutView)
-        return Destination(SettingsEntryUpdateSelectionView, view_args={"attr_name": settings_entries[selected_menu_num].attr_name})
-
+        return Destination(SettingsEntryUpdateSelectionView, view_args={'attr': settings_entries[selected_menu_num].attr})
 
 
 class SettingsEntryUpdateSelectionView(View):
@@ -96,14 +97,14 @@ class SettingsEntryUpdateSelectionView(View):
     Enabled/Disabled, etc).
     """
 
-    def __init__(self, attr_name: str, parent_initial_scroll: int = 0, selected_button: int = None):
+    def __init__(self, attr: Setting, parent_initial_scroll: int = 0, selected_button: int = None):
         super().__init__()
-        self.settings_entry = SettingsDefinition.get_settings_entry(attr_name)
+        self.settings_entry = SettingsDefinition.get_settings_entry(attr)
         self.selected_button = selected_button
         self.parent_initial_scroll = parent_initial_scroll
 
     def run(self):
-        initial_value = self.settings.get_value(self.settings_entry.attr_name)
+        initial_value: SelectionOption = self.settings.get_value(self.settings_entry.attr)
         button_data = []
         checked_buttons = []
         for i, value in enumerate(self.settings_entry.selection_options):
@@ -127,24 +128,24 @@ class SettingsEntryUpdateSelectionView(View):
             button_data=button_data,
             selected_button=self.selected_button,
             checked_buttons=checked_buttons,
-            settings_entry_type=self.settings_entry.type,
+            settings_entry_type=self.settings_entry.type
         )
         destination = None
         settings_menu_view_destination = Destination(
             SettingsMenuView,
             view_args={
-                "visibility": self.settings_entry.visibility,
-                "selected_attr": self.settings_entry.attr_name,
-                "initial_scroll": self.parent_initial_scroll
+                'visibility': self.settings_entry.visibility,
+                'selected_attr': self.settings_entry.attr,
+                'initial_scroll': self.parent_initial_scroll
             }
         )
         if ret_value == RET_CODE__BACK_BUTTON:
             return settings_menu_view_destination
         value = self.settings_entry.get_selection_option_value(ret_value)
-        if self.settings_entry.type == SettingsConstants.TYPE__FREE_ENTRY:
+        if self.settings_entry.type == Type.FREE_ENTRY:
             updated_value = ret_value
             destination = settings_menu_view_destination
-        elif self.settings_entry.type == SettingsConstants.TYPE__MULTISELECT:
+        elif self.settings_entry.type == Type.MULTISELECT:
             updated_value = list(initial_value)
             if ret_value not in checked_buttons:
                 # This is a new selection to add
@@ -160,7 +161,7 @@ class SettingsEntryUpdateSelectionView(View):
             else:
                 updated_value = value
         self.settings.set_value(
-            attr_name=self.settings_entry.attr_name,
+            attr=self.settings_entry.attr,
             value=updated_value
         )
         if destination:
@@ -170,7 +171,7 @@ class SettingsEntryUpdateSelectionView(View):
         return Destination(
             SettingsEntryUpdateSelectionView,
             view_args={
-                'attr_name': self.settings_entry.attr_name,
+                'attr': self.settings_entry.attr,
                 'parent_initial_scroll': self.parent_initial_scroll,
                 'selected_button': self.selected_button
             },
@@ -187,7 +188,7 @@ class SettingsIngestSettingsQRView(View):
         return Destination(
             SettingsEntryUpdateSelectionView,
             view_args={
-                'attr_name': self.settings_entry.attr_name,
+                'attr': self.settings_entry.attr,
                 'parent_initial_scroll': self.parent_initial_scroll,
                 'selected_button': self.selected_button
             },
@@ -198,16 +199,14 @@ class SettingsIngestSettingsQRView(View):
 class SettingsIngestSettingsQRView(View):
     def __init__(self, data: str):
         super().__init__()
-
         # May raise an Exception which will bubble up to the Controller to display to the
         # user.
         self.config_name, settings_update_dict = Settings.parse_settingsqr(data)
         self.settings.update(settings_update_dict)
-
-        if MicroSD.get_instance().is_inserted and self.settings.get_value(SettingsConstants.SETTING__PERSISTENT_SETTINGS) == SettingsConstants.OPTION__ENABLED:
-            self.status_message = "Persistent Settings enabled. Settings saved to SD card."
+        if MicroSD.get_instance().is_inserted and self.settings.get_value(Setting.PERSISTENT_SETTINGS) == Option.ENABLED:
+            self.status_message = 'Persistent Settings enabled. Settings saved to SD card.'
         else:
-            self.status_message = "Settings updated in temporary memory"
+            self.status_message = 'Settings updated in temporary memory'
 
     def run(self):
         from xmrsigner.gui.screens.settings_screens import SettingsQRConfirmationScreen

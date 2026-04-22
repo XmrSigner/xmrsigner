@@ -1,13 +1,11 @@
-import json
-import re
+from ots.enums import SeedType
 
-from xmrsigner.controller import Controller
+from xmrsigner.controller import Controller, Flow
+from xmrsigner.models.pending_seed import PendingSeed
 from xmrsigner.gui.screens.screen import RET_CODE__BACK_BUTTON
-from xmrsigner.models.seed import Seed
-from xmrsigner.models.polyseed import PolyseedSeed
-from xmrsigner.models.qr_type import QRType
+from xmrsigner.models.qr_type import QrType
 from xmrsigner.models.decode_qr import DecodeQR
-from xmrsigner.models.settings import SettingsConstants
+from xmrsigner.models.settings import Setting, Option
 from xmrsigner.views.settings_views import SettingsIngestSettingsQRView
 from xmrsigner.views.view import (
     BackStackView,
@@ -18,18 +16,16 @@ from xmrsigner.views.view import (
     View,
     Destination
 )
-from typing import Optional, List
-
 
 
 class ScanView(View):
     """
-        The catch-all generic scanning View that will accept any of our supported QR
-        formats and will route to the most sensible next step.
+    The catch-all generic scanning View that will accept any of our supported QR
+    formats and will route to the most sensible next step.
 
-        Can also be used as a base class for more specific scanning flows with
-        dedicated errors when an unexpected QR type is scanned (e.g. Scan Tx was
-        selected but a SeedQR was scanned).
+    Can also be used as a base class for more specific scanning flows with
+    dedicated errors when an unexpected QR type is scanned (e.g. Scan Tx was
+    selected but a SeedQR was scanned).
     """
 
     instructions_text = "Scan a QR code"
@@ -40,8 +36,8 @@ class ScanView(View):
         super().__init__()
         # Define the decoder here to make it available to child classes' is_valid_qr_type
         # checks and so we can inject data into it in the test suite's `before_run()`.
-        self.wordlist_language_code = self.settings.get_value(SettingsConstants.SETTING__MONERO_WORDLIST_LANGUAGE)  # TODO: 2024-08-08, not sure if this is a good idea, refactor one day
-        self.decoder: DecodeQR = DecodeQR(wordlist_language_code=self.wordlist_language_code)
+        self.wordlist_language = self.settings.get_value(Setting.MONERO_WORDLIST_LANGUAGE)  # TODO: 2024-08-08, not sure if this is a good idea, refactor one day
+        self.decoder: DecodeQR = DecodeQR(wordlist_language_code=self.wordlist_language)
 
 
     @property
@@ -61,7 +57,7 @@ class ScanView(View):
             if not self.is_valid_qr_type:
                 # We recognized the QR type but it was not the type expected for the
                 # current flow.
-                # Report QR types in more human-readable text (e.g. QRType
+                # Report QR types in more human-readable text (e.g. QrType
                 # `seed__compactseedqr` as "seed: compactseedqr").
                 return Destination(ErrorView, view_args=dict(
                     title='Error',
@@ -71,48 +67,46 @@ class ScanView(View):
                     next_destination=Destination(BackStackView, skip_current_view=True),
                 ))
             if self.decoder.is_seed or (self.decoder.is_wallet and not self.decoder.is_view_only_wallet):
-                seed_mnemonic: Optional[List] = self.decoder.get_seed_phrase()
+                seed_mnemonic: list|None = self.decoder.get_seed_phrase()
                 if not seed_mnemonic:
                     # seed is not valid, Exit if not valid with message
-                    raise Exception('Not yet implemented!')
+                    raise Exception('Not yet implemented!')  # TODO: what is missing, error message?
                 # Found a valid mnemonic seed! All new seeds should be considered
                 #   pending (might set a passphrase, SeedXOR, etc) until finalized.
                 from xmrsigner.views.seed_views import SeedFinalizeView
-                self.controller.jar.set_pending_seed(
-                    Seed(mnemonic=seed_mnemonic, wordlist_language_code=self.wordlist_language_code)
-                    if len(seed_mnemonic) != 16 else
-                    PolyseedSeed(mnemonic=seed_mnemonic, wordlist_language_code=self.wordlist_language_code)
+                self.controller.pending_seed = PendingSeed(
+                    mnemonic=seed_mnemonic, seed_type = SeedType.MONERO if len(seed_mnemonic) != 16 else SeedType.POLYSEED
                 )
-                if self.settings.get_value(SettingsConstants.SETTING__MONERO_SEED_PASSPHRASE if len(seed_mnemonic) != 16 else SettingsConstants.SETTING__POLYSEED_PASSPHRASE) == SettingsConstants.OPTION__REQUIRED:
+                if self.settings.get_value(Setting.MONERO_SEED_PASSPHRASE if len(seed_mnemonic) != 16 else Setting.POLYSEED_PASSPHRASE) != Option.DISABLED:  # TODO: think enabled should ask if want to use a offset passphrase, polyseed should ask for password if necessary
                     from xmrsigner.views.seed_views import SeedAddPassphraseView
                     return Destination(SeedAddPassphraseView)
                 return Destination(SeedFinalizeView)
             if self.decoder.is_ur:
-                if self.decoder.qr_type == QRType.XMR_OUTPUT_UR:
+                if self.decoder.qr_type == QrType.XMR_OUTPUT_UR:
                     self.controller.outputs = self.decoder.get_output()
                     from xmrsigner.views.monero_views import MoneroSelectSeedView
-                    return Destination(MoneroSelectSeedView, view_args={'flow': Controller.FLOW__SYNC}, skip_current_view=True)
-                if self.decoder.qr_type == QRType.XMR_TX_UNSIGNED_UR:
+                    return Destination(MoneroSelectSeedView, view_args={'flow': Flow.SYNC}, skip_current_view=True)
+                if self.decoder.qr_type == QrType.XMR_TX_UNSIGNED_UR:
                     from xmrsigner.views.monero_views import MoneroSelectSeedView
                     tx = self.decoder.get_tx()
                     self.controller.transaction = tx
-                    return Destination(MoneroSelectSeedView, view_args={'flow': Controller.FLOW__TX}, skip_current_view=True)
+                    return Destination(MoneroSelectSeedView, view_args={'flow': Flow.TX}, skip_current_view=True)
                 raise Exception('Not Implemented Yet!')
             if self.decoder.is_settings:
                 data = self.decoder.get_settings_data()
-                return Destination(SettingsIngestSettingsQRView, view_args=dict(data=data))
+                return Destination(SettingsIngestSettingsQRView, view_args={'data': data})
             return Destination(NotYetImplementedView)
         if self.decoder.is_invalid:
             # For now, don't even try to re-do the attempted operation, just reset and
             # start everything over.
             self.controller.resume_main_flow = None
-            return Destination(ErrorView, view_args=dict(
-                title='Error',
-                status_headline='Unknown QR Type',
-                text='QRCode is invalid or is a data format not yet supported.',
-                button_text='Done',
-                next_destination=Destination(MainMenuView, clear_history=True),
-            ))
+            return Destination(ErrorView, view_args={
+                'title': 'Error',
+                'status_headline': 'Unknown QR Type',
+                'text': 'QRCode is invalid or is a data format not yet supported.',
+                'button_text': 'Done',
+                'next_destination': Destination(MainMenuView, clear_history=True)
+            })
         return Destination(MainMenuView)
 
 
@@ -148,7 +142,7 @@ class ScanAddressView(ScanView):
 
     instructions_text = "Scan address QR"
     invalid_qr_type_message = "Expected an address QR"
- 
+
     @property
     def is_valid_qr_type(self):
         return self.decoder.is_address

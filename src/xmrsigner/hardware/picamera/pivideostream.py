@@ -2,7 +2,6 @@ from picamera.array import PiRGBArray
 from picamera import PiCamera
 from threading import Thread
 from time import sleep
-from typing import Tuple
 
 from xmrsigner.hardware.interfaces import PiVideoStreamInterface
 
@@ -12,7 +11,7 @@ class PiVideoStream(PiVideoStreamInterface):
 
     def __init__(
         self,
-        resolution: Tuple[int, int] = (320, 240),
+        resolution: tuple[int, int] = (320, 240),
         framerate: int = 32,
         format: str = 'bgr',
         **kwargs

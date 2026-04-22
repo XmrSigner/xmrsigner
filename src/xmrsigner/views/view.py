@@ -1,5 +1,4 @@
 from dataclasses import dataclass
-from typing import Type, List, Dict, Union
 
 from xmrsigner.gui.components import FontAwesomeIconConstants, IconConstants
 from xmrsigner.gui.screens.screen import (
@@ -11,7 +10,10 @@ from xmrsigner.gui.screens.screen import (
     ResetScreen,
     WarningScreen
 )
-from xmrsigner.models.settings import Settings, SettingsConstants
+from xmrsigner.models.settings import (
+    Settings,
+    Setting
+)
 from xmrsigner.models.settings_definition import SettingsDefinition
 from xmrsigner.models.threads import BaseThread
 
@@ -102,7 +104,7 @@ class View:
     def get_redirect(self) -> 'Destination':
         return self._redirect
 
-    def run_screen(self, Screen_cls: Type[BaseScreen], **kwargs) -> Union[int, str]:
+    def run_screen(self, Screen_cls: type[BaseScreen], **kwargs) -> int|str:
         """
             Instantiates the provided Screen_cls and runs its interactive display.
             Returns the user's input upon completion.
@@ -120,8 +122,8 @@ class Destination:
         Basic struct to pass back to the Controller to tell it which View the user should
         be presented with next.
     """
-    View_cls: Type[View]                # The target View to route to
-    view_args: Dict = None              # The input args required to instantiate the target View
+    View_cls: type[View]                # The target View to route to
+    view_args: dict = None              # The input args required to instantiate the target View
     skip_current_view: bool = False     # The current View is just forwarding; omit current View from history
     clear_history: bool = False         # Optionally clears the back_stack to prevent "back"
 
@@ -242,11 +244,11 @@ class NetworkMismatchErrorView(ErrorView):
     def __post_init__(self):
         super().__post_init__()
         if not self.text:
-            self.text = f"Current network setting ({self.settings.get_value_display_name(SettingsConstants.SETTING__NETWORKS)[0]}) doesn't match current action."  # TODO: 2024-06-26, solve multi network issue
+            self.text = f"Current network setting ({self.settings.get_value_display_name(Setting.NETWORKS)[0]}) doesn't match current action."  # TODO: 2024-06-26, solve multi network issue
 
         if not self.next_destination:
             from xmrsigner.views.settings_views import SettingsEntryUpdateSelectionView
-            self.next_destination = Destination(SettingsEntryUpdateSelectionView, view_args=dict(attr_name=SettingsConstants.SETTING__NETWORKS)[0], clear_history=True)  # TODO: 2024-06-26, solve multi network issue
+            self.next_destination = Destination(SettingsEntryUpdateSelectionView, view_args=dict(attr_name=Setting.NETWORKS)[0], clear_history=True)  # TODO: 2024-06-26, solve multi network issue
 
 
 class NotYetImplementedView(View):
@@ -268,7 +270,7 @@ class NotYetImplementedView(View):
 @dataclass
 class UnhandledExceptionView(View):
 
-    error: List[str]
+    error: list[str]
 
     def run(self) -> None:
         self.run_screen(
@@ -280,7 +282,6 @@ class UnhandledExceptionView(View):
             show_back_button=False,
             allow_text_overflow=True,  # Fit what we can, let the rest go off the edges
         )
-        
         return Destination(MainMenuView, clear_history=True)
 
 
@@ -288,7 +289,7 @@ class UnhandledExceptionView(View):
 class OptionDisabledView(View):
     UPDATE_SETTING = "Update Setting"
     DONE = "Done"
-    settings_attr: str
+    settings_attr: SettingsEntry
 
     def __post_init__(self):
         super().__post_init__()

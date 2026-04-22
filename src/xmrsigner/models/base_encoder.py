@@ -1,22 +1,19 @@
-from typing import List, Optional
 from dataclasses import dataclass
-from xmrsigner.helpers.qr import QR
-from xmrsigner.models.settings import SettingsConstants
+from xmrsigner.helpers.qr import Qr
+from xmrsigner.models.settings_definition import QrDensity
+
 
 @dataclass
 class QrEncoder:
     """
-   Encode data for displaying as qr image
+    Encode data for displaying as qr image
     """
-    qr: Optional[QR] = None
-    qr_density: str = SettingsConstants.DENSITY__MEDIUM
+    qr: Qr|None = None
+    qr_density: QrDensity = QrDensity.MEDIUM
     _complete: bool = False
 
     def __post_init__(self):
-        self.qr = QR()
-
-        if self.qr_density == None:
-            self.qr_density = SettingsConstants.DENSITY__MEDIUM
+        self.qr = Qr()
 
     def seq_len(self):
         raise Exception("Not implemented in child class")

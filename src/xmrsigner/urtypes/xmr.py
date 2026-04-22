@@ -1,5 +1,6 @@
 from urtypes import RegistryType, Bytes
 
+
 XMR_OUTPUT = RegistryType('xmr-output', 610)
 XMR_KEY_IMAGE = RegistryType('xmr-keyimage', 611)
 XMR_TX_UNSIGNED = RegistryType('xmr-txunsigned', 612)

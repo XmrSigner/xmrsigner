@@ -1,9 +1,6 @@
-from typing import Optional
-
-
 class Singleton:
 
-    _instance: Optional['Singleton'] = None
+    _instance: 'Singleton|None' = None
 
     def __init__(self):
         # Singleton pattern must prevent normal instantiation

@@ -3,6 +3,7 @@ from threading import Thread
 from time import sleep
 from xmrsigner.hardware.interfaces import CameraInterface
 
+
 class PiVideoStream2:
 
     def __init__(self, resolution=(320, 240), framerate=32, format="bgr", **kwargs):

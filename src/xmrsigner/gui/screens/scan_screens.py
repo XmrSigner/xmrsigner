@@ -1,7 +1,6 @@
 from time import sleep
 
 from dataclasses import dataclass
-from typing import Tuple
 from PIL import Image, ImageDraw
 
 from xmrsigner.gui import renderer
@@ -9,7 +8,6 @@ from xmrsigner.hardware.buttons import HardwareButtonsConstants
 from xmrsigner.hardware.camera import Camera
 from xmrsigner.models.decode_qr import DecodeQR, DecodeQRStatus
 from xmrsigner.models.threads import BaseThread
-
 from xmrsigner.gui.screens.screen import BaseScreen, ButtonListScreen
 from xmrsigner.gui.components import GUIConstants, Fonts, TextArea
 
@@ -42,9 +40,9 @@ class ScanScreen(BaseScreen):
     """
     decoder: DecodeQR = None
     instructions_text: str = None
-    resolution: Tuple[int,int] = (480, 480)
+    resolution: tuple[int,int] = (480, 480)
     framerate: int = 5
-    render_rect: Tuple[int,int,int,int] = None
+    render_rect: tuple[int,int,int,int] = None
 
     def __post_init__(self):
         from xmrsigner.hardware.camera import Camera
@@ -64,7 +62,7 @@ class ScanScreen(BaseScreen):
 
     class LivePreviewThread(BaseThread):
 
-        def __init__(self, camera: Camera, decoder: DecodeQR, renderer: renderer.Renderer, instructions_text: str, render_rect: Tuple[int,int,int,int]):
+        def __init__(self, camera: Camera, decoder: DecodeQR, renderer: renderer.Renderer, instructions_text: str, render_rect: tuple[int,int,int,int]):
             self.camera = camera
             self.decoder = decoder
             self.renderer = renderer

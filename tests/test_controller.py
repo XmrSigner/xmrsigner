@@ -1,9 +1,12 @@
 import configparser
 import pytest
 from mock import MagicMock
-from seedsigner.controller import Controller
-from seedsigner.models.settings import Settings
-from seedsigner.models.settings_definition import SettingsConstants
+from xmrsigner.controller import Controller
+from xmrsigner.models.settings import (
+    Settings,
+    Setting,
+    Option
+)
 
 
 
@@ -50,4 +53,4 @@ def test_missing_settings_get_defaults():
 
     # Controller should still have a default value
     controller = Controller.get_instance()
-    assert controller.settings.get_value(SettingsConstants.SETTING__COMPACT_SEEDQR) == SettingsConstants.OPTION__DISABLED
+    assert controller.settings.get_value(Setting.COMPACT_SEEDQR) == Option.DISABLED

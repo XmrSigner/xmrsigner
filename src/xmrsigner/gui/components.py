@@ -1,20 +1,25 @@
-import math
-import os
-import pathlib
+from ots.enums import Network
 
+from math import ceil, floor
+from os import path
+from pathlib import Path
 from re import findall
 from time import time
 from dataclasses import dataclass
 from decimal import Decimal
-from PIL import Image, ImageDraw, ImageFont, ImageFilter
-from xmrsigner.helpers.pillow import get_font_size
-from typing import List, Tuple, Dict, Optional
+from io import BytesIO
+from PIL import (
+    Image,
+    ImageDraw,
+    ImageFont,
+    ImageFilter
+)
 
+from xmrsigner.helpers.pillow import get_font_size
 from xmrsigner.models.settings import Settings
-from xmrsigner.models.settings_definition import SettingsConstants
+from xmrsigner.models.settings_definition import XmrDenomination
 from xmrsigner.models.singleton import Singleton
 from xmrsigner.resources import get as res
-from io import BytesIO
 
 
 class GUIConstants:
@@ -99,7 +104,7 @@ class GUIConstants:
     # LOADING_SCREEN_ARC_COLOR = '#ff9416'
     # LOADING_SCREEN_ARC_TRAILING_COLOR = '#80490b'
     XMRSIGNER_DOMAIN = 'xmrsigner.org'
-    XMRSIGNER_DONATION_TEXT = 'XmrSigner is 100% free & open source, funded solely by the Monero community.\n\nDonate onchain at: xmrsigner.org/donate'
+    XMRSIGNER_DONATION_TEXT = f'XmrSigner is 100% free & open source, funded solely by the Monero community.\n\nDonate onchain at: {XMRSIGNER_DOMAIN}/donate'
 
     XMRSIGNER_UPDATE_URL = f'{XMRSIGNER_DOMAIN}/download'
 
@@ -120,7 +125,6 @@ class GUIConstants:
         from xmrsigner.controller import Controller
         version = Controller.VERSION
         return f'XmrSigner Version {Controller.VERSION}\n\nYou can find the newest version always at: {cls.XMRSIGNER_UPDATE_URL}'
-
 
 
 class FontAwesomeIconConstants:
@@ -230,7 +234,7 @@ def calc_text_centering(font: ImageFont,
                         total_width: int,
                         total_height: int,
                         start_x: int = 0,
-                        start_y: int = 0) -> Tuple[int, int]:
+                        start_y: int = 0) -> tuple[int, int]:
     # see: https://pillow.readthedocs.io/en/stable/handbook/text-anchors.html#text-anchors
     # Gap between the starting coordinate and the first marking.
     offset_x, offset_y = font.getoffset(text)
@@ -246,7 +250,7 @@ def calc_text_centering(font: ImageFont,
     return (start_x + text_x, start_y + text_y)
 
 def load_icon(icon_name: str, load_selected_variant: bool = False):
-    icon_url = pathlib.Path(os.path.dirname(os.path.dirname(__file__)), 'resources', 'icons', icon_name).resolve()
+    icon_url = Path(path.dirname(path.dirname(__file__)), 'resources', 'icons', icon_name).resolve()
     icon = Image.open(BytesIO(res('icons', image_name))).convert("RGB")
     if not load_selected_variant:
         return icon
@@ -260,7 +264,7 @@ def load_image(image_name: str) -> Image.Image:
 
 
 class Fonts(Singleton):
-    font_path = pathlib.Path(os.path.dirname(__file__), 'resources', 'fonts')
+    font_path = Path(path.dirname(__file__), 'resources', 'fonts')
     fonts = {}
 
     @classmethod
@@ -272,7 +276,7 @@ class Fonts(Singleton):
             file_extension = "otf"
         if size not in cls.fonts[font_name]:
             try:
-                # cls.fonts[font_name][size] = ImageFont.truetype(os.path.join(cls.font_path, f"{font_name}.{file_extension}"), size)
+                # cls.fonts[font_name][size] = ImageFont.truetype(path.join(cls.font_path, f"{font_name}.{file_extension}"), size)
                 cls.fonts[font_name][size] = ImageFont.truetype(BytesIO(res('fonts', f'{font_name}.{file_extension}')), size)
             except OSError as e:
                 if "cannot open resource" in str(e):
@@ -594,7 +598,7 @@ class FormattedAddress(BaseComponent):
 
         multisig native segwit:   64 chars (66 for regtest)
         multisig nested segwit:   34 chars (35 for regtest?)
- 
+
         single sig taproot:       62 chars
 
         * max_lines: forces truncation on long addresses to fit
@@ -650,10 +654,10 @@ class FormattedAddress(BaseComponent):
             ))
             cur_y += char_height
         else:
-            max_chars_per_line = math.floor(self.width / char_width)
-            num_lines = math.ceil(len(display_str)/max_chars_per_line)
+            max_chars_per_line = floor(self.width / char_width)
+            num_lines = ceil(len(display_str)/max_chars_per_line)
             # Recalc chars per line to even out all x lines to the same width
-            max_chars_per_line  = math.ceil(len(display_str) / num_lines)
+            max_chars_per_line  = ceil(len(display_str) / num_lines)
             remaining_display_str = display_str
             addr_lines_x = self.screen_x + int((self.width - char_width*max_chars_per_line) / 2)
             for i in range(0, num_lines):
@@ -752,24 +756,24 @@ class XmrAmount(BaseComponent):
     font_size: int = 24
     screen_x: int = 0
     screen_y: int = None
-    network: Optional[str] = None
+    network: Network|None = None
 
     def __post_init__(self):
         super().__post_init__()
-        self.sub_components: List[BaseComponent] = []
+        self.sub_components: list[BaseComponent] = []
         self.paste_image: Image.Image = None
         self.paste_coords = None
-        denomination = Settings.get_instance().get_value(SettingsConstants.SETTING__XMR_DENOMINATION)
+        denomination = Settings.get_instance().get_value(Setting.XMR_DENOMINATION)
         if not self.network:
-            self.network = Settings.get_instance().get_value(SettingsConstants.SETTING__NETWORKS)[0]
+            self.network: Network = Settings.get_instance().get_value(Setting.NETWORKS)[0]
         self.total_atomic_units = int(self.total_atomic_units)
         xmr_unit = "XMR"
         atomic_units_unit = "pXMR"
-        if self.network == SettingsConstants.MAINNET:
+        if self.network == Network.MAIN:
             xmr_color = GUIConstants.MAINNET_COLOR
-        elif self.network == SettingsConstants.TESTNET:
+        elif self.network == Network.TEST:
             xmr_color = GUIConstants.TESTNET_COLOR
-        elif self.network == SettingsConstants.STAGENET:
+        elif self.network == Network.STAGE:
             xmr_color = GUIConstants.STAGENET_COLOR
         digit_font = Fonts.get_font(font_name=GUIConstants.BODY_FONT_NAME, size=self.font_size)
         smaller_digit_font = Fonts.get_font(font_name=GUIConstants.BODY_FONT_NAME, size=self.font_size - 2)
@@ -791,9 +795,9 @@ class XmrAmount(BaseComponent):
         cur_x = xmr_icon.width + int(GUIConstants.COMPONENT_PADDING / 4)
         print(f'denomination: {denomination}')
         print(f'total_atomic_units: {self.total_atomic_units}')
-        if denomination == SettingsConstants.XMR_DENOMINATION__XMR or \
-            (denomination == SettingsConstants.XMR_DENOMINATION__THRESHOLD and self.total_atomic_units >= 10**10) or \
-                (denomination == SettingsConstants.XMR_DENOMINATION__XMRATOMICUNITSHYBRID and self.total_atomic_units >= 10**6 and str(self.total_atomic_units)[-6:] == "0" * 6) or \
+        if denomination == XmrDenomination.XMR or \
+            (denomination == XmrDenomination.TRESHOLD and self.total_atomic_units >= 10**10) or \
+                (denomination == XmrDenomination.HYBRID and self.total_atomic_units >= 10**6 and str(self.total_atomic_units)[-6:] == "0" * 6) or \
                     self.total_atomic_units > 10**10:
             decimal_xmr = Decimal(self.total_atomic_units / 10**12).quantize(Decimal("0.123456789012"))
             if str(self.total_atomic_units)[-12:] == "0" * 12:
@@ -826,9 +830,9 @@ class XmrAmount(BaseComponent):
             )
             cur_x += text_width
             unit_text = xmr_unit
-        elif denomination == SettingsConstants.XMR_DENOMINATION__ATOMICUNITS or \
-            (denomination == SettingsConstants.XMR_DENOMINATION__THRESHOLD and self.total_atomic_units < 10**10) or \
-                (denomination == SettingsConstants.XMR_DENOMINATION__XMRATOMICUNITSHYBRID and self.total_atomic_units < 10**6):
+        elif denomination == XmrDenomination.ATOMIC_UNITS or \
+            (denomination == XmrDenomination.THRESHOLD and self.total_atomic_units < 10**10) or \
+                (denomination == XmrDenomination.HYBRID and self.total_atomic_units < 10**6):
             # Draw the atomic_units side
             atomic_units_text = f"{self.total_atomic_units:,}"
             font = digit_font
@@ -849,7 +853,7 @@ class XmrAmount(BaseComponent):
             )
             cur_x += text_width
             unit_text = atomic_units_unit
-        elif denomination == SettingsConstants.XMR_DENOMINATION__XMRATOMICUNITSHYBRID:
+        elif denomination == XmrDenomination.HYBRID:
             decimal_xmr = Decimal(self.total_atomic_units / 10**8).quantize(Decimal("0.12345678"))
             decimal_xmr = Decimal(str(decimal_xmr)[:-6])
             xmr_text = f"{decimal_xmr:,}"
@@ -950,13 +954,13 @@ class Button(BaseComponent):
     scroll_y: int = 0
     width: int = None
     height: int = None
-    icon_name: Optional[str] = None   # Optional icon to accompany the text
+    icon_name: str|None = None   # Optional icon to accompany the text
     icon_size: int = GUIConstants.ICON_INLINE_FONT_SIZE
     icon_color: str = GUIConstants.BUTTON_FONT_COLOR
     selected_icon_color: str = GUIConstants.BLACK
     icon_y_offset: int = 0
     is_icon_inline: bool = True    # True = render next to text; False = render centered above text
-    right_icon_name: Optional[str] = None    # Optional icon rendered right-justified
+    right_icon_name: str|None = None    # Optional icon rendered right-justified
     right_icon_size: int = GUIConstants.ICON_INLINE_FONT_SIZE
     right_icon_color: str = GUIConstants.BUTTON_FONT_COLOR
     text_y_offset: int = 0
@@ -1016,7 +1020,7 @@ class Button(BaseComponent):
                         self.text_x += int((self.icon.width + icon_padding) / 2)
                         self.icon_x = self.text_x - int(self.text_width / 2) - (self.icon.width + icon_padding)
                     else:
-                        self.icon_x = math.ceil((self.width - self.icon.width) / 2)
+                        self.icon_x = ceil((self.width - self.icon.width) / 2)
                 else:
                     if self.text:
                         self.text_x += self.icon.width + icon_padding
@@ -1026,7 +1030,7 @@ class Button(BaseComponent):
             if self.icon_y_offset:
                 self.icon_y = self.icon_y_offset
             else:
-                self.icon_y = math.ceil((self.height - self.icon.height) / 2)
+                self.icon_y = ceil((self.height - self.icon.height) / 2)
         if self.right_icon_name:
             self.right_icon = Icon(
                 icon_name=self.right_icon_name,
@@ -1039,7 +1043,7 @@ class Button(BaseComponent):
                 icon_color=self.selected_icon_color
             )
             self.right_icon_x = self.width - self.right_icon.width - GUIConstants.COMPONENT_PADDING
-            self.right_icon_y = math.ceil((self.height - self.right_icon.height) / 2)
+            self.right_icon_y = ceil((self.height - self.right_icon.height) / 2)
 
     def render(self):
         if self.is_selected:
@@ -1236,7 +1240,7 @@ def linear_interp(a, b, t):
         int((1.0 - t)*a[1] + t*b[1])
     )
 
-def calc_bezier_curve(p1: Tuple[int,int], p2: Tuple[int,int], p3: Tuple[int,int], segments: int) -> List[Tuple[Tuple[int,int], Tuple[int,int]]]:
+def calc_bezier_curve(p1: tuple[int,int], p2: tuple[int,int], p3: tuple[int,int], segments: int) -> list[tuple[tuple[int,int], tuple[int,int]]]:
     """
     Calculates the points of a bezier curve between points p1 and p3 with p2 as a
     control point influencing the amount of curve deflection.
@@ -1266,14 +1270,13 @@ def reflow_text_for_width(text: str,
                           width: int,
                           font_name=GUIConstants.BODY_FONT_NAME,
                           font_size=GUIConstants.BODY_FONT_SIZE,
-                          allow_text_overflow: bool=False) -> List[Dict]:
+                          allow_text_overflow: bool=False) -> list[dict]:
     """
     Reflows text to fit within `width` by breaking long lines up.
 
     Returns a List with each reflowed line of text as its own entry.
 
-    Note: It is up to the calling code to handle any height considerations for the 
-    resulting lines of text.
+    Note: It is up to the calling code to handle any height considerations for the resulting lines of text.
     """
     # We have to figure out if and where to make line breaks in the text so that it
     #   fits in its bounding rect (plus accounting for edge padding) using its given
@@ -1288,12 +1291,12 @@ def reflow_text_for_width(text: str,
         text_lines.append({"text": text, "text_width": text_width})
     if "\n" not in text and full_text_width < width:
         # The whole text fits on one line
-        _add_text_line(text, full_text_width)        
+        _add_text_line(text, full_text_width)
     else:
         # Have to calc how to break text into multiple lines
         def _binary_len_search(min_index, max_index):
             # Try the middle of the range
-            index = math.ceil((max_index + min_index) / 2)
+            index = ceil((max_index + min_index) / 2)
             if index == 0:
                 # Handle edge case where there's only one word in the last line
                 index = 1
@@ -1341,7 +1344,7 @@ def reflow_text_into_pages(text: str,
                            font_name=GUIConstants.BODY_FONT_NAME,
                            font_size=GUIConstants.BODY_FONT_SIZE,
                            line_spacer: int = GUIConstants.BODY_LINE_SPACING,
-                           allow_text_overflow: bool=False) -> List[str]:
+                           allow_text_overflow: bool=False) -> list[str]:
     """
     Invokes `reflow_text_for_width` above to convert long text into width-limited
     individual text lines and then calculates how many lines will fit on a "page"and groups the output accordingly.

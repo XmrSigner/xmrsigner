@@ -1,19 +1,20 @@
-import math
-import time
+from ots.seed import Seed, SeedType
 
+from math import floor, ceil
 from dataclasses import dataclass
-from typing import List, Tuple
 
 from PIL import Image, ImageDraw, ImageFilter
 from xmrsigner.helpers.pillow import get_font_size
 from xmrsigner.gui.renderer import Renderer
-from xmrsigner.helpers.qr import QR
-from xmrsigner.models.qr_type import QRType
-from xmrsigner.models.threads import BaseThread, ThreadsafeCounter
-
-from xmrsigner.models.seed import Seed, SeedType
-from xmrsigner.models.settings_definition import SettingsConstants, SettingsDefinition
-
+from xmrsigner.helpers.qr import Qr, QrStyle
+from xmrsigner.models.threads import (
+    BaseThread,
+    ThreadsafeCounter
+)
+from xmrsigner.models.settings_definition import (
+    SettingsConstants,
+    SettingsDefinition
+)
 from xmrsigner.gui.screens import (
     RET_CODE__BACK_BUTTON,
     BaseScreen,
@@ -35,16 +36,20 @@ from xmrsigner.gui.components import (
     GUIConstants,
     reflow_text_into_pages
 )
-
-from xmrsigner.gui.keyboard import Keyboard, TextEntryDisplay
-from xmrsigner.hardware.buttons import HardwareButtons, HardwareButtonsConstants
-
+from xmrsigner.gui.keyboard import (
+    Keyboard,
+    TextEntryDisplay
+)
+from xmrsigner.hardware.buttons import (
+    HardwareButtons,
+    HardwareButtonsConstants
+)
 
 
 @dataclass
 class SeedMnemonicEntryScreen(BaseTopNavScreen):
-    initial_letters: list = None
-    wordlist: list = None
+    initial_letters: list[str]
+    wordlist: list[str]
 
     def __post_init__(self):
         super().__post_init__()
@@ -111,7 +116,6 @@ class SeedMnemonicEntryScreen(BaseTopNavScreen):
             width=self.canvas_width - self.matches_list_x + GUIConstants.COMPONENT_PADDING,
             height=int(0.75*GUIConstants.BUTTON_HEIGHT),
         )
-
         arrow_button_width = GUIConstants.BUTTON_HEIGHT + GUIConstants.EDGE_PADDING
         arrow_button_height = int(0.75*GUIConstants.BUTTON_HEIGHT)
         self.matches_list_up_button = IconButton(
@@ -123,7 +127,6 @@ class SeedMnemonicEntryScreen(BaseTopNavScreen):
             width=arrow_button_width,
             height=arrow_button_height,
         )
-
         self.matches_list_down_button = IconButton(
             icon_name=FontAwesomeIconConstants.ANGLE_DOWN,
             icon_size=GUIConstants.ICON_INLINE_FONT_SIZE + 2,
@@ -160,7 +163,7 @@ class SeedMnemonicEntryScreen(BaseTopNavScreen):
 
     def calc_possible_words(self):
         self.possible_words = [i for i in self.wordlist if i.startswith("".join(self.letters).strip())]
-        self.selected_possible_words_index = 0        
+        self.selected_possible_words_index = 0
 
 
     def render_possible_matches(self, highlight_word=None):
@@ -182,7 +185,6 @@ class SeedMnemonicEntryScreen(BaseTopNavScreen):
                 fill=GUIConstants.BACKGROUND_COLOR
             )
             return
-
         img = Image.new(
             "RGB",
             (
@@ -192,34 +194,26 @@ class SeedMnemonicEntryScreen(BaseTopNavScreen):
             GUIConstants.BACKGROUND_COLOR
         )
         draw = ImageDraw.Draw(img)
-
         word_indent = GUIConstants.COMPONENT_PADDING
-
         highlighted_row = 3
         num_possible_rows = 11
         y = self.highlighted_row_y - GUIConstants.LIST_ITEM_PADDING - 3 * self.matches_list_row_height
-
         if not highlight_word:
             list_starting_index = self.selected_possible_words_index - highlighted_row
             for row, i in enumerate(range(list_starting_index, list_starting_index + num_possible_rows)):
                 if i < 0:
                     # We're near the top of the list, not enough items to fill above the highlighted row
                     continue
-
                 if row == highlighted_row:
                     # Leave the highlighted row to be rendered below
                     continue
-
                 if len(self.possible_words) <= i:
                     # No more possible words to render
                     break
-
                 if row < highlighted_row:
                     cur_y = self.highlighted_row_y - GUIConstants.COMPONENT_PADDING - (highlighted_row - row - 1) * self.matches_list_row_height
-
                 elif row > highlighted_row:
                     cur_y = self.highlighted_row_y + self.matches_list_highlight_button.height + (row - highlighted_row) * self.matches_list_row_height
-
                 # else draw the nth row
                 draw.text(
                     (word_indent, cur_y),
@@ -228,7 +222,6 @@ class SeedMnemonicEntryScreen(BaseTopNavScreen):
                     font=self.word_font,
                     anchor="ls",
                 )
-
         self.canvas.paste(
             img.crop(
                 (
@@ -240,12 +233,10 @@ class SeedMnemonicEntryScreen(BaseTopNavScreen):
             ),
             (self.matches_list_x, self.matches_list_y)
         )
-
         # Now render the buttons over the matches list
         self.matches_list_highlight_button.text = self.possible_words[self.selected_possible_words_index]
         self.matches_list_highlight_button.is_selected = True
         self.matches_list_highlight_button.render()
-
         self.matches_list_up_button.render()
         self.matches_list_down_button.render()
 
@@ -255,7 +246,6 @@ class SeedMnemonicEntryScreen(BaseTopNavScreen):
         self.keyboard.render_keys()
         self.text_entry_display.render()
         self.render_possible_matches()
-
         self.renderer.show_image()
 
 
@@ -266,56 +256,45 @@ class SeedMnemonicEntryScreen(BaseTopNavScreen):
                 check_release=True,
                 release_keys=[HardwareButtonsConstants.KEY_PRESS, HardwareButtonsConstants.KEY2]
             )
-
             if self.is_input_in_top_nav:
                 if input == HardwareButtonsConstants.KEY_PRESS:
                     # User clicked the "back" arrow
                     return RET_CODE__BACK_BUTTON
-
                 elif input == HardwareButtonsConstants.KEY_UP:
                     input = Keyboard.ENTER_BOTTOM
                     self.is_input_in_top_nav = False
                     # Re-render it without the highlight
                     self.top_nav.left_button.is_selected = False
                     self.top_nav.left_button.render()
-
                 elif input == HardwareButtonsConstants.KEY_DOWN:
                     input = Keyboard.ENTER_TOP
                     self.is_input_in_top_nav = False
                     # Re-render it without the highlight
                     self.top_nav.left_button.is_selected = False
                     self.top_nav.left_button.render()
-
                 elif input in [HardwareButtonsConstants.KEY_RIGHT, HardwareButtonsConstants.KEY_LEFT]:
                     # no action in this context
                     continue
-
             ret_val = self.keyboard.update_from_input(input)
-
             if ret_val in Keyboard.EXIT_DIRECTIONS:
                 self.is_input_in_top_nav = True
                 self.top_nav.left_button.is_selected = True
                 self.top_nav.left_button.render()
-
             elif ret_val in Keyboard.ADDITIONAL_KEYS:
                 if input == HardwareButtonsConstants.KEY_PRESS and ret_val == Keyboard.KEY_BACKSPACE["code"]:
                     self.letters = self.letters[:-2]
                     self.letters.append(" ")
-
                     # Reactivate keys after deleting last letter
                     self.calc_possible_alphabet()
                     self.keyboard.update_active_keys(active_keys=self.possible_alphabet)
                     self.keyboard.render_keys()
-                        
                     # Update the right-hand possible matches area
                     self.render_possible_matches()
-
                 elif ret_val == Keyboard.KEY_BACKSPACE["code"]:
                     # We're just hovering over DEL but haven't clicked. Show blank (" ")
                     #   in the live text entry display at the top.
                     self.letters = self.letters[:-1]
                     self.letters.append(" ")
-
             # Has the user made a final selection of a candidate word?
             final_selection = None
             if input == HardwareButtonsConstants.KEY1 and self.possible_words:
@@ -323,37 +302,30 @@ class SeedMnemonicEntryScreen(BaseTopNavScreen):
                 self.selected_possible_words_index -= 1
                 if self.selected_possible_words_index < 0:
                     self.selected_possible_words_index = 0
-
                 if not self.arrow_up_is_active:
                     # Flash the up arrow as selected
                     self.arrow_up_is_active = True
                     self.matches_list_up_button.is_selected = True
-
             elif input == HardwareButtonsConstants.KEY2:
                 if self.possible_words:
                     final_selection = self.possible_words[self.selected_possible_words_index]
-
             elif input == HardwareButtonsConstants.KEY3 and self.possible_words:
                 # Scroll the list down
                 self.selected_possible_words_index += 1
                 if self.selected_possible_words_index >= len(self.possible_words):
                     self.selected_possible_words_index = len(self.possible_words) - 1
-
                 if not self.arrow_down_is_active:
                     # Flash the down arrow as selected
                     self.arrow_down_is_active = True
                     self.matches_list_down_button.is_selected = True
-
             if input is not HardwareButtonsConstants.KEY1 and self.arrow_up_is_active:
                 # Deactivate the UP arrow and redraw
                 self.arrow_up_is_active = False
                 self.matches_list_up_button.is_selected = False
-
             if input is not HardwareButtonsConstants.KEY3 and self.arrow_down_is_active:
                 # Deactivate the DOWN arrow and redraw
                 self.arrow_down_is_active = False
                 self.matches_list_down_button.is_selected = False
-
             if final_selection:
                 # Animate the selection storage, then return the word to the caller
                 self.letters = list(final_selection + " ")
@@ -361,9 +333,7 @@ class SeedMnemonicEntryScreen(BaseTopNavScreen):
                 self.text_entry_display.cur_text = ''.join(self.letters)
                 self.text_entry_display.render()
                 self.renderer.show_image()
-
                 return final_selection
-
             elif input == HardwareButtonsConstants.KEY_PRESS and ret_val in self.possible_alphabet:
                 # User has locked in the current letter
                 if self.letters[-1] != " ":
@@ -385,17 +355,13 @@ class SeedMnemonicEntryScreen(BaseTopNavScreen):
                     self.letters = self.letters[:-1]
                     self.letters.append(ret_val)
                     self.letters.append(" ")
-
                 # Recalc and deactivate keys after advancing
                 self.calc_possible_alphabet()
                 self.keyboard.update_active_keys(active_keys=self.possible_alphabet)
-
                 if len(self.possible_alphabet) == 1:
                     # If there's only one possible letter left, select it
                     self.keyboard.set_selected_key(self.possible_alphabet[0])
-
                 self.keyboard.render_keys()
-
             elif input in HardwareButtonsConstants.KEYS__LEFT_RIGHT_UP_DOWN \
                     or input in (Keyboard.ENTER_TOP, Keyboard.ENTER_BOTTOM):
                 if ret_val in self.possible_alphabet:
@@ -408,26 +374,21 @@ class SeedMnemonicEntryScreen(BaseTopNavScreen):
                     self.letters = self.letters[:-1]
                     self.letters.append(ret_val)
                     self.calc_possible_words()  # live update our matches as we move
-                
                 else:
                     # We've navigated to a deactivated letter
                     pass
-
             # Render the text entry display and cursor block
             self.text_entry_display.cur_text = ''.join(self.letters)
             self.text_entry_display.render()
-
             # Update the right-hand possible matches area
             self.render_possible_matches()
-
             # Now issue one call to send the pixels to the screen
             self.renderer.show_image()
 
 
-
 @dataclass
 class SeedFinalizeScreen(ButtonListScreen):
-    fingerprint: str = None
+    fingerprint: str|None = None
     polyseed: bool = False
     my_monero: bool = False
     title: str = "Finalize Seed"
@@ -458,7 +419,6 @@ class SeedOptionsScreen(ButtonListScreen):
     fingerprint: str = None
     polyseed: bool = False
     my_monero: bool = False
-    has_passphrase: bool = False
 
     def __post_init__(self):
         self.top_nav_icon_name = IconConstants.FINGERPRINT
@@ -471,7 +431,7 @@ class SeedOptionsScreen(ButtonListScreen):
 
 @dataclass
 class SeedWordsScreen(WarningEdgesMixin, ButtonListScreen):
-    words: List[str] = None
+    words: list[str] = None
     page_index: int = 0
     num_pages: int = 3
     is_bottom_list: bool = True
@@ -926,11 +886,10 @@ class SeedAddPassphraseScreen(BaseTopNavScreen):
                 # Leave current spot blank for now. Only update the active keyboard keys
                 # when a selection has been locked in (KEY_PRESS) or removed ("del").
                 pass
-        
             if keyboard_swap:
                 # Show the hw buttons' updated text and not active state
                 self.hw_button1.text = cur_button1_text
-                self.hw_button2.text = cur_button2_text                
+                self.hw_button2.text = cur_button2_text
                 self.hw_button1.is_selected = False
                 self.hw_button2.is_selected = False
                 self.hw_button1.render()
@@ -981,11 +940,10 @@ class SeedReviewPassphraseScreen(ButtonListScreen):
             char_width, char_height = get_font_size(font, 'X')
             for num_lines in range(1, max_lines+1):
                 # Break the passphrase into n lines
-                chars_per_line = math.ceil(len(self.passphrase) / num_lines)
+                chars_per_line = ceil(len(self.passphrase) / num_lines)
                 passphrase = []
                 for i in range(0, len(self.passphrase), chars_per_line):
                     passphrase.append(self.passphrase[i:i+chars_per_line])
-                
                 # See if it fits in this configuration
                 if char_width * len(passphrase[0]) <= self.canvas_width - 2*GUIConstants.EDGE_PADDING:
                     # Width is good...
@@ -1012,7 +970,7 @@ class SeedReviewPassphraseScreen(ButtonListScreen):
 @dataclass
 class SeedTranscribeSeedQRFormatScreen(ButtonListScreen):
 
-    seed_type: SeedType = None
+    seed: Seed
 
     def __post_init__(self):
         self.is_bottom_list = True
@@ -1021,10 +979,10 @@ class SeedTranscribeSeedQRFormatScreen(ButtonListScreen):
         self.components.append(IconTextLine(
             label_text="Standard",
             value_text={
-                SeedType.Monero: 'Monero wordlist indices',
-                SeedType.MyMonero: 'My Monero wordlist indices',
-                SeedType.Polyseed: 'Polyseed wordlist indices'
-            }[self.seed_type],
+                (SeedType.MONERO, False): 'Monero wordlist indices',
+                (SeedType.MONERO, True): 'My Monero wordlist indices',
+                (SeedType.POLYSEED, False): 'Polyseed wordlist indices'
+            }[(self.seed.type, self.seed.isLegacy)],
             is_text_centered=False,
             auto_line_break=True,
             screen_x=GUIConstants.EDGE_PADDING,
@@ -1055,13 +1013,13 @@ class SeedTranscribeSeedQRWholeQRScreen(WarningEdgesMixin, ButtonListScreen):
         qr_height = self.buttons[0].screen_y - self.top_nav.height - GUIConstants.COMPONENT_PADDING
         qr_width = qr_height
 
-        qr = QR()
+        qr: Qr = Qr()
         qr_image = qr.qrimage(
             data=self.qr_data,
             width=qr_width,
             height=qr_height,
             border=1,
-            style=QR.STYLE__ROUNDED
+            style=QrStyle.ROUNDED
         ).convert("RGBA")
 
         self.paste_images.append((qr_image, (int((self.canvas_width - qr_width)/2), self.top_nav.height)))
@@ -1089,18 +1047,18 @@ class SeedTranscribeSeedQRZoomedInScreen(BaseScreen):
 
         self.qr_width = (self.qr_border + self.num_modules + self.qr_border) * self.pixels_per_block
         self.height = self.qr_width
-        qr = QR()
+        qr: Qr = Qr()
         self.qr_image = qr.qrimage(
             self.qr_data,
             width=self.qr_width,
             height=self.height,
             border=self.qr_border,
-            style=QR.STYLE__ROUNDED
+            style=QrStyle.ROUNDED
         ).convert("RGBA")
 
         # Render gridlines but leave the 1-block border as-is
         draw = ImageDraw.Draw(self.qr_image)
-        for i in range(self.qr_border, math.floor(self.qr_width/self.pixels_per_block) - self.qr_border):
+        for i in range(self.qr_border, floor(self.qr_width/self.pixels_per_block) - self.qr_border):
             draw.line((i * self.pixels_per_block, self.qr_border * self.pixels_per_block, i * self.pixels_per_block, self.height - self.qr_border * self.pixels_per_block), fill="#bbb")
             draw.line((self.qr_border * self.pixels_per_block, i * self.pixels_per_block, self.qr_width - self.qr_border * self.pixels_per_block, i * self.pixels_per_block), fill="#bbb")
 

@@ -3,14 +3,10 @@ from time import sleep
 
 from xmrsigner.models.singleton import Singleton
 from xmrsigner.models.threads import BaseThread
-from xmrsigner.models.settings import Settings
-
+from xmrsigner.models.settings import Settings, MicroSdAction
 
 
 class MicroSD(Singleton, BaseThread):
-    ACTION__INSERTED = 'add'
-    ACTION__REMOVED = 'remove'
-
 
     @classmethod
     def get_instance(cls):
@@ -19,10 +15,8 @@ class MicroSD(Singleton, BaseThread):
             # Instantiate the one and only instance
             microsd = cls.__new__(cls)
             cls._instance = microsd
-
             # explicitly call BaseThread __init__ since multiple class inheritance
             BaseThread.__init__(microsd)
-
         return cls._instance
 
 
@@ -43,7 +37,7 @@ class MicroSD(Singleton, BaseThread):
         if Settings.HOSTNAME == Settings.XMRSIGNER_OS:
             # at start-up, get current status and inform Settings
             Settings.handle_microsd_state_change(
-                action=MicroSD.ACTION__INSERTED if self.is_inserted else MicroSD.ACTION__REMOVED
+                action=MicroSdAction.INSERTED if self.is_inserted else MicroSdAction.REMOVED
             )
             if path.exists(Settings.MICROSD_FIFO_PATH):
                 remove(Settings.MICROSD_FIFO_PATH)

@@ -1,5 +1,7 @@
 # Todo
-- [ ] transition to ots library
+- [x] transition to ots library
+- [ ] test migration to ots and fix issues
+- [ ] make networks work
 ## Other things
 - [ ] Modify [Monero GUI](https://github.com/DiosDelRayo/monero-gui)
 - [ ] remove old font if unused

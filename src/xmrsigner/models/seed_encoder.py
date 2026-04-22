@@ -1,16 +1,18 @@
-from xmrsigner.models.base_encoder import BaseQrEncoder, BaseStaticQrEncoder
-from xmrsigner.models.qr_type import QRType
+from xmrsigner.models.base_encoder import (
+    BaseQrEncoder,
+    BaseStaticQrEncoder
+)
+from xmrsigner.models.qr_type import QrType
 from xmrsigner.helpers.compactseed import CompactSeed
-from typing import List
 
 
 class SeedQrEncoder(BaseStaticQrEncoder):
 
-    def __init__(self, seed_phrase: List[str], wordlist: List[str]):
+    def __init__(self, seed_phrase: list[str], wordlist: list[str]):
         super().__init__()
         self.seed_phrase = seed_phrase
-        self.wordlist = wordlist
-        if self.wordlist == None:
+        self.wordlist: list[str] = wordlist
+        if not self.wordlist:
             raise Exception('Wordlist Required')
 
     def next_part(self):
@@ -22,7 +24,7 @@ class SeedQrEncoder(BaseStaticQrEncoder):
         return data
 
     def get_qr_type(self):
-        return QRType.SEED__SEEDQR
+        return QrType.SEED_QR
 
 
 class CompactSeedQrEncoder(SeedQrEncoder):
@@ -36,4 +38,4 @@ class CompactSeedQrEncoder(SeedQrEncoder):
         return CompactSeed(self.wordlist).bytes(seed_phrase)
 
     def get_qr_type(self):
-        return QRType.SEED__COMPACTSEEDQR
+        return QrType.COMPACT_SEED_QR

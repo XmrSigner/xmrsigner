@@ -1,43 +1,53 @@
+from ots.seed_jar import SeedJar
+from ots.transaction import TxDescription
+from ots.seed import Seed
+
 import logging
 import traceback
 
 from PIL.Image import Image
-from typing import List, Optional, Dict, Union
 from time import sleep
 from sys import exit
+from enum import Enum
 
 from xmrsigner.gui.renderer import Renderer
 from xmrsigner.hardware.buttons import HardwareButtons
 from xmrsigner.views.screensaver import ScreensaverScreen
-from xmrsigner.views.view import Destination, NotYetImplementedView, UnhandledExceptionView
-
-from xmrsigner.helpers.network import Network
-from xmrsigner.helpers.wallet import MoneroWalletRPCManager
-from xmrsigner.helpers.monero import TxDescription
-from xmrsigner.models.seed import Seed
-from xmrsigner.models.seed_storage import SeedJar
+from xmrsigner.views.view import (
+    Destination,
+    NotYetImplementedView,
+    UnhandledExceptionView
+)
 from xmrsigner.models.settings import Settings
 from xmrsigner.models.singleton import Singleton
+from xmrsigner.models.pending_seed import PendingSeed
 from xmrsigner.views.view import RemoveMicroSDWarningView
-
-from monero.wallet import Wallet as MoneroWallet
 
 
 MICROSECONDS_PER_MINUTE = 60 * 1000
 IS_EMULATOR = False
 
-
 logger = logging.getLogger(__name__)
 
 
-class BackStack(List[Destination]):
+class Flow(Enum):
+    SYNC = 'sync'
+    TX = 'tx'
+    VERIFY_MULTISIG_ADDR = 'multisig_addr'
+    VERIFY_SINGLESIG_ADDR = 'singlesig_addr'
+    ADDRESS_EXPLORER = 'address_explorer'
+    SIGN_MESSAGE = 'sign_message'
+
+
+class BackStack(list[Destination]):
+
     def __repr__(self):
         if len(self) == 0:
-            return "[]"
-        out = "[\n"
+            return '[]'
+        out = '[\n'
         for index, destination in reversed(list(enumerate(self))):
-            out += f"    {index:2d}: {destination}\n"
-        out += "]"
+            out += f'    {index:2d}: {destination}\n'
+        out += ']'
         return out
 
 
@@ -62,67 +72,52 @@ class Controller(Singleton):
     VERSION = "0.9.2"
 
     buttons: HardwareButtons = None
-    jar: SeedJar = None
     settings: Settings = None
     renderer: Renderer = None
 
-    block_height: Optional[int] = None  # helper var
+    block_height: int|None = None  # helper var
 
-    selected_seed: Optional[Seed] = None
-    transaction: Optional[bytes] = None
-    outputs: Optional[bytes] = None
-    tx_description: TxDescription = None
-
-    _wallet_rpc_manager: Optional[MoneroWalletRPCManager] = None
-    wallets: Dict[Network, MoneroWallet] = {}
-    wallet_seeds: Dict[Network, Seed] = {}
+    pending_seed: PendingSeed|None = None
+    selected_seed: Seed|None = None
+    transaction: bytes|None = None
+    outputs: bytes|None = None
+    tx_description: TxDescription|None = None
 
     unverified_address = None
 
-    image_entropy_preview_frames: List[Image] = None
-    image_entropy_final_image: Image = None
+    image_entropy_preview_frames: list[Image]|None = None
+    image_entropy_final_image: Image|None = None
 
     # Destination placeholder for when we need to jump out to a side flow but intend to
     # return navigation to the main flow (e.g. TX flow, load something,
     # then resume TX flow).
-    FLOW__SYNC = "sync"
-    FLOW__TX = "tx"
-    FLOW__VERIFY_MULTISIG_ADDR = "multisig_addr"
-    FLOW__VERIFY_SINGLESIG_ADDR = "singlesig_addr"
-    FLOW__ADDRESS_EXPLORER = "address_explorer"
-    FLOW__SIGN_MESSAGE = "sign_message"
-    resume_main_flow: str = None
+    resume_main_flow: Flow|None = None
+    back_stack: BackStack|None = None
+    screensaver: ScreensaverScreen|None = None
 
-    back_stack: BackStack = None
-    screensaver: ScreensaverScreen = None
-
-
+    # This is the only way to access the one and only instance
     @classmethod
     def get_instance(cls):
-        # This is the only way to access the one and only instance
-        if cls._instance:
-            return cls._instance
-        else:
+        if not cls._instance:
             # Instantiate the one and only Controller instance
             return cls.configure_instance()
+        return cls._instance
 
     @classmethod
     def shutdown(cls) -> None:
         print('shutdown...')
-        if cls._instance._wallet_rpc_manager:
-            cls._instance._wallet_rpc_manager.cleanup()
 
     @classmethod
     def configure_instance(cls, disable_hardware=False):
         """
-            - `disable_hardware` is only meant to be used by the test suite so that it
-            can keep re-initializing a Controller in however many tests it needs to. But
-            this is only possible if the hardware isn't already being reserved. Without
-            this you get:
+        - `disable_hardware` is only meant to be used by the test suite so that it
+        can keep re-initializing a Controller in however many tests it needs to. But
+        this is only possible if the hardware isn't already being reserved. Without
+        this you get:
 
-            RuntimeError: Conflicting edge detection already enabled for this GPIO channel
+        RuntimeError: Conflicting edge detection already enabled for this GPIO channel
 
-            each time you try to re-initialize a Controller.
+        each time you try to re-initialize a Controller.
         """
         from xmrsigner.hardware.microsd import MicroSD
 
@@ -135,13 +130,9 @@ class Controller(Singleton):
         cls._instance = controller
 
         # Input Buttons
-        if disable_hardware:
-            controller.buttons = None
-        else:
-            controller.buttons = HardwareButtons.get_instance()
+        controller.buttons = None if disable_hardware else HardwareButtons.get_instance()
 
         # models
-        controller.jar = SeedJar()
         controller.settings = Settings.get_instance()
         controller.microsd = MicroSD.get_instance()
         controller.microsd.start_detection()
@@ -149,17 +140,15 @@ class Controller(Singleton):
         # Store one working incomming data in memory
         controller.outputs = None
         controller.transaction = None
-        controller.selected_seed = None
+        controller.selected_seed: Seed|None = None
         controller.tx_description = None
 
         # Configure the Renderer
         Renderer.configure_instance()
 
         controller.back_stack = BackStack()
-
         # Other behavior constants
         controller.screensaver_activation_ms = 2 * MICROSECONDS_PER_MINUTE
-
         return cls._instance
 
 
@@ -169,77 +158,27 @@ class Controller(Singleton):
         return Camera.get_instance()
 
     @property
-    def seeds(self) -> Optional[List[Seed]]:
-        return self.jar.seeds
+    def seeds(self) -> list[Seed]|None:
+        return SeedJar.seeds()
 
     def has_seed(self, seed: Seed) -> bool:
-        return seed in self.jar.seeds
+        return seed in SeedJar.seeds()
 
-    def get_seed_num(self, seed: Seed) -> Optional[int]:
-        idx = self.jar.seeds.index(seed)
+    def get_seed_num(self, seed: Seed) -> int|None:
+        idx = SeedJar.seeds.index(seed)
         if idx >= 0:
             return idx
         return None
 
     def get_seed(self, seed_num: int) -> Seed:
-        if seed_num < len(self.jar.seeds):
-            return self.jar.seeds[seed_num]
-        else:
-            raise Exception(f"There is no seed_num {seed_num}; only {len(self.jar.seeds)} in memory.")
-
-    def replace_seed(self, seed_num: int, seed: Seed) -> None:
-        if seed_num < len(self.jar.seeds):
-            self.jar.seeds[seed_num] = seed
-        else:
-            raise Exception(f"There is no seed_num {seed_num}; only {len(self.jar.seeds)} in memory.")
-
-    def discard_seed(self, seed_num: int):
-        if seed_num < len(self.jar.seeds):
-            del self.jar.seeds[seed_num]
-        else:
-            raise Exception(f"There is no seed_num {seed_num}; only {len(self.jar.seeds)} in memory.")
-
-    @property
-    def wallet_rpc_manager(self):
-        if not self._wallet_rpc_manager:
-            self._wallet_rpc_manager = MoneroWalletRPCManager.get_instance()
-        return self._wallet_rpc_manager
-
-    def get_wallet_seed(self, network: Union[str, Network]) -> Optional[Seed]:
-        network = Network.ensure(network)
-        if network in self.wallet_seeds:
-            return self.wallet_seeds[network]
-        return None
-
-    def set_wallet_seed(self, network: Union[str, Network], seed: Seed) -> None:
-        network = Network.ensure(network)
-        self.wallet_seeds[network] = seed
-
-    def clear_wallet_seed(self, network: Union[str, Network]) -> None:
-        network = Network.ensure(network)
-        if network in self.wallet_seeds:
-            del self.wallet_seeds[network]
-
-    def get_wallet(self, network: Union[str, Network]) -> Optional[MoneroWallet]:
-        network = Network.ensure(network)
-        if network in self.wallets:
-            return self.wallets[network]
-        return None
-
-    def set_wallet(self, network: Union[str, Network], wallet: MoneroWallet) -> None:
-        network = Network.ensure(network)
-        self.wallets[network] = wallet
-
-    def clear_wallet(self, network: Union[str, Network]) -> None:
-        network = Network.ensure(network)
-        if network in self.wallets:
-            del self.wallets[network]
+        if seed_num < len(SeedJar.count()):
+            return SeedJar.forIndex(seed_num)
+        raise Exception(f"There is no seed_num {seed_num}; only {len(self.jar.seeds)} in memory.")
 
     def pop_prev_from_back_stack(self):
         if len(self.back_stack) > 0:
             # Pop the top View (which is the current View_cls)
             self.back_stack.pop()
-
             if len(self.back_stack) > 0:
                 # One more pop back gives us the actual "back" View_cls
                 return self.back_stack.pop()
@@ -288,11 +227,9 @@ class Controller(Singleton):
                 # Destination(None) is a special case; render the Home screen
                 if next_destination.View_cls is None:
                     next_destination = Destination(MainMenuView)
-
                 if next_destination.View_cls == MainMenuView:
                     # Home always wipes the back_stack
                     self.clear_back_stack()
-
                     # Home always wipes the back_stack/state of temp vars
                     self.resume_main_flow = None
                     self.unverified_address = None
@@ -301,37 +238,29 @@ class Controller(Singleton):
                     self.outputs = None
                     self.transaction = None
                     self.tx_description = None
-
                 print(f'back_stack: {self.back_stack}')
-
                 try:
                     print(f'Executing {next_destination}')
                     next_destination = next_destination.run()
                 except Exception as e:
                     # Display user-friendly error screen w/debugging info
                     next_destination = self.handle_exception(e)
-
                 if not next_destination:
                     # Should only happen during dev when you hit an unimplemented option
                     next_destination = Destination(NotYetImplementedView)
-
                 if next_destination.skip_current_view:
                     # Remove the current View from history; it's forwarding us straight
                     # to the next View so it should be as if this View never happened.
                     current_view = self.back_stack.pop()
                     print(f'Skipping current view: {current_view}')
-
                 # Hang on to this reference...
                 clear_history = next_destination.clear_history
-
                 if next_destination.View_cls == BackStackView:
                     # "Back" arrow was clicked; load the previous view
                     next_destination = self.pop_prev_from_back_stack()
-
                 # ...now apply it, if needed
                 if clear_history:
                     self.clear_back_stack()
-
                 # The next_destination up always goes on the back_stack, even if it's the
                 #   one we just popped.
                 # Do not push a "new" destination if it is the same as the current one on
@@ -341,13 +270,10 @@ class Controller(Singleton):
                     self.back_stack.append(next_destination)
                 else:
                     print(f'NOT appending {next_destination}')
-
                 print('-' * 30)
-
         finally:
             if self.is_screensaver_running:
                 self.screensaver.stop()
-
             # Clear the screen when exiting
             print('Clearing screen, exiting')
             Renderer.get_instance().display_blank_screen()
@@ -356,25 +282,24 @@ class Controller(Singleton):
     def is_screensaver_running(self):
         return self.screensaver is not None and self.screensaver.is_running
 
-
     def start_screensaver(self):
-        print("Controller: Starting screensaver")
+        print('Controller: Starting screensaver')
         if not self.screensaver:
             self.screensaver = ScreensaverScreen(HardwareButtons.get_instance())
 
         # Start the screensaver, but it will block until it can acquire the Renderer.lock.
         self.screensaver.start()
-        print("Controller: Screensaver started")
+        print('Controller: Screensaver started')
 
     def handle_exception(self, e) -> Destination:
         """
-            Displays a user-friendly error screen and includes debugging info to help
-            devs diagnose what went wrong.
+        Displays a user-friendly error screen and includes debugging info to help
+        devs diagnose what went wrong.
 
-            Shows:
-                * Exception type
-                * python file, line num, method name
-                * Exception message
+        Shows:
+            * Exception type
+            * python file, line num, method name
+            * Exception message
         """
         logger.exception(e)
 
@@ -389,13 +314,12 @@ class Controller(Singleton):
         line_info = None
         for i in range(len(traceback.format_exc().splitlines()) - 1, 0, -1):
             traceback_line = traceback.format_exc().splitlines()[i]
-            if ", line " in traceback_line:
-                line_info = traceback_line.split("/")[-1].replace("\"", "").replace("line ", "")
+            if ', line ' in traceback_line:
+                line_info = traceback_line.split('/')[-1].replace('"', '').replace('line ', '')
                 break
-
         error = [
             exception_type,
             line_info,
             exception_msg,
         ]
-        return Destination(UnhandledExceptionView, view_args={"error": error}, clear_history=True)
+        return Destination(UnhandledExceptionView, view_args={'error': error}, clear_history=True)

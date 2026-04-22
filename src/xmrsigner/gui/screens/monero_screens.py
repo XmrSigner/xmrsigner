@@ -1,19 +1,25 @@
 from dataclasses import dataclass
 from PIL import Image, ImageDraw, ImageFilter
 from xmrsigner.helpers.pillow import get_font_size
-from typing import List, Optional
 from time import sleep
-from datetime import date
+from datetime import date, timedelta
 from calendar import monthrange
 
-from xmrsigner.helpers.network import Network
-from xmrsigner.helpers.monero_time import MoneroTime
+from ots.enums import Network
+from ots.ots import Ots
 from xmrsigner.gui.renderer import Renderer
 from xmrsigner.models.threads import BaseThread
 
 from xmrsigner.gui.screens.screen import RET_CODE__BACK_BUTTON
-from xmrsigner.hardware.buttons import HardwareButtonsConstants, HardwareButtons
-from xmrsigner.gui.screens.screen import ButtonListScreen, WarningScreen, BaseTopNavScreen
+from xmrsigner.hardware.buttons import (
+    HardwareButtonsConstants,
+    HardwareButtons
+)
+from xmrsigner.gui.screens.screen import (
+    ButtonListScreen,
+    WarningScreen,
+    BaseTopNavScreen
+)
 from xmrsigner.gui.components import (
     XmrAmount,
     BaseComponent,
@@ -40,7 +46,7 @@ class TxOverviewScreen(ButtonListScreen):
     num_inputs: int = 0
     num_self_transfer_outputs: int = 0
     num_change_outputs: int = 0
-    destination_addresses: List[str] = None
+    destination_addresses: list[str] = None
 
 
     def __post_init__(self):
@@ -186,7 +192,7 @@ class TxOverviewScreen(ButtonListScreen):
         center_bar_x = GUIConstants.EDGE_PADDING*ssf + max_inputs_text_width + int(GUIConstants.COMPONENT_PADDING*ssf/4) + curve_width
 
         # Center bar stretches to fill any excess width
-        center_bar_width = destination_col_x - int(GUIConstants.COMPONENT_PADDING*ssf/4) - curve_width - center_bar_x 
+        center_bar_width = destination_col_x - int(GUIConstants.COMPONENT_PADDING*ssf/4) - curve_width - center_bar_x
 
         # Position each input row
         num_rendered_inputs = len(inputs_column)
@@ -227,7 +233,7 @@ class TxOverviewScreen(ButtonListScreen):
             )
             conjunction_pt = (inputs_conjunction_x, vertical_center)
             mid_pt = (
-                int(start_pt[0]*0.5 + conjunction_pt[0]*0.5), 
+                int(start_pt[0]*0.5 + conjunction_pt[0]*0.5),
                 int(start_pt[1]*0.5 + conjunction_pt[1]*0.5)
             )
 
@@ -270,7 +276,6 @@ class TxOverviewScreen(ButtonListScreen):
                 prev_pt = pt
 
             inputs_y += inputs_y_spacing
-        
         # Render center bar
         draw.line(
             (
@@ -319,10 +324,9 @@ class TxOverviewScreen(ButtonListScreen):
                 destination_y + int(chart_text_height/2)
             )
             mid_pt = (
-                int(conjunction_pt[0]*0.5 + end_pt[0]*0.5), 
+                int(conjunction_pt[0]*0.5 + end_pt[0]*0.5),
                 int(conjunction_pt[1]*0.5 + end_pt[1]*0.5)
             )
-
             bezier_points = calc_bezier_curve(
                 conjunction_pt,
                 (mid_pt[0], conjunction_pt[1]),
@@ -710,19 +714,17 @@ class DateOrBlockHeightScreen(BaseTopNavScreen):
 
     network: Network = Network.MAIN
     is_block_height: bool = False
-    focus: Optional[BaseComponent] = None
-    focusable_elements: List[BaseComponent] = None
+    focus: BaseComponent|None = None
+    focusable_elements: list[BaseComponent] = None
     current_height: int = 0
     current_date: date = date.today()
-    monero_time: Optional[MoneroTime] = None
 
     def __post_init__(self):
         self.title = 'Block Height'
-        self.monero_time = MoneroTime(str(self.network), 0)  # security_margin_days = 0, so whie switching btween the modes there are not huge jumps
         if not self.is_block_height and self.current_height != 0:
-            self.current_date = self.monero_time.getDate(self.current_height)
+            self.current_date = date.fromtimestamp(Ots.timestampFromHeight(self.current_height, self.network))
         if self.is_block_height and  self.current_date != date.today():
-            self.current_height = self.monero_time.getBlockchainHeight(self.current_date)
+            self.current_height = Ots.heightFromTimestamp(int(self.current_date), self.network)
         super().__post_init__()
 
     def _render(self):
@@ -766,7 +768,7 @@ class DateOrBlockHeightScreen(BaseTopNavScreen):
             if self.top_nav.is_selected and input == HardwareButtonsConstants.KEY_PRESS:
                 return RET_CODE__BACK_BUTTON
             if input in KEYMAP:
-                ret: Optional[str] = KEYMAP[input]()
+                ret: str|None = KEYMAP[input]()
                 if ret:
                     return ret
                 continue
@@ -850,11 +852,10 @@ class DateOrBlockHeightScreen(BaseTopNavScreen):
             self.top_nav.is_selected = False
             self.focus = self.btn_date
 
-    def key_press(self) -> Optional[str]:
+    def key_press(self) -> str|None:
         if self.focus == self.btn_accept or self.focus in self.btn_block_height or self.focus in [self.year, self.month, self.day]:
             if not self.is_block_height:
-                self.monero_time.security_margin_days = 30  # better safe then sorry!
-                self.current_height = self.monero_time.getBlockchainHeight(self.current_date)
+                self.current_height = Ots.heightFromTimestamp(int(self.current_date - timedelta(days=30)), self.network)
             return f'{self.current_height:08d}'
         if self.focus in [self.btn_height, self.btn_date]:
             self.set_block_height_selection(self.focus == self.btn_height)
@@ -888,10 +889,10 @@ class DateOrBlockHeightScreen(BaseTopNavScreen):
     def set_block_height_selection(self, block_height: bool) -> None:
         self.is_block_height = block_height
         if block_height:
-            self.current_height = self.monero_time.getBlockchainHeight(self.current_date)
+            self.current_height = Ots.heightFromTimestamp(int(self.current_date), self.network)
             self.focus = self.btn_block_height[0]
         else:
-            self.current_date = self.monero_time.getDate(self.current_height)
+            self.current_date = date.fromtimestamp(Ots.timestampFromHeight(self.current_height, self.network))
             self.focus = self.year
 
     def create_common(self) -> None:
@@ -930,7 +931,7 @@ class DateOrBlockHeightScreen(BaseTopNavScreen):
 
     def create_block_height(self) -> None:
         self.btn_block_height_width = int((self.canvas_width - GUIConstants.EDGE_PADDING * 2 - GUIConstants.COMPONENT_PADDING * 7) // 8)
-        self.btn_block_height: List[Button] = []
+        self.btn_block_height: list[Button] = []
         for pos in range(8):
             self.btn_block_height.append(Button(
                 text='0',

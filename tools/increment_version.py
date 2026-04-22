@@ -20,19 +20,17 @@ class VersionUpdater:
         with open(self.file_path, 'w') as file:
             for line in lines:
                 if line.startswith('    VERSION ='):
-                    line = f'    VERSION = "{new_version}"\n'
+                    line = f"    VERSION = '{new_version}'\n"
                 file.write(line)
 
     def increment_version(self, major=False, minor=False, patch=False):
         major_num, minor_num, patch_num = map(int, self.current_version.split('.'))
-        
         if major:
             new_version = f'{major_num + 1}.0.0'
         elif minor:
             new_version = f'{major_num}.{minor_num + 1}.0'
         else:
             new_version = f'{major_num}.{minor_num}.{patch_num + 1}'
-        
         self.update_version(new_version)
         self.current_version = new_version
         print(f'Version updated to {new_version}')
@@ -49,9 +47,7 @@ def main():
     parser.add_argument('--major', action='store_true', help='Increment major version')
     parser.add_argument('--minor', action='store_true', help='Increment minor version')
     parser.add_argument('--patch', action='store_true', help='Increment patch version')
-    
     args = parser.parse_args()
-    
     updater = VersionUpdater('src/xmrsigner/controller.py')
     updater.increment_version(args.major, args.minor, args.patch)
     updater.update_setup_py_version('setup.py')

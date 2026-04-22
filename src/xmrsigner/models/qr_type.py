@@ -1,33 +1,30 @@
-class QRType:
+from enum import Enum
+
+
+class QrType(Enum):
     '''
-    Used with DecodeQR and EncodeQR to communicate qr encoding type
+    Used with DecodeQR to communicate qr encoding type
     '''
     UR2 = 'ur2'
 
-    SEED__SEEDQR = 'seed__seedqr'
-    SEED__COMPACTSEEDQR = 'seed__compactseedqr'
-    SEED__UR2 = 'seed__ur2'
-    SEED__MNEMONIC = 'seed__mnemonic'
-    SEED__FOUR_LETTER_MNEMONIC = 'seed__four_letter_mnemonic'
+    SEED_QR = 'seed_seedqr'
+    COMPACT_SEED_QR = 'seed_compactseedqr'
+    SEED_UR2 = 'seed_ur2'
+    MNEMONIC = 'seed_mnemonic'
 
     SETTINGS = 'settings'
 
     MONERO_ADDRESS = 'monero_address'
     MONERO_WALLET = 'monero_wallet'
-    XMR_OUTPUT_UR = 'xmr__output__ur'
-    XMR_KEYIMAGE_UR = 'xmr__keyimage__ur'
-    XMR_TX_UNSIGNED_UR = 'xmr__unsigned__tx__ur'
-    XMR_TX_SIGNED_UR = 'xmr__signed__tx_ur'
+    XMR_OUTPUT_UR = 'xmr_output_ur'
+    XMR_KEYIMAGE_UR = 'xmr_keyimage_ur'
+    XMR_TX_UNSIGNED_UR = 'xmr_unsigned_tx_ur'
+    XMR_TX_SIGNED_UR = 'xmr_signed_tx_ur'
 
     SIGN_MESSAGE = "sign_message"
 
-    WALLET_VIEW_ONLY = 'wallet__view__only'
-    WALLET_VIEW_ONLY_JSON = 'wallet__view__only__json'
-    WALLET__UR = 'wallet__ur'
-    WALLET__CONFIGFILE = 'wallet__configfile'
-    WALLET__GENERIC = 'wallet__generic'
-    OUTPUT__UR = 'output__ur'
-    ACCOUNT__UR = 'account__ur'
-    BYTES__UR = 'bytes__ur'
+    WALLET_VIEW_ONLY = 'wallet_view_only'
+    WALLET_VIEW_ONLY_JSON = 'wallet_view_only_json'
+    BYTES_UR = 'bytes_ur'
 
     INVALID = 'invalid'

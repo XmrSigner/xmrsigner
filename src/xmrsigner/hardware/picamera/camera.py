@@ -4,10 +4,13 @@ from picamera import PiCamera
 from PIL.Image import Image
 from PIL.Image import fromarray as image_from_array
 from PIL.Image import open as image_open
+
 from xmrsigner.hardware.interfaces import CameraInterface
 from xmrsigner.hardware.picamera.pivideostream import PiVideoStream
-from xmrsigner.models.settings import Settings, SettingsConstants
-from typing import Tuple, Union
+from xmrsigner.models.settings import (
+    Settings,
+    SettingsConstants
+)
 
 
 class Camera(CameraInterface):
@@ -26,7 +29,7 @@ class Camera(CameraInterface):
 
     def start_video_stream_mode(
         self,
-        resolution: Tuple[int, int] = (512, 384),
+        resolution: tuple[int, int] = (512, 384),
         framerate: int = 12,
         format: str = 'bgr'
     ) -> None:
@@ -35,7 +38,7 @@ class Camera(CameraInterface):
         self._video_stream = PiVideoStream(resolution=resolution, framerate=framerate, format=format)
         self._video_stream.start()
 
-    def read_video_stream(self, as_image=False) -> Union[Image, NumpyArray]:
+    def read_video_stream(self, as_image=False) -> Image|NumpyArray:
         if not self._video_stream:
             raise Exception("Must call start_video_stream first.")
         frame: NumpyArray = self._video_stream.read()

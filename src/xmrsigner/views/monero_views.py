@@ -1,14 +1,23 @@
-from typing import List
+from ots.enums import SeedType
+from ots.seed import Seed
+from ots.seed_jar import SeedJar
+from ots.transaction import (
+    Transaction,
+    TxDescription
+)
 
-from xmrsigner.controller import Controller
-from xmrsigner.gui.button_data import ButtonData, FingerprintButtonData
-from xmrsigner.gui.components import GUIConstants, FontAwesomeIconConstants, IconConstants
+from xmrsigner.controller import Controller, Flow
+from xmrsigner.gui.button_data import (
+    ButtonData,
+    FingerprintButtonData
+)
+from xmrsigner.gui.components import (
+    GUIConstants,
+    FontAwesomeIconConstants,
+    IconConstants
+)
 from xmrsigner.models.monero_encoder import MoneroSignedTxQrEncoder
-from xmrsigner.helpers.monero import TxDescription, WalletRpcWrapper
-from xmrsigner.models.tx_parser import TxParser
-from xmrsigner.models.qr_type import QRType
-from xmrsigner.models.settings import SettingsConstants
-from xmrsigner.models.polyseed import PolyseedSeed
+from xmrsigner.models.settings_definition import Setting
 from xmrsigner.gui.screens.monero_screens import (
     TxOverviewScreen,
     TxMathScreen,
@@ -17,7 +26,6 @@ from xmrsigner.gui.screens.monero_screens import (
     TxFinalizeScreen,
     DateOrBlockHeightScreen
 )
-from xmrsigner.views.wallet_views import LoadWalletView
 from xmrsigner.gui.screens.screen import (
     RET_CODE__BACK_BUTTON,
     ButtonListScreen,
@@ -42,19 +50,19 @@ class MoneroSelectSeedView(View):
     TYPE_13WORD = ButtonData('Enter 13-word seed').with_icon(FontAwesomeIconConstants.KEYBOARD)
     TYPE_25WORD = ButtonData('Enter 25-word seed').with_icon(FontAwesomeIconConstants.KEYBOARD)
 
-    def __init__(self, flow: str):
+    def __init__(self, flow: Flow):
         super().__init__()
-        self.flow = flow
+        self.flow: Flow = flow
 
     def run(self):
         button_data = []
-        for seed in self.controller.jar.seeds:
+        for seed in SeedJar.seeds():
             button_data.append(
                 FingerprintButtonData(
                     seed.fingerprint,
-                    seed.has_passphrase,
-                    isinstance(seed, PolyseedSeed),
-                    seed.is_my_monero
+                    False,
+                    seed.type == SeedType.POLYSEED,
+                    seed.isLegacy
                 )
             )
         button_data.append(self.SCAN_SEED)
@@ -68,15 +76,25 @@ class MoneroSelectSeedView(View):
         )
         if selected_menu_num == RET_CODE__BACK_BUTTON:
             return Destination(BackStackView)
-        if len(self.controller.jar.seeds) > 0 and selected_menu_num < len(self.controller.jar.seeds):
+        if SeedJar.count() > 0 and selected_menu_num < SeedJar.count():
             # User selected one of the n seeds
-            self.controller.selected_seed = self.controller.get_seed(selected_menu_num)
-            if self.flow == Controller.FLOW__SYNC:
-                return Destination(ImportOutputsView)
-            if self.flow == Controller.FLOW__TX:
-                return Destination(OverviewView)
+            self.controller.selected_seed = SeedJar.forIndex(selected_menu_num)
+            if self.flow == Flow.SYNC:
+                return Destination(
+                    ImportOutputsView,
+                    view_args={
+                        'seed': self.controller.selected_seed
+                    }
+                )
+            if self.flow == Flow.TX:
+                return Destination(
+                    OverviewView,
+                    view_args={
+                        'seed': self.controller.selected_seed
+                    }
+                )
         # The remaining flows are a sub-flow; resume PSBT flow once the seed is loaded.
-        # self.controller.resume_main_flow = Controller.FLOW__TX
+        # self.controller.resume_main_flow = Flow.TX
         self.controller.resume_main_flow = self.flow
         if button_data[selected_menu_num] == self.SCAN_SEED:
             from xmrsigner.views.scan_views import ScanSeedQRView
@@ -84,18 +102,17 @@ class MoneroSelectSeedView(View):
         if button_data[selected_menu_num] in [self.TYPE_13WORD, self.TYPE_25WORD]:
             from xmrsigner.views.seed_views import SeedMnemonicEntryView
             if button_data[selected_menu_num] == self.TYPE_13WORD:
-                self.controller.jar.init_pending_mnemonic(num_words=13)
+                self.controller.pending_seed = PendingSeed(isLegacy=True)
             else:
-                self.controller.jar.init_pending_mnemonic(num_words=25)
+                self.controller.pending_seed = PendingSeed()
             return Destination(SeedMnemonicEntryView)
 
 
 class OverviewView(View):
 
-    def __init__(self):
+    def __init__(self, seed: Seed|None = None):
         super().__init__()
-        self.seed: Seed = self.controller.selected_seed
-        self.wallet: MoneroWallet = self.controller.get_wallet(self.seed.network)
+        self.seed: Seed = seed
 
         self.loading_screen = None
 
@@ -106,15 +123,8 @@ class OverviewView(View):
             self.loading_screen.start()
 
     def run(self):
-        if not self.wallet and self.seed and self.controller.has_seed(self.seed):
-            self.loading_screen.stop()
-            return Destination(LoadWalletView, view_args={'seed_num': self.controller.get_seed_num(self.seed)})
-        if self.controller.get_wallet_seed(self.seed.network) != self.seed:
-            if self.loading_screen:
-                self.loading_screen.stop()
-                return Destination(LoadWalletView, view_args={'seed_num': self.controller.get_seed_num(self.seed)}) 
         try:
-            txd: Optional[TxDescription] = WalletRpcWrapper(self.wallet).describe_transfer(self.controller.transaction)
+            txd: TxDescription|None = self.seed.wallet.describeTransfer(self.controller.transaction)
             # Everything is set. Stop the loading screen
             if self.loading_screen:
                 self.loading_screen.stop()
@@ -351,12 +361,12 @@ class SignedQRDisplayView(View):
 
     def run(self):
         try:
-            signed_tx: str = WalletRpcWrapper(self.wallet).sign_transfer(self.controller.transaction)
+            signed_tx: bytes = self.seed.wallet.signTransaction(self.controller.transaction)
             if not signed_tx:
                 raise Exception('No valid transaction')
             qr_encoder = MoneroSignedTxQrEncoder(
                 signed_tx,
-                self.settings.get_value(SettingsConstants.SETTING__QR_DENSITY)
+                self.settings.get_value(Setting.QR_DENSITY)
             )
         except Exception as e:
             if self.loading_screen:

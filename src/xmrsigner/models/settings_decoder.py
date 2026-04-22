@@ -1,10 +1,14 @@
+from .base_decoder import BaseSingleFrameQrDecoder
+from xmrsigner.models.qr_type import QrType
+
+
 class SettingsQrDecoder(BaseSingleFrameQrDecoder):
 
     def __init__(self):
         super().__init__()
         self.data = None
 
-    def add(self, segment, qr_type=QRType.SETTINGS):
+    def add(self, segment, qr_type=QrType.SETTINGS):
         """
             * Ignores unrecognized settings options.
             * Raises an Exception if a settings value is invalid.

@@ -1,6 +1,5 @@
 import RPi.GPIO as GPIO
 from time import time, sleep
-from typing import List
 
 from xmrsigner.models.singleton import Singleton
 
@@ -129,7 +128,7 @@ class HardwareButtons(Singleton):
         HardwareButtonsConstants.release_lock = True
         return True
 
-    def check_for_low(self, key: int = None, keys: List[int] = None) -> bool:
+    def check_for_low(self, key: int = None, keys: list[int] = None) -> bool:
         if key:
             keys = [key]
         for key in keys:

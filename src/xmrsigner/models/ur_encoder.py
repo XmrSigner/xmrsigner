@@ -1,23 +1,22 @@
-from xmrsigner.models.qr_type import QRType
-from xmrsigner.models.settings import SettingsConstants
+from xmrsigner.models.qr_type import QrType
+from xmrsigner.models.settings_definition import QrDensity
 from xmrsigner.models.base_encoder import BaseQrEncoder
 from xmrsigner.helpers.ur2.ur_encoder import UREncoder
 from xmrsigner.helpers.ur2.ur import UR
 
+
 class UrQrEncoder(BaseQrEncoder):
 
-    def __init__(self, ur_type: str, ur_payload: str, qr_density):
+    def __init__(self, ur_type: str, ur_payload: str, qr_density: QrDensity):
         super().__init__()
-        self.qr_max_fragment_size = 20
         self.ur_type: str = ur_type
         self.ur_payload: str = ur_payload
         qr_ur_bytes = UR(self.ur_type, self.ur_payload)
-        if qr_density == SettingsConstants.DENSITY__LOW:
-            self.qr_max_fragment_size = 10
-        elif qr_density == SettingsConstants.DENSITY__MEDIUM:
-            self.qr_max_fragment_size = 30
-        elif qr_density == SettingsConstants.DENSITY__HIGH:
-            self.qr_max_fragment_size = 120
+        self.qr_max_fragment_size = {
+            QrDensity.LOW: 10,
+            QrDensity.MEDIUM: 30
+            QrDensity.HIGH: 120
+        }[qr_density]
         self.ur2_encode = UREncoder(ur=qr_ur_bytes, max_fragment_len=self.qr_max_fragment_size)
 
     def next_part_image(self, width=240, height=240, border=3, background_color='bdbdbd'):
@@ -34,4 +33,4 @@ class UrQrEncoder(BaseQrEncoder):
         return self.ur2_encode.is_complete()
 
     def get_qr_type(self):
-        return QRType.UR2
+        return QrType.UR2

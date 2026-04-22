@@ -1,7 +1,7 @@
 from numpy import array as NumpyArray
 from PIL.Image import Image
+
 from xmrsigner.hardware.interfaces import CameraInterface
-from typing import Tuple, Union
 try:
     import picamera2
     from xmrsigner.hardware.picamera2.camera import Camera as CameraImplementation
@@ -21,19 +21,19 @@ class Camera(CameraInterface):
 
     def start_video_stream_mode(
         self,
-        resolution: Tuple[int, int] = (512, 384),
+        resolution: tuple[int, int] = (512, 384),
         framerate: int = 12,
         format: str = 'bgr'
     ) -> None:
         pass
 
-    def read_video_stream(self, as_image: bool = False) -> Union[Image, NumpyArray]:
+    def read_video_stream(self, as_image: bool = False) -> Image|NumpyArray:
         pass
 
     def stop_video_stream_mode(self) -> None:
         pass
 
-    def start_single_frame_mode(self, resolution: Tuple[int, int] = (720, 480)) -> None:
+    def start_single_frame_mode(self, resolution: tuple[int, int] = (720, 480)) -> None:
         pass
 
     def capture_frame(self) -> Image:

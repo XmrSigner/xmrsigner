@@ -1,9 +1,16 @@
 from json import load, dump, dumps
 from os import path, remove, fsync
 from platform import uname
-from typing import List, Tuple, Dict
 
-from xmrsigner.models.settings_definition import SettingsConstants, SettingsDefinition
+from xmrsigner.models.settings_definition import (
+    Setting,
+    Type,
+    Option,
+    Network,
+    SettingsConstants,
+    SettingsDefinition,
+    MicroSdAction
+)
 from xmrsigner.models.singleton import Singleton
 
 
@@ -12,10 +19,9 @@ class InvalidSettingsQRData(Exception):
 
 
 class Settings(Singleton):
-
     HOSTNAME = uname()[1]  # TODO: 2024-06-30 don't know what will uname return on win32, check
-    XMRSIGNER_OS = "xmrsigner-os"
-    SETTINGS_FILENAME = "/mnt/microsd/settings.json" if HOSTNAME == XMRSIGNER_OS else "settings.json"
+    XMRSIGNER_OS = 'xmrsigner-os'
+    SETTINGS_FILENAME = '/mnt/microsd/settings.json' if HOSTNAME == XMRSIGNER_OS else 'settings.json'
     MICROSD_MOUNT_POINT = '/mnt/microsd'
     MICROSD_FIFO_PATH = '/tmp/mdev_fifo'
     MICROSD_FIFO_MODE = 0o600
@@ -24,215 +30,187 @@ class Settings(Singleton):
     def get_instance(cls):
         # This is the only way to access the one and only instance
         if cls._instance is None:
-            # Instantiate the one and only instance
-            settings = cls.__new__(cls)
-            cls._instance = settings
-
-            settings._data = SettingsDefinition.get_defaults()
-
+            cls._instance = cls.__new__(cls)
+            cls._instance._data = SettingsDefinition.get_defaults()
             # Read persistent settings file, if it exists
             if path.exists(Settings.SETTINGS_FILENAME):
                 with open(Settings.SETTINGS_FILENAME) as settings_file:
-                    settings.update(load(settings_file))
+                    cls._instance.load(load(settings_file))
         return cls._instance
 
     @classmethod
-    def parse_settingsqr(cls, data: str) -> Tuple[str, Dict]:
+    def parse_settingsqr(cls, data: str) -> tuple[str, dict[Setting, any]]:
         """
         Parses SettingsQR data and returns a tuple of (config_name, settings_dict).
         The resulting settings config can be applied by calling `Settings.update(settings_dict)`.
         """
-        if not data.startswith("settings::"):
+        if not data.startswith('settings::'):
             raise InvalidSettingsQRData()
-        version = data.split()[0].split("::")[1]
-        if version != "v1":
-            raise InvalidSettingsQRData(f"Unsupported SettingsQR version: {version}")
-        # Start parsing key/value settings at the nth split() index
-        split_index = 1
-        # handle optional "name" attr
+        header, data = data.split(maxsplit=1)
+        version = header.split('::')[1]
+        if version != 'v1':
+            raise InvalidSettingsQRData(f'Unsupported SettingsQR version: {version}')
+        # handle optional 'name' attr
+        config = {k: v for k, v in [e.split('=') for e in [e for e in data.split()]]}
         config_name = None
-        if "name=" in data.split()[1]:
-            config_name = data.split("name=")[1].split()[0].replace("_", " ")
-            split_index += 1
+        if 'name' in config:
+            config_name = config['name'].replace('_', ' ')
+            del config['name']
         updated_settings = {}
-        for entry in data.split()[split_index:]:
-            abbreviated_name, value = entry.split("=")
-            # Parse multi-value settings; integer-ize where needed
-            if "," in value:
-                values_updated = []
-                for v in value.split(","):
-                    if v.isdigit():
-                        v = int(v)
-                    values_updated.append(v)
-                value = values_updated
-            elif value.isdigit():
-                value = int(value)
-            # Replace abbreviated name with full attr_name
+        for abbreviated_name, value in config.items:
+            # Replace abbreviated name with full attr
             settings_entry = SettingsDefinition.get_settings_entry_by_abbreviated_name(abbreviated_name)
             if not settings_entry:
-                print(f"Ignoring unrecognized attribute: {abbreviated_name}")
+                print(f'Ignoring unrecognized attribute: {abbreviated_name}')
+                continue
+            # Parse multi-value settings; integer-ize where needed
+            values = [
+                int(v) if v.isdigit() else v
+                for v in value.split(',') if settings_entry.type == Type.MULTISELECT else [value]
+            ]
+            options = {opt.config_value: opt for opt in settings_entry.selection_options}
+            if settings_entry.attr == Setting.PERSISTENT_SETTINGS:
+                # Special case: if trying to enable Persistent Settings when
+                # DISABLED is the only option allowed (because the SD card is not
+                # inserted. Explicitly set to DISABLED.
+                updated_settings[settings_entry.attr] = Option.DISABLED if (values[0] == Option.ENABLED.value and values[0] not in options) else options[values[0]]
                 continue
             # Validate value(s) against SettingsDefinition's valid options
-            if type(value) is not list:
-                values = [value]
-            else:
-                values = value
             for v in values:
-                if v not in [opt[0] for opt in settings_entry.selection_options]:
-                    if settings_entry.attr_name == SettingsConstants.SETTING__PERSISTENT_SETTINGS and v == SettingsConstants.OPTION__ENABLED:
-                        # Special case: trying to enable Persistent Settings when
-                        # DISABLED is the only option allowed (because the SD card is not
-                        # inserted. Explicitly set to DISABLED.
-                        value = SettingsConstants.OPTION__DISABLED
-                        break
+                if v not in options:
                     raise InvalidSettingsQRData(f"""{abbreviated_name} = '{v}' is not valid""")
-            updated_settings[settings_entry.attr_name] = value
+            updated_settings[settings_entry.attr] = [options[v] for v in values] if settings_entry.type == Type.MULTISELECT else options[values[0]]
         return (config_name, updated_settings)
 
     def __str__(self):
         return dumps(self._data, indent=4)
 
     def save(self):
-        if self._data[SettingsConstants.SETTING__PERSISTENT_SETTINGS] == SettingsConstants.OPTION__ENABLED:
+        if self._data[Setting.PERSISTENT_SETTINGS] == Option.ENABLED:
             with open(Settings.SETTINGS_FILENAME, 'w') as settings_file:
-                dump(self._data, settings_file, indent=4)
-                # MoneroSignerOS makes removing the microsd possible, flush and then fsync forces persistent settings to disk
+                dump(
+                    {
+                        k.value: v.value if not isinstance(v, list) else ','.join([e.value for e in v])
+                        for k, v in self._data.items()
+                    },
+                    settings_file,
+                    indent=4
+                )
+                # XmrSignerOS makes removing the microsd possible, flush and then fsync forces persistent settings to disk
                 # without this, recent settings changes could be missing after the microsd card was removed
                 settings_file.flush()
                 fsync(settings_file.fileno())
 
-    def update(self, new_settings: Dict):
+    def load(self, json: dict) -> None:
+        settings = {e.value: e for e in Setting}
+        new_settings = {}
+        for k, v in json:
+            key = settings[k]
+            settings_entry = SettingsDefinition.get_settings_entry(key)
+            options = {e.config_value: e for e in settings_entry.selection_options}
+            value = options[int(v) if v.isdigit() else v] if settings_entry.type != Type.MULTISELECT else [options[int(e) if e.isdigit() else e] for e in v]
+            new_settings[key] = value
+        self.update(new_settings)
+
+    def update(self, new_settings: dict[Setting, any]):
         """
         Replaces the current settings with the incoming dict.
-
-        If a setting is missing from `new_settings`:
-            * Hidden settings that have a value remain as-is.
-            * All other missing settings are set to their default value.
         """
-        for entry in SettingsDefinition.settings_entries:
-            if entry.attr_name not in new_settings:
-                if entry.visibility == SettingsConstants.VISIBILITY__HIDDEN and entry.attr_name in self._data:
-                    # Preserve existing hidden values
-                    new_settings[entry.attr_name] = self._data[entry.attr_name]
-                else:
-                    # Setting is missing; insert default
-                    new_settings[entry.attr_name] = entry.default_value
-            else:
-                # Clean the incoming data, if necessary
-                if entry.type == SettingsConstants.TYPE__MULTISELECT:
-                    if type(new_settings[entry.attr_name]) == str:
-                        # Break comma-separated SettingsQR input into List
-                        new_settings[entry.attr_name] = new_settings[entry.attr_name].split(",")
+        self._data.update(new_settings)
 
-        # Can't just merge the _data dict; have to replace keys they have in common
-        #   (otherwise list values will be merged instead of replaced).
-        for key, value in new_settings.items():
-            self._data.pop(key, None)
-            self._data[key] = value
-
-
-    def set_value(self, attr_name: str, value: any):
+    def set_value(self, attr: Setting, value: SelectionOption|list[SelectionOption]|str|int):
         """
         Updates the attr's current value.
         Note that for multiselect, the value must be a List.
         """
-        if attr_name not in self._data:
-            raise Exception(f"Setting for {attr_name} not found")
-        if SettingsDefinition.get_settings_entry(attr_name).type == SettingsConstants.TYPE__MULTISELECT:
+        if attr not in self._data:
+            raise Exception(f'Setting for {attr.name} not found')
+        if SettingsDefinition.get_settings_entry(attr).type == Type.MULTISELECT:
             if type(value) != list:
-                raise Exception(f"value must be a List for {attr_name}")
+                raise Exception(f'value must be a List for {attr.name}')
         # Special handling for toggling persistence
-        if attr_name == SettingsConstants.SETTING__PERSISTENT_SETTINGS and value == SettingsConstants.OPTION__DISABLED:
+        if attr == Setting.PERSISTENT_SETTINGS and value == Option.DISABLED:
             try:
                 remove(self.SETTINGS_FILENAME)
-                print(f"Removed {self.SETTINGS_FILENAME}")
+                print(f'Removed {self.SETTINGS_FILENAME}')
             except:
-                print(f"{self.SETTINGS_FILENAME} not found to be removed")
-        self._data[attr_name] = value
+                print(f'{self.SETTINGS_FILENAME} not found to be removed')
+        self._data[attr] = value
         self.save()
 
-    def get_value(self, attr_name: str):
+    def get_value(self, attr: Setting) -> SelectionOption|list[SelectionOption]|str|int:
         """
         Returns the attr's current value.
         Note that for multiselect, the current value is a List.
         """
-        if attr_name not in self._data:
-            raise Exception(f"Setting for {attr_name} not found")
-        return self._data[attr_name]
+        if attr not in self._data:
+            raise Exception(f'Setting for {attr.name} not found')
+        return self._data[attr]
 
-    def get_value_display_name(self, attr_name: str) -> str:
+    def get_value_display_name(self, attr: Setting) -> str:
         """
         Figures out the mapping from value to display_name for the current value's
         tuple(value, display_name) definition, if it's defined that way.
 
-        If the selection_options are defined as simple strings, we just return the
-        string.
-
         Cannot be used for multiselect (use get_multiselect_value_display_names
         instead) or free entry types (there is no tuple mapping).
         """
-        if attr_name not in self._data:
-            raise Exception(f"Setting for {attr_name} not found")
-        settings_entry = SettingsDefinition.get_settings_entry(attr_name)
-        if settings_entry.type in [SettingsConstants.TYPE__FREE_ENTRY, SettingsConstants.TYPE__MULTISELECT]:
-            raise Exception(f"Unsupported SettingsEntry.type: {settings_entry.type}")
-        return settings_entry.get_selection_option_display_name_by_value(value=self._data[attr_name])
+        if attr not in self._data:
+            raise Exception(f'Setting for {attr.name} not found')
+        settings_entry = SettingsDefinition.get_settings_entry(attr)
+        if settings_entry.type == Type.MULTISELECT:
+            raise Exception(f'Unsupported SettingsEntry.type: {settings_entry.type.name}')
+        return self._data[attr].display
 
-    def get_multiselect_value_display_names(self, attr_name: str) -> List[str]:
+    def get_multiselect_value_display_names(self, attr: Setting) -> list[str]:
         """
         Returns a List of all the selected values' display_names.
         """
-        if attr_name not in self._data:
-            raise Exception(f"Setting for {attr_name} not found")
-        settings_entry = SettingsDefinition.get_settings_entry(attr_name)
-        if settings_entry.type != SettingsConstants.TYPE__MULTISELECT:
-            raise Exception(f"Unsupported SettingsEntry.type: {settings_entry.type}")
-        display_names = []
+        if attr not in self._data:
+            raise Exception(f'Setting for {attr.name} not found')
+        settings_entry = SettingsDefinition.get_settings_entry(attr)
+        if settings_entry.type != Type.MULTISELECT:
+            raise Exception(f'Unsupported SettingsEntry.type: {settings_entry.type.name}')
         # Iterate through the selection_options list in order to preserve intended sort
         # order when adding which options are selected.
-        for value, display_name in settings_entry.selection_options:
-            if value in self._data[attr_name]:
-                display_names.append(display_name)
-        return display_names
+        return [e.display for e in settings_entry.selection_options if e in self._data[attr]]
 
     """
     Intentionally keeping the properties very limited to avoid an expectation of
     boilerplate property code for every SettingsEntry.
 
     It's more cumbersome, but instead use:
-        settings.get_value(SettingsConstants.SETTING__MY_SETTING_ATTR)
+        settings.get_value(Setting.MY_SETTING_ATTR)
     """
     @property
     def debug(self) -> bool:
-        return self._data[SettingsConstants.SETTING__DEBUG] == SettingsConstants.OPTION__ENABLED
+        return self._data[Setting.DEBUG] == Option.ENABLED
 
-    def handle_microsd_state_change(action: str):
+    def handle_microsd_state_change(action: MicroSdAction):
         """
         Enables/Disables the Persistent Settings option based on the MicroSD card state.
         """
-        from xmrsigner.hardware.microsd import MicroSD
-
         if Settings.HOSTNAME == Settings.XMRSIGNER_OS:
-            if action == MicroSD.ACTION__INSERTED:
+            if action == MicroSdAction.INSERTED:
                 # SD card was just inserted.
                 # Restore persistent settings back to defaults
-                entry = SettingsDefinition.get_settings_entry(SettingsConstants.SETTING__PERSISTENT_SETTINGS)
-                entry.selection_options = SettingsConstants.OPTIONS__ENABLED_DISABLED
+                entry = SettingsDefinition.get_settings_entry(Setting.PERSISTENT_SETTINGS)
+                entry.selection_options = Option.enabled_disabled()
                 entry.help_text = SettingsConstants.PERSISTENT_SETTINGS__SD_INSERTED__HELP_TEXT
                 # - Overwrite settings on the SD?
                 # - Load settings from SD?
                 # if Settings file exists (meaning persistent settings was previously enabled), write out current settings to disk
                 if path.exists(Settings.SETTINGS_FILENAME):
                     # enable persistent settings first, then save
-                    Settings.get_instance()._data[SettingsConstants.SETTING__PERSISTENT_SETTINGS] = SettingsConstants.OPTION__ENABLED
+                    Settings.get_instance()._data[Setting.PERSISTENT_SETTINGS] = Option.ENABLED
                     Settings.get_instance().save()
-            elif action == MicroSD.ACTION__REMOVED:
+                return
+            if action == MicroSdAction.REMOVED:
                 # SD card was just removed.
                 # Set persistent settings to disabled value directly
-                Settings.get_instance()._data[SettingsConstants.SETTING__PERSISTENT_SETTINGS] = SettingsConstants.OPTION__DISABLED
+                Settings.get_instance()._data[Setting.PERSISTENT_SETTINGS] = Option.DISABLED
                 # set persistent settings to only have disabled as an option, adding additional help text that microSD is removed
-                entry = SettingsDefinition.get_settings_entry(SettingsConstants.SETTING__PERSISTENT_SETTINGS)
-                entry.selection_options = SettingsConstants.OPTIONS__ONLY_DISABLED
+                entry = SettingsDefinition.get_settings_entry(Setting.PERSISTENT_SETTINGS)
+                entry.selection_options = [Option.DISABLED]
                 entry.help_text = SettingsConstants.PERSISTENT_SETTINGS__SD_REMOVED__HELP_TEXT
-            else:
-                raise Exception(f"Invalid MicroSD action: {action}")
+                return

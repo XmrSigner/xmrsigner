@@ -1,4 +1,3 @@
-from typing import Optional, Dict, Tuple, Union
 from xmrsigner.gui.components import (
     GUIConstants,
     FontAwesomeIconConstants,
@@ -8,20 +7,20 @@ from xmrsigner.gui.components import (
 
 class ButtonData:
 
-    position: Optional[int]
+    position: int|None
     label: str
-    label_color: Optional[str]
-    icon_name: Optional[str]
-    icon_color: Optional[str]
-    right_icon_name: Optional[str]
+    label_color: str|None
+    icon_name: str|None
+    icon_color: str|None
+    right_icon_name: str|None
 
     def __init__(
         self,
         label: str,
-        icon_name: Optional[str] = None,
-        icon_color: Optional[str] = None,
-        label_color: Optional[str] = None,
-        right_icon_name: Optional[str] = None
+        icon_name: str|None = None,
+        icon_color: str|None = None,
+        label_color: str|None = None,
+        right_icon_name: str|None = None
     ):
         self.label = label
         self.icon_name = icon_name
@@ -29,19 +28,19 @@ class ButtonData:
         self.label_color = label_color
         self.right_icon_name = right_icon_name
 
-    def with_icon(self, icon_name: Optional[str]) -> 'ButtonData':
+    def with_icon(self, icon_name: str|None) -> 'ButtonData':
         self.icon_name = icon_name
         return self
 
-    def with_icon_color(self, icon_color: Optional[str]) -> 'ButtonData':
+    def with_icon_color(self, icon_color: str|None) -> 'ButtonData':
         self.icon_color = icon_color
         return self
 
-    def with_label_color(self, label_color: Optional[str]) -> 'ButtonData':
+    def with_label_color(self, label_color: str|None) -> 'ButtonData':
         self.label_color = label_color
         return self
 
-    def with_right_icon(self, right_icon_name: Optional[str]) -> 'ButtonData':
+    def with_right_icon(self, right_icon_name: str|None) -> 'ButtonData':
         self.right_icon_name = right_icon_name
         return self
 
@@ -50,7 +49,7 @@ class ButtonData:
         return cls(label)
 
     @classmethod
-    def fromTuple(cls, data: Tuple) -> 'ButtonData':
+    def fromTuple(cls, data: tuple) -> 'ButtonData':
         bd = cls(data[0])
         if len(data) > 1:
             bd.icon_name = data[1]
@@ -63,7 +62,7 @@ class ButtonData:
         return bd
 
     @classmethod
-    def ensure(cls, data: Union[str, Tuple, 'ButtonData']) -> 'ButtonData':
+    def ensure(cls, data: 'str|tuple|ButtonData') -> 'ButtonData':
         if isinstance(data, cls):
             return data
         if type(data) == str:
@@ -74,15 +73,15 @@ class ButtonData:
         self,
         button_list_y: int,
         button_height: int,
-        scroll_y_initial_offset: Optional[int],
+        scroll_y_initial_offset: int|None,
         canvas_width: int,
         text_centered: bool,
         font_name: str,
         font_size: int,
         selected_color: str,
-        is_checked: Optional[bool] = None,
-    ) -> Dict:
-        out: Dict = {
+        is_checked: bool|None = None,
+    ) -> dict:
+        out: dict = {
             'text': self.label,
             'icon_name': self.icon_name,
             'icon_color': self.icon_color or GUIConstants.BUTTON_FONT_COLOR,
@@ -149,14 +148,13 @@ class FingerprintButtonData(ButtonData):
     def __init__(
         self,
         fingerprint: str,
-        has_passphrase: bool = False,
         is_polyseed: bool = False,
-        is_mymonero: bool = False
+        is_legacy: bool = False
     ):
         super().__init__(
             fingerprint,
             IconConstants.FINGERPRINT,
-            GUIConstants.FINGERPRINT_POLYSEED_COLOR if is_polyseed else GUIConstants.FINGERPRINT_MONERO_SEED_COLOR if not is_mymonero else GUIConstants.FINGERPRINT_MY_MONERO_SEED_COLOR,
+            GUIConstants.FINGERPRINT_POLYSEED_COLOR if is_polyseed else GUIConstants.FINGERPRINT_MONERO_SEED_COLOR if not is_legacy else GUIConstants.FINGERPRINT_MY_MONERO_SEED_COLOR,
             None,
-            FontAwesomeIconConstants.LOCK if has_passphrase else None
+            None
         )

@@ -2,12 +2,16 @@ from PIL import Image, ImageDraw
 from xmrsigner.helpers.pillow import get_font_size
 from threading import Lock
 
-from xmrsigner.gui.components import Fonts, GUIConstants
+from xmrsigner.gui.components import (
+    Fonts,
+    GUIConstants
+)
 from xmrsigner.hardware.ST7789 import ST7789
 from xmrsigner.models.singleton import ConfigurableSingleton
 
 
 class Renderer(ConfigurableSingleton):
+
     buttons = None
     canvas_width = 0
     canvas_height = 0
@@ -15,7 +19,6 @@ class Renderer(ConfigurableSingleton):
     draw: ImageDraw.ImageDraw = None
     disp = None
     lock = Lock()
-
 
     @classmethod
     def configure_instance(cls):

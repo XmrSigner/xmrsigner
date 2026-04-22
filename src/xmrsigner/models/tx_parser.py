@@ -1,2 +1,0 @@
-class TxParser:
-    pass

@@ -1,15 +1,29 @@
-import time
-
+from time import sleep
 from dataclasses import dataclass
 from PIL.ImageOps import autocontrast
-from typing import List
-from xmrsigner.gui.components import Button, CheckboxButton, CheckedSelectionButton, FontAwesomeIconConstants, Fonts, GUIConstants, Icon, IconButton, IconTextLine, TextArea
+
+from xmrsigner.gui.components import (
+    Button,
+    CheckboxButton,
+    CheckedSelectionButton,
+    FontAwesomeIconConstants,
+    Fonts,
+    GUIConstants,
+    Icon,
+    IconButton,
+    IconTextLine,
+    TextArea
+)
 from xmrsigner.gui.button_data import ButtonData
 from xmrsigner.gui.screens.scan_screens import ScanScreen
-from xmrsigner.gui.screens.screen import BaseScreen, BaseTopNavScreen, ButtonListScreen
+from xmrsigner.gui.screens.screen import (
+    BaseScreen,
+    BaseTopNavScreen,
+    ButtonListScreen
+)
 from xmrsigner.hardware.buttons import HardwareButtonsConstants
 from xmrsigner.hardware.camera import Camera
-from xmrsigner.models.settings import SettingsConstants
+from xmrsigner.models.settings import Type
 
 
 @dataclass
@@ -17,15 +31,15 @@ class SettingsEntryUpdateSelectionScreen(ButtonListScreen):
 
     display_name: str = None
     help_text: str = None
-    checked_buttons: List[int] = None
-    settings_entry_type: str = SettingsConstants.TYPE__ENABLED_DISABLED
+    checked_buttons: list[int] = None
+    settings_entry_type: Type = Type.ENABLED_DISABLED
     selected_button: int = 0
 
     def __post_init__(self):
         self.title = 'Settings'
         self.is_bottom_list = True
         self.use_checked_selection_buttons = True
-        if self.settings_entry_type == SettingsConstants.TYPE__MULTISELECT:
+        if self.settings_entry_type == Type.MULTISELECT:
             self.Button_cls = CheckboxButton
         else:
             self.Button_cls = CheckedSelectionButton
@@ -118,7 +132,7 @@ class IOTestScreen(BaseTopNavScreen):
         font = Fonts.get_font(GUIConstants.BUTTON_FONT_NAME, GUIConstants.BUTTON_FONT_SIZE)
         (left, top, text_width, bottom) = font.getbbox(text="Clear", anchor="ls")
         icon = Icon(
-            icon_name=FontAwesomeIconConstants.CAMERA, 
+            icon_name=FontAwesomeIconConstants.CAMERA,
             icon_size=GUIConstants.ICON_INLINE_FONT_SIZE,
         )
         key_button_width = text_width + 2 * GUIConstants.COMPONENT_PADDING + GUIConstants.EDGE_PADDING
@@ -193,7 +207,7 @@ class IOTestScreen(BaseTopNavScreen):
                         cur_selected_button.is_selected = False
                         cur_selected_button.render()
                         self.renderer.show_image()
-                    time.sleep(0.25)
+                    sleep(0.25)
                     background_frame = camera.capture_frame()
                     display_version = autocontrast(
                         background_frame,
@@ -247,7 +261,7 @@ class IOTestScreen(BaseTopNavScreen):
                 cur_selected_button.is_selected = False
                 cur_selected_button.render()
                 self.renderer.show_image()
-            time.sleep(0.1)
+            sleep(0.1)
 
 
 @dataclass

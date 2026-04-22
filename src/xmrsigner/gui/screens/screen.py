@@ -2,7 +2,6 @@ from xmrsigner.gui.button_data import ButtonData
 from time import sleep, time_ns, time
 from dataclasses import dataclass
 from PIL import Image, ImageDraw, ImageColor
-from typing import Any, List, Tuple, Union
 
 from xmrsigner.gui.components import (
     GUIConstants,
@@ -21,7 +20,11 @@ from xmrsigner.gui.keyboard import Keyboard, TextEntryDisplay
 from xmrsigner.gui.renderer import Renderer
 from xmrsigner.models.threads import BaseThread, ThreadsafeCounter
 from xmrsigner.models.base_encoder import BaseQrEncoder
-from xmrsigner.models.settings import Settings, SettingsConstants
+from xmrsigner.models.settings import (
+    Settings,
+    SettingsConstants,
+    Network
+)
 from xmrsigner.hardware.buttons import HardwareButtonsConstants, HardwareButtons
 
 
@@ -36,33 +39,28 @@ class BaseScreen(BaseComponent):
 
     def __post_init__(self):
         super().__post_init__()
-        
+
         self.hw_inputs = HardwareButtons.get_instance()
 
         # Implementation classes can add their own BaseThread to run in parallel with the
         # main execution thread.
-        self.threads: List[BaseThread] = []
-
+        self.threads: list[BaseThread] = []
         # Implementation classes can add additional BaseComponent-derived objects to the
         # list. They'll be called to `render()` themselves in BaseScreen._render().
-        self.components: List[BaseComponent] = []
-
+        self.components: list[BaseComponent] = []
         # Implementation classes can add PIL.Image objs here. Format is a tuple of the
         # Image and its (x,y) paste coords.
-        self.paste_images: List[Tuple] = []
-
+        self.paste_images: list[tuple] = []
         # Tracks position on scrollable pages, determines which elements are visible.
         self.scroll_y = 0
 
-    def display(self) -> Any:
+    def display(self) -> any:
         try:
             with self.renderer.lock:
                 self._render()
                 self.renderer.show_image()
-
             for t in self.threads:
                 t.start()
-
             return self._run()
         except Exception as e:
             repr(e)
@@ -122,7 +120,7 @@ class AnimatedScreenThread(BaseThread):
 
     def __init__(self):
         super().__init__()
-        self.renderer: Option[Renderer] = None
+        self.renderer: Renderer|None = None
 
     def initial_render(self) -> None:
         pass
@@ -160,7 +158,6 @@ class LoadingScreenThread(AnimatedScreenThread):
         with self.renderer.lock:
             self.renderer.draw.rectangle((0, 0, self.renderer.canvas_width, self.renderer.canvas_height), fill=GUIConstants.BACKGROUND_COLOR)
             self.renderer.canvas.paste(center_image, (self.bounding_box[0] + orbit_gap, self.bounding_box[1] + orbit_gap))
-
             if self.text:
                 TextArea(
                     text=self.text,
@@ -178,7 +175,6 @@ class LoadingScreenThread(AnimatedScreenThread):
                 fill=GUIConstants.LOADING_SCREEN_ARC_COLOR,
                 width=GUIConstants.COMPONENT_PADDING
             )
-
             # Render trailing arc
             self.renderer.draw.arc(
                 self.bounding_box,
@@ -187,7 +183,6 @@ class LoadingScreenThread(AnimatedScreenThread):
                 fill=GUIConstants.LOADING_SCREEN_ARC_TRAILING_COLOR,
                 width=GUIConstants.COMPONENT_PADDING
             )
-
             # Erase previous trailing arc leading arc
             self.renderer.draw.arc(
                 self.bounding_box,
@@ -196,7 +191,6 @@ class LoadingScreenThread(AnimatedScreenThread):
                 fill=GUIConstants.BACKGROUND_COLOR,
                 width=GUIConstants.COMPONENT_PADDING
             )
-
             self.renderer.show_image()
         self.position += self.arc_sweep
 
@@ -233,8 +227,8 @@ class EtaLoadingScreenThread(LoadingScreenThread):
 
 @dataclass
 class BaseTopNavScreen(BaseScreen):
-    top_nav_icon_name: str = None
-    top_nav_icon_color: str = None
+    top_nav_icon_name: str|None = None
+    top_nav_icon_color: str|None = None
     title: str = "Screen Title"
     title_font_size: int = GUIConstants.TOP_NAV_TITLE_FONT_SIZE
     show_back_button: bool = True
@@ -253,7 +247,6 @@ class BaseTopNavScreen(BaseScreen):
             show_power_button=self.show_power_button,
         )
         self.is_input_in_top_nav = False
-
         self.components.append(self.top_nav)
 
 
@@ -263,13 +256,11 @@ class BaseTopNavScreen(BaseScreen):
                 # There's no navigation away from this screen; nothing to do here
                 sleep(0.1)
                 continue
-
             user_input = self.hw_inputs.wait_for(
                 HardwareButtonsConstants.ALL_KEYS,
                 check_release=True,
                 release_keys=HardwareButtonsConstants.KEYS__ANYCLICK
             )
-
             with self.renderer.lock:
                 if not self.top_nav.is_selected and user_input in [
                         HardwareButtonsConstants.KEY_LEFT,
@@ -277,21 +268,17 @@ class BaseTopNavScreen(BaseScreen):
                     ]:
                     self.top_nav.is_selected = True
                     self.top_nav.render_buttons()
-
                 elif self.top_nav.is_selected and user_input in [
                         HardwareButtonsConstants.KEY_DOWN,
                         HardwareButtonsConstants.KEY_RIGHT
                     ]:
                     self.top_nav.is_selected = False
                     self.top_nav.render_buttons()
-
                 elif self.top_nav.is_selected and user_input in HardwareButtonsConstants.KEYS__ANYCLICK:
                     return self.top_nav.selected_button
-                
                 else:
                     # Nothing to do with this input
                     continue
-
                 # Write the screen updates
                 self.renderer.show_image()
 
@@ -299,7 +286,7 @@ class BaseTopNavScreen(BaseScreen):
 @dataclass
 class ButtonListScreen(BaseTopNavScreen):
 
-    button_data: list = None                  # list can be a mix of str or tuple(label: str, icon_name: str)
+    button_data: list[ButtonData|str|tuple[str, str]]                  # list can be a mix of str or tuple(label: str, icon_name: str)
     selected_button: int = 0
     is_button_text_centered: bool = True
     is_bottom_list: bool = False
@@ -309,18 +296,15 @@ class ButtonListScreen(BaseTopNavScreen):
 
     # Params for version of list used for Settings
     Button_cls = Button
-    checked_buttons: List[int] = None
+    checked_buttons: list[int]|None = None
 
     # Enables returning w/buttons rendered at the same place
-    scroll_y_initial_offset: int = None
+    scroll_y_initial_offset: int|None = None
 
     def __post_init__(self):
         super().__post_init__()
         button_height = GUIConstants.BUTTON_HEIGHT
-        if len(self.button_data) == 1:
-            button_list_height = button_height
-        else:
-            button_list_height = (len(self.button_data) * button_height) + (GUIConstants.COMPONENT_PADDING * (len(self.button_data) - 1))
+        button_list_height = (len(self.button_data) * button_height) + (GUIConstants.COMPONENT_PADDING * max((len(self.button_data) - 1), 0))
 
         if self.is_bottom_list:
             button_list_y = self.canvas_height - (button_list_height + GUIConstants.EDGE_PADDING)
@@ -333,7 +317,7 @@ class ButtonListScreen(BaseTopNavScreen):
             button_list_y = self.top_nav.height
             self.has_scroll_arrows = True
 
-        self.buttons: List[Button] = []
+        self.buttons: list[Button] = []
         for i, button_data in enumerate(self.button_data):
             button_data = ButtonData.ensure(button_data)
             button_data.position = i
@@ -350,10 +334,9 @@ class ButtonListScreen(BaseTopNavScreen):
             )
             button = self.Button_cls(**button_kwargs)
             self.buttons.append(button)
-        
         if self.has_scroll_arrows:
             self.arrow_half_width = 10
-            self.cur_scroll_y = self.scroll_y_initial_offset if self.scroll_y_initial_offset is not None else 0
+            self.cur_scroll_y = self.scroll_y_initial_offset or 0
             self.up_arrow_img = Image.new('RGBA', size=(2 * self.arrow_half_width, 8), color=GUIConstants.ARROW_COLOR)
             self.up_arrow_img_y = self.top_nav.height - 12
             arrow_draw = ImageDraw.Draw(self.up_arrow_img)
@@ -366,7 +349,6 @@ class ButtonListScreen(BaseTopNavScreen):
             center_x = int(self.canvas_width / 2)
             arrow_draw.line((self.arrow_half_width, 7, 0, 1), fill=GUIConstants.BUTTON_FONT_COLOR)
             arrow_draw.line((self.arrow_half_width, 7, 2 * self.arrow_half_width, 1), fill=GUIConstants.BUTTON_FONT_COLOR)
-
         cur_selected_button = self.buttons[self.selected_button]
         cur_selected_button.is_selected = True
 
@@ -379,22 +361,18 @@ class ButtonListScreen(BaseTopNavScreen):
         if self.has_scroll_arrows:
             self._render_up_arrow()
             self._render_down_arrow()
-
         for i, button in enumerate(self.buttons):
             if not self.has_scroll_arrows:
                 button.render()
                 continue
-
             button_position_y = button.screen_y - button.scroll_y
             if button_position_y >= self.top_nav.height and button_position_y < self.down_arrow_img_y:
                 if i == 0:
                     # We rendered the top button; no more to scroll up for.
                     self._hide_up_arrow()
-
                 if i == len(self.buttons) - 1:
                     # We just pulled up the last button; no more to scroll down for.
                     self._hide_down_arrow()
-
                 # Render the button after the arrows to cover up overlap
                 button.render()
 
@@ -427,7 +405,6 @@ class ButtonListScreen(BaseTopNavScreen):
             ret = self._run_callback()
             if ret is not None:
                 return ret
-
             user_input = self.hw_inputs.wait_for(
                 [
                     HardwareButtonsConstants.KEY_UP,
@@ -438,7 +415,6 @@ class ButtonListScreen(BaseTopNavScreen):
                 check_release=True,
                 release_keys=HardwareButtonsConstants.KEYS__ANYCLICK
             )
-
             with self.renderer.lock:
                 if not self.top_nav.is_selected and (
                         user_input == HardwareButtonsConstants.KEY_LEFT or (
@@ -452,10 +428,8 @@ class ButtonListScreen(BaseTopNavScreen):
                     if self.top_nav.show_back_button or self.top_nav.show_power_button:
                         self.buttons[self.selected_button].is_selected = False
                         self.buttons[self.selected_button].render()
-
                         self.top_nav.is_selected = True
                         self.top_nav.render_buttons()
-
                 elif user_input == HardwareButtonsConstants.KEY_UP:
                     if self.top_nav.is_selected:
                         # Can't go up any further
@@ -475,7 +449,6 @@ class ButtonListScreen(BaseTopNavScreen):
                         else:
                             cur_selected_button.render()
                             next_selected_button.render()
-
                 elif user_input == HardwareButtonsConstants.KEY_DOWN or (
                         self.top_nav.is_selected and user_input == HardwareButtonsConstants.KEY_RIGHT
                     ):
@@ -485,22 +458,18 @@ class ButtonListScreen(BaseTopNavScreen):
                         # this update loop.
                         if not self.top_nav.is_selected:
                             continue
-
                     if self.top_nav.is_selected:
                         self.top_nav.is_selected = False
                         self.top_nav.render_buttons()
-
                         cur_selected_button = None
                         next_selected_button = self.buttons[self.selected_button]
                         next_selected_button.is_selected = True
-
                     else:
                         cur_selected_button: Button = self.buttons[self.selected_button]
                         self.selected_button += 1
                         next_selected_button: Button = self.buttons[self.selected_button]
                         cur_selected_button.is_selected = False
                         next_selected_button.is_selected = True
-
                     if self.has_scroll_arrows and (
                             next_selected_button.screen_y - next_selected_button.scroll_y + next_selected_button.height > self.down_arrow_img_y
                         ):
@@ -513,12 +482,10 @@ class ButtonListScreen(BaseTopNavScreen):
                         if cur_selected_button:
                             cur_selected_button.render()
                         next_selected_button.render()
-
                 elif user_input in HardwareButtonsConstants.KEYS__ANYCLICK:
                     if self.top_nav.is_selected:
                         return self.top_nav.selected_button
                     return self.selected_button
-
                 # Write the screen updates
                 self.renderer.show_image()
 
@@ -528,11 +495,10 @@ class SelectNetworkScreen(ButtonListScreen):
     text: str = 'Select Network'
 
     def __post_init__(self):
-        settings = Settings.get_instance()
-        networks = settings.get_value(SettingsConstants.SETTING__NETWORKS)
-        self.button_data = [network for network in networks]
+        settings: Settings = Settings.get_instance()
+        networks: list[Network] = settings.get_value(SettingsConstants.SETTING__NETWORKS)
+        self.button_data: list[ButtonData] = [ButtonData(network.display) for network in networks]
         super().__post_init__()
-
         self.components.append(TextArea(
             text=self.text,
             screen_y=self.top_nav.height,
@@ -541,7 +507,7 @@ class SelectNetworkScreen(ButtonListScreen):
 
 @dataclass
 class LargeButtonScreen(BaseTopNavScreen):
-    button_data: List[Union[str, Tuple]] = None  # List can be a mix of str or tuple(label: str, icon_name: str)
+    button_data: list[str|tuple]  # List can be a mix of str or tuple(label: str, icon_name: str)
     button_font_name: str = GUIConstants.BUTTON_FONT_NAME
     button_font_size: int = 20
     button_selected_color: str = GUIConstants.ACCENT_COLOR
@@ -553,7 +519,7 @@ class LargeButtonScreen(BaseTopNavScreen):
             raise Exception("LargeButtonScreen only supports 2 or 4 buttons")
         # Maximize 2-across width; calc height with a 4:3 aspect ratio
         button_width = int((self.canvas_width - (2 * GUIConstants.EDGE_PADDING) - GUIConstants.COMPONENT_PADDING) / 2)
-        button_height = int(button_width * (3.0 / 4.0))
+        button_height = int(button_width * 0.75)
         # Vertically center the buttons
         if len(self.button_data) == 2:
             button_start_y = self.top_nav.height + int((self.canvas_height - (self.top_nav.height + GUIConstants.COMPONENT_PADDING) - button_height) / 2)
@@ -599,12 +565,10 @@ class LargeButtonScreen(BaseTopNavScreen):
             self.selected_button = new_selected_button
             self.buttons[self.selected_button].is_selected = True
             self.buttons[self.selected_button].render()
-
         while True:
             ret = self._run_callback()
             if ret is not None:
                 return ret
-
             user_input = self.hw_inputs.wait_for(
                 [
                     HardwareButtonsConstants.KEY_UP,
@@ -615,46 +579,36 @@ class LargeButtonScreen(BaseTopNavScreen):
                 check_release=True,
                 release_keys=HardwareButtonsConstants.KEYS__ANYCLICK
             )
-
             with self.renderer.lock:
                 if user_input == HardwareButtonsConstants.KEY_UP:
                     if self.selected_button in [0, 1]:
                         # Move selection up to top_nav
                         self.top_nav.is_selected = True
                         self.top_nav.render_buttons()
-
                         self.buttons[self.selected_button].is_selected = False
                         self.buttons[self.selected_button].render()
-
                     elif len(self.buttons) == 4:
                         swap_selected_button(self.selected_button - 2)
-
                 elif user_input == HardwareButtonsConstants.KEY_DOWN:
                     if self.top_nav.is_selected:
                         self.top_nav.is_selected = False
                         self.top_nav.render_buttons()
-
                         self.buttons[self.selected_button].is_selected = True
                         self.buttons[self.selected_button].render()
-
                     elif self.selected_button in [2, 3]:
                         pass
                     elif len(self.buttons) == 4:
                         swap_selected_button(self.selected_button + 2)
-
                 elif user_input == HardwareButtonsConstants.KEY_RIGHT and not self.top_nav.is_selected:
                     if self.selected_button in [0, 2]:
                         swap_selected_button(self.selected_button + 1)
-                
                 elif (user_input == HardwareButtonsConstants.KEY_RIGHT and
                         self.top_nav.is_selected and not self.top_nav.show_power_button
                     ):
                     self.top_nav.is_selected = False
                     self.top_nav.render_buttons()
-
                     self.buttons[self.selected_button].is_selected = True
                     self.buttons[self.selected_button].render()
-
                 elif user_input == HardwareButtonsConstants.KEY_LEFT and not self.top_nav.is_selected:
                     if self.selected_button in [1, 3]:
                         swap_selected_button(self.selected_button - 1)
@@ -666,19 +620,17 @@ class LargeButtonScreen(BaseTopNavScreen):
 
                             self.buttons[self.selected_button].is_selected = False
                             self.buttons[self.selected_button].render()
-
                 elif user_input in HardwareButtonsConstants.KEYS__ANYCLICK:
                     if self.top_nav.is_selected:
                         return self.top_nav.selected_button
                     return self.selected_button
-
                 # Write the screen updates
                 self.renderer.show_image()
 
 
 @dataclass
 class QRDisplayScreen(BaseScreen):
-    qr_encoder: BaseQrEncoder = None
+    qr_encoder: BaseQrEncoder|None = None
 
     class QRDisplayThread(BaseThread):
 
@@ -831,20 +783,20 @@ class QRDisplayScreen(BaseScreen):
 
 @dataclass
 class LargeIconStatusScreen(ButtonListScreen):
-    title: str = "Success!"
+    title: str = 'Success!'
     status_icon_name: str = IconConstants.SUCCESS
     status_icon_size: int = GUIConstants.ICON_PRIMARY_SCREEN_SIZE
     status_color: str = GUIConstants.SUCCESS_COLOR
-    status_headline: str = "Success!"  # The colored text under the large icon
-    text: str = ""                          # The body text of the screen
+    status_headline: str = 'Success!'  # The colored text under the large icon
+    text: str = ''                          # The body text of the screen
     text_edge_padding: int = GUIConstants.EDGE_PADDING
-    button_data: list = None
+    button_data: list|None = None
     allow_text_overflow: bool = False
 
     def __post_init__(self):
         self.is_bottom_list: bool = True
         if not self.button_data:
-            self.button_data = ["OK"]
+            self.button_data = ['OK']
         super().__post_init__()
 
         self.status_icon = Icon(
@@ -879,10 +831,10 @@ class LargeIconStatusScreen(ButtonListScreen):
 
 
 class WarningEdgesThread(BaseThread):
+
     def __init__(self, args):
         super().__init__()
         self.args = args
-
 
     def run(self):
         screen = self.args[0]
@@ -910,17 +862,13 @@ class WarningEdgesThread(BaseThread):
                     for index, n in enumerate(range(4, -1, -1)):
                         # Reverse range steadily increases rgb in brightness until reaching full.
                         # 34 == 0x22; just eyeballed a good step size
-
                         r = max(0, rgb[0] - 34*n - inhale_scalar)
                         g = max(0, rgb[1] - 34*n - inhale_scalar)
                         b = max(0, rgb[2] - 34*n - inhale_scalar)
-
                         # `index` shrinks the border at each step
                         render_border((r, g, b), GUIConstants.EDGE_PADDING - 2 - index)
-
                     # Write the screen updates
                     screen.renderer.show_image()
-                
                 if inhale_factor == inhale_max:
                     inhale_step = -1
                 elif inhale_factor == 0 and inhale_step == -1:
@@ -932,10 +880,8 @@ class WarningEdgesThread(BaseThread):
                         # It's about to be decremented below zero
                         inhale_factor = 1
                 inhale_factor += inhale_step
-
                 # Target ~10fps
                 sleep(0.05)
-
         except KeyboardInterrupt as e:
             self.stop()
             raise e
@@ -948,38 +894,37 @@ class WarningEdgesMixin:
 
     def __post_init__(self):
         super().__post_init__()
-
         self.threads.append(WarningEdgesThread(args=(self,)))
 
 
 @dataclass
 class WarningScreen(WarningEdgesMixin, LargeIconStatusScreen):
-    title: str = "Caution"
+    title: str = 'Caution'
     status_icon_name: str = IconConstants.WARNING
     status_color: str = GUIConstants.WARNING_COLOR
-    status_headline: str = "Privacy Leak!"     # The colored text under the alert icon
+    status_headline: str = 'Privacy Leak!'     # The colored text under the alert icon
 
     def __post_init__(self):
         if not self.button_data:
-            self.button_data = ["I Understand"]
+            self.button_data = ['I Understand']
         super().__post_init__()
 
 
 @dataclass
 class DireWarningScreen(WarningScreen):
-    status_headline: str = "Classified Info!"     # The colored text under the alert icon
+    status_headline: str = 'Classified Info!'     # The colored text under the alert icon
     status_color: str = GUIConstants.DIRE_WARNING_COLOR
 
 
 @dataclass
 class ResetScreen(BaseTopNavScreen):
     def __post_init__(self):
-        self.title = "Restarting"
+        self.title = 'Restarting'
         self.show_back_button = False
         super().__post_init__()
 
         self.components.append(TextArea(
-            text="XmrSigner is restarting.\n\nAll in-memory data will be wiped.",
+            text='XmrSigner is restarting.\n\nAll in-memory data will be wiped.',
             screen_y=self.top_nav.height,
             height=self.canvas_height - self.top_nav.height,
         ))
@@ -1002,24 +947,21 @@ class KeyboardScreen(BaseTopNavScreen):
     * show_save_button: Render a KEY3 soft button for save & exit
     * initial_value: initialize the TextEntryDisplay with an existing string
     """
-    rows: int = None
-    cols: int = None
+    rows: int|None = None
+    cols: int|None = None
     keyboard_font_name: str = GUIConstants.FIXED_WIDTH_EMPHASIS_FONT_NAME
     keyboard_font_size: int = GUIConstants.TOP_NAV_TITLE_FONT_SIZE + 2
-    key_height: int = None
-    keys_charset: str = None
-    keys_to_values: dict = None
-    return_after_n_chars: int = None
+    key_height: int|None = None
+    keys_charset: str|None = None
+    keys_to_values: dict|None = None
+    return_after_n_chars: int|None = None
     show_save_button: bool = False
     initial_value: str = ''
 
     def __post_init__(self):
         super().__post_init__()
-        if self.initial_value:
-            self.user_input = self.initial_value
-        else:
-            self.user_input = ""
-        # Set up the keyboard params        
+        self.user_input = self.initial_value or ''
+        # Set up the keyboard params
         if self.show_save_button:
             right_panel_buttons_width = 60
             hw_button_x = self.canvas_width - right_panel_buttons_width + GUIConstants.COMPONENT_PADDING
@@ -1091,7 +1033,7 @@ class KeyboardScreen(BaseTopNavScreen):
                 check_release=True,
                 release_keys=[HardwareButtonsConstants.KEY_PRESS, HardwareButtonsConstants.KEY3]
             )
-            # Check possible exit conditions   
+            # Check possible exit conditions
             if self.top_nav.is_selected and input == HardwareButtonsConstants.KEY_PRESS:
                 return RET_CODE__BACK_BUTTON
             if self.show_save_button and input == HardwareButtonsConstants.KEY3:
@@ -1124,7 +1066,7 @@ class KeyboardScreen(BaseTopNavScreen):
                 self.top_nav.is_selected = True
                 self.top_nav.render_buttons()
             elif ret_val in Keyboard.ADDITIONAL_KEYS and input == HardwareButtonsConstants.KEY_PRESS:
-                if ret_val == Keyboard.KEY_BACKSPACE["code"]:
+                if ret_val == Keyboard.KEY_BACKSPACE['code']:
                     if len(self.user_input) > 0:
                         self.user_input = self.user_input[:-1]
                         self.cursor_position -= 1
@@ -1171,15 +1113,3 @@ class MainMenuScreen(LargeButtonScreen):
     title_font_size: int = 26
     show_back_button: bool = False
     show_power_button: bool = True
-
-
-@dataclass
-class WalletRpcScreen(LargeIconStatusScreen):
-    version: str = ''
-
-    def __post_init__(self):
-        self.title = 'Wallet RPC'
-        self.status_icon_name = FontAwesomeIconConstants.WALLET
-        self.status_color = GUIConstants.INFO_COLOR
-        self.text = f'Version {self.version}'
-        super().__post_init__()

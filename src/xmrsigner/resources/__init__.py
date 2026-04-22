@@ -1,11 +1,11 @@
-from os.path import dirname
-from os import path
+from os.path import dirname, exists, join
 from base64 import b85decode
 from lzma import decompress as lzma
-        
+
+
 def get(namespace, name):
-    file_path = path.join(dirname(__file__), namespace, name)
-    if path.exists(file_path):
+    file_path = join(dirname(__file__), namespace, name)
+    if exists(file_path):
         with open(file_path, 'rb') as file:
             return file.read()
     try:

@@ -3,7 +3,7 @@ from enum import IntEnum
 
 class DecodeQRStatus(IntEnum):
     """
-        Used in DecodeQR to communicate status of adding qr frame/segment
+    Used in DecodeQR to communicate status of adding qr frame/segment
     """
     PART_COMPLETE = 1
     PART_EXISTING = 2

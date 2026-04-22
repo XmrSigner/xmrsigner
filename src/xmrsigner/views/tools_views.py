@@ -1,10 +1,19 @@
+from ots.seed import (
+    Seed,
+    Polyseed,
+    MoneroSeed,
+    LegacySeed
+)
+from ots.seed_language import SeedLanguage
+from ots.enums import SeedType
+
 from dataclasses import dataclass
 from time import time, sleep
 
 from PIL import Image
 from PIL.ImageOps import autocontrast
 
-from monero.seed import Seed as MoneroSeed
+from xmrsigner.controller import Flow
 from xmrsigner.gui.button_data import ButtonData
 from xmrsigner.gui.components import FontAwesomeIconConstants, GUIConstants, IconConstants
 from xmrsigner.gui.screens import (
@@ -21,14 +30,13 @@ from xmrsigner.gui.screens.tools_screens import (
     ToolsCalcFinalWordDoneScreen,
     ToolsAddressExplorerAddressTypeScreen
 )
-from xmrsigner.helpers.entropy import CameraEntropy, DiceEntropy
-from xmrsigner.helpers import mnemonic_generation
-from xmrsigner.helpers import polyseed_mnemonic_generation
-from xmrsigner.models.seed import Seed
-from xmrsigner.models.polyseed import PolyseedSeed
-from xmrsigner.models.settings_definition import SettingsConstants
+from xmrsigner.helpers.entropy import (
+    CameraEntropy,
+    DiceEntropy
+)
+from xmrsigner.models.wordlist import words
+from xmrsigner.models.settings_definition import Setting
 from xmrsigner.models.monero_encoder import MoneroAddressEncoder
-from xmrsigner.models.qr_type import QRType
 from xmrsigner.views.seed_views import (
     SeedDiscardView,
     SeedFinalizeView,
@@ -48,7 +56,7 @@ class ToolsMenuView(View):
 
     def __init__(self, secure_only: bool = False):
         super().__init__()
-        self.secure_only = secure_only
+        self.secure_only: bool = secure_only
 
     def run(self):
         IMAGE = ButtonData('New seed').with_icon(FontAwesomeIconConstants.CAMERA)
@@ -56,7 +64,7 @@ class ToolsMenuView(View):
         KEYBOARD = ButtonData('Pick own words').with_icon(FontAwesomeIconConstants.KEYBOARD)
         EXPLORER = ButtonData('Address Explorer')
         ADDRESS = ButtonData('Verify address')
-        if self.secure_only or self.settings.get_value(SettingsConstants.SETTING__LOW_SECURITY) == SettingsConstants.OPTION__DISABLED:
+        if self.secure_only or self.settings.get_value(Setting.LOW_SECURITY) == Option.DISABLED:
             button_data = [IMAGE, DICE]  # , EXPLORER, ADDRESS]  # TODO: 2024-06-17, activate when it works
         else:
             button_data = [IMAGE, DICE, KEYBOARD]  # , EXPLORER, ADDRESS]  # TODO: 2024-06-17, activate when it works
@@ -74,9 +82,9 @@ class ToolsMenuView(View):
             return Destination(ToolsDiceSeedTypeView)
         if button_data[selected_menu_num] == KEYBOARD:
             return Destination(ToolsCalcFinalWordWarningView)
-        if button_data[selected_menu_num] == self.EXPLORER:
+        if button_data[selected_menu_num] == EXPLORER:
             return Destination(ToolsAddressExplorerSelectSourceView)
-        if button_data[selected_menu_num] == self.ADDRESS:
+        if button_data[selected_menu_num] == ADDRESS:
             from xmrsigner.views.scan_views import ScanAddressView
             return Destination(ScanAddressView)
 
@@ -92,7 +100,6 @@ class ToolsImageEntropyLivePreviewView(View):
             return Destination(BackStackView)
         self.controller.image_entropy_preview_frames = ret
         return Destination(ToolsImageEntropyFinalImageView)
-
 
 
 class ToolsImageEntropyFinalImageView(View):
@@ -124,7 +131,6 @@ class ToolsImageEntropyFinalImageView(View):
             # Go back to live preview and reshoot
             self.controller.image_entropy_final_image = None
             return Destination(BackStackView)
-        # return Destination(ToolsImageEntropyMnemonicLengthView)
         return Destination(ToolsImageSeedTypeView)
 
 
@@ -141,51 +147,44 @@ class ToolsImageSeedTypeView(View):
         if selected_menu_num == RET_CODE__BACK_BUTTON:
             return Destination(BackStackView)
         if button_data[selected_menu_num] == MONERO_SEED:
-            return Destination(ToolsImageEntropyMnemonicLengthView)
+            return Destination(ToolsImageEntropyMoneroSeedView)
         return Destination(ToolsImagePolyseedView)
 
 
-class ToolsImageEntropyMnemonicLengthView(View):
+class ToolsImageEntropyMoneroSeedView(View):
 
     def run(self):
-        if self.settings.get_value(SettingsConstants.SETTING__LOW_SECURITY) == SettingsConstants.OPTION__ENABLED:
-            THIRTEEN_WORDS = "13 words"
-            TWENTYFOUR_WORDS = "25 words"
-            button_data = [THIRTEEN_WORDS, TWENTYFOUR_WORDS]
-            selected_menu_num = ButtonListScreen(
-                title="Mnemonic Length?",
-                button_data=button_data,
-            ).display()
-            if selected_menu_num == RET_CODE__BACK_BUTTON:
-                return Destination(BackStackView)
-            mnemonic_length = 13 if button_data[selected_menu_num] == THIRTEEN_WORDS else 25
-        else:
-            mnemonic_length = 25
         entropy: CameraEntropy = CameraEntropy(self.controller.image_entropy_preview_frames, self.controller.image_entropy_final_image)
-        # Generate the mnemonic
-        # 12-word mnemonic only uses the first 128 bits / 16 bytes of entropy
-        mnemonic = mnemonic_generation.generate_mnemonic_from_bytes(bytes(entropy) if mnemonic_length != 13 else bytes(entropy)[:16])
+        seed: Seed = MoneroSeed.create(
+            bytes(entropy),
+            time=0,  # TODO: provide time
+            passphrase=''  # TODO: passphrase if desired
+        )
+        mnemonic = seed.phrase(self.settings.get_value(Setting.MONEROSEED_WORDLIST_LANGUAGE)).insecure()
         self.controller.image_entropy_preview_frames = None
         self.controller.image_entropy_final_image = None
         # Add the mnemonic as an in-memory Seed
-        seed = Seed(mnemonic, wordlist_language_code=self.settings.get_value(SettingsConstants.SETTING__MONERO_WORDLIST_LANGUAGE))
-        self.controller.jar.set_pending_seed(seed)
+        self.controller.pending_seed = PendingSeed(mnemonic.split(), type=SeedType.MONERO)
         # Cannot return BACK to this View
-        return Destination(SeedWordsWarningView, view_args={"seed_num": None}, clear_history=True)
+        return Destination(SeedWordsWarningView, clear_history=True)
 
 
 class ToolsImagePolyseedView(View):
 
     def run(self):
         entropy: CameraEntropy = CameraEntropy(self.controller.image_entropy_preview_frames, self.controller.image_entropy_final_image)
-        mnemonic = polyseed_mnemonic_generation.generate_mnemonic_from_bytes(bytes(entropy))
+        seed = Polyseed.create(
+            bytes(entropy),
+            time=0,  # TODO: provide time
+            passphrase=''  # TODO: passphrase if desired
+        )
+        mnemonic = seed.phrase(self.settings.get_value(Setting.POLYSEED_WORDLIST_LANGUAGE)).insecure()
         self.controller.image_entropy_preview_frames = None
         self.controller.image_entropy_final_image = None
         # Add the mnemonic as an in-memory Seed
-        seed = PolyseedSeed(mnemonic, wordlist_language_code=self.settings.get_value(SettingsConstants.SETTING__POLYSEED_WORDLIST_LANGUAGE))
-        self.controller.jar.set_pending_seed(seed)
+        self.controller.pending_seed = PendingSeed(mnemonic.split(), type=SeedType.POLYSEED)
         # Cannot return BACK to this View
-        return Destination(SeedWordsWarningView, view_args={"seed_num": None}, clear_history=True)
+        return Destination(SeedWordsWarningView, clear_history=True)
 
 
 """****************************************************************************
@@ -197,82 +196,62 @@ class ToolsDiceSeedTypeView(View):
         MONERO_SEED = 'Monero Seed'
         POLYSEED = 'Polyseed'
         button_data = [MONERO_SEED, POLYSEED]
-
         selected_menu_num = ButtonListScreen(
             title="Seed type?",
             button_data=button_data,
         ).display()
-
         if selected_menu_num == RET_CODE__BACK_BUTTON:
             return Destination(BackStackView)
-        
         if button_data[selected_menu_num] == MONERO_SEED:
-            return Destination(ToolsDiceEntropyMnemonicLengthView)
-        else:
-            return Destination(ToolsDicePolyseedView)
-
-
-class ToolsDiceEntropyMnemonicLengthView(View):
-    def run(self):
-        if self.settings.get_value(SettingsConstants.SETTING__LOW_SECURITY) != SettingsConstants.OPTION__ENABLED:
-            return Destination(ToolsDiceEntropyEntryView, view_args=dict(total_rolls=100), clear_history=True)
-        THIRTEEN = ButtonData('13 words (50 rolls)')
-        TWENTY_FIVE = ButtonData('25 words (100 rolls)')
-        button_data = [THIRTEEN, TWENTY_FIVE]
-        selected_menu_num = ButtonListScreen(
-            title='Mnemonic Length',
-            is_bottom_list=True,
-            is_button_text_centered=True,
-            button_data=button_data,
-        ).display()
-        if selected_menu_num == RET_CODE__BACK_BUTTON:
-            return Destination(BackStackView)
-        if button_data[selected_menu_num] == THIRTEEN:
-            return Destination(ToolsDiceEntropyEntryView, view_args=dict(total_rolls=50), clear_history=True)
-        if button_data[selected_menu_num] == TWENTY_FIVE:
-            return Destination(ToolsDiceEntropyEntryView, view_args=dict(total_rolls=100), clear_history=True)
+            return Destination(ToolsDiceEntropyEntryView)
+        return Destination(ToolsDicePolyseedView)
 
 
 class ToolsDiceEntropyEntryView(View):
 
-    def __init__(self, total_rolls: int):
+    def __init__(self):
         super().__init__()
-        self.total_rolls = total_rolls
 
     def run(self):
         ret = ToolsDiceEntropyEntryScreen(
-            return_after_n_chars=self.total_rolls,
+            return_after_n_chars=100,  # 256bit
         ).display()
         if ret == RET_CODE__BACK_BUTTON:
             return Destination(BackStackView)
-        dice_seed_phrase = mnemonic_generation.generate_mnemonic_from_bytes(bytes(DiceEntropy(ret, 128 if self.total_rolls < 100 else 256)))
         # Add the mnemonic as an in-memory Seed
-        seed = Seed(dice_seed_phrase, wordlist_language_code=self.settings.get_value(SettingsConstants.SETTING__MONERO_WORDLIST_LANGUAGE))
-        self.controller.jar.set_pending_seed(seed)
+        seed = MoneroSeed.create(bytes(DiceEntropy(ret, 256)))
+        self.controller.pending_seed = PendingSeed(
+            seed.phrase(
+                self.settings.get_value(Setting.MONERO_WORDLIST_LANGUAGE)
+            ).insecure().split()
+        )
         # Cannot return BACK to this View
-        return Destination(SeedWordsWarningView, view_args={"seed_num": None}, clear_history=True)
+        return Destination(SeedWordsWarningView, clear_history=True)
 
 
 class ToolsDicePolyseedView(View):
 
-    def __init__(self, total_rolls: int = 100):
+    def __init__(self):
         super().__init__()
-        self.total_rolls: int = total_rolls
 
     def run(self):
         ret = ToolsDiceEntropyEntryScreen(
-            return_after_n_chars=self.total_rolls,
+            return_after_n_chars=100,  # 256bit
         ).display()
         if ret == RET_CODE__BACK_BUTTON:
             return Destination(BackStackView)
         print(f"Dice rolls: {ret}")
-        dice_seed_phrase = polyseed_mnemonic_generation.generate_mnemonic_from_bytes(bytes(DiceEntropy(ret)))
+        seed = Polyseed.create(
+            bytes(DiceEntropy(ret)),
+            time=0,  # TODO: add current timestamp
+            passphrase = ''  # TODO: add passphrase if desired
+        )
+        dice_seed_phrase = seed.phrase(self.settings.get_value(Setting.POLYSEED_WORDLIST_LANGUAGE)).insecure()
         print(f"""Mnemonic: "{dice_seed_phrase}" """)
         # Add the mnemonic as an in-memory Seed
-        seed = PolyseedSeed(dice_seed_phrase, wordlist_language_code=self.settings.get_value(SettingsConstants.SETTING__POLYSEED_WORDLIST_LANGUAGE))
-        self.controller.jar.set_pending_seed(seed)
+        self.controller.pending_seed = PendingSeed(dice_seed_phrase.split(), type=SeedType.POLYSEED)
         # Cannot return BACK to this View
-        return Destination(SeedWordsWarningView, view_args={"seed_num": None}, clear_history=True)
+        return Destination(SeedWordsWarningView, clear_history=True)
 
 
 
@@ -288,7 +267,7 @@ class ToolsCalcFinalWordWarningView(View):
             ToolsCalcFinalWordNumWordsView,
             skip_current_view=True,  # Prevent going BACK to WarningViews
         )
-        if self.settings.get_value(SettingsConstants.SETTING__DIRE_WARNINGS) == SettingsConstants.OPTION__DISABLED:
+        if self.settings.get_value(Setting.DIRE_WARNINGS) == Option.DISABLED:
             return destination
 
         MORE_SECURE = ButtonData('Choose secure way')
@@ -315,10 +294,10 @@ class ToolsCalcFinalWordWarningView(View):
 
 class ToolsCalcFinalWordNumWordsView(View):
     def run(self):
-        if self.settings.get_value(SettingsConstants.SETTING__LOW_SECURITY) == SettingsConstants.OPTION__ENABLED:
+        if self.settings.get_value(Setting.LOW_SECURITY) == Option.ENABLED:
             THIRTEEN = ButtonData('13 words')
             TWENTY_FIVE = ButtonData('25 words')
-            
+
             button_data = [THIRTEEN, TWENTY_FIVE]
             selected_menu_num = ButtonListScreen(
                 title='Mnemonic Length',
@@ -329,50 +308,58 @@ class ToolsCalcFinalWordNumWordsView(View):
             if selected_menu_num == RET_CODE__BACK_BUTTON:
                 return Destination(BackStackView)
             if button_data[selected_menu_num] == THIRTEEN:
-                self.controller.jar.init_pending_mnemonic(13)
+                self.controller.pending_seed = PendingSeed(isLegacy=True)
                 return Destination(SeedMnemonicEntryView, view_args=dict(is_calc_final_word=True))
             if button_data[selected_menu_num] == TWENTY_FIVE:
-                self.controller.jar.init_pending_mnemonic(25)
-                return Destination(SeedMnemonicEntryView, view_args=dict(is_calc_final_word=True))
-        self.controller.jar.init_pending_mnemonic(25)
-        return Destination(SeedMnemonicEntryView, view_args=dict(is_calc_final_word=True))
+                self.controller.pending_seed = PendingSeed()
+                return Destination(
+                    SeedMnemonicEntryView, view_args={
+                            'is_calc_final_word': True
+                    }
+                )
+        return Destination(
+            SeedMnemonicEntryView,
+            view_args={
+                'is_calc_final_word': True
+            }
+        )
 
 
 class ToolsCalcFinalWordShowFinalWordView(View):  # TODO: 2024-06-04, rename, because it is missleading, the only thing what will be calculated is the checksum word
 
-    def __init__(self, coin_flips: str = None):
+    def __init__(self, coin_flips: str|None = None):
         super().__init__()
-        self.coin_flips = coin_flips
+        self.coin_flips str|None = coin_flips
 
     def run(self):
-        mnemonic = self.controller.jar.pending_mnemonic
-        mnemonic_length = len(mnemonic)
-        wordlist_language_code = self.settings.get_value(SettingsConstants.SETTING__MONERO_WORDLIST_LANGUAGE)
-        wordlist = Seed.get_wordlist(wordlist_language_code)
-
-        final_mnemonic = MoneroSeed(MoneroSeed(' '.join(self.controller.jar.pending_mnemonic[:(mnemonic_length - 1)])).hex).phrase.split(' ')
-        self.controller.jar.update_pending_mnemonic(final_mnemonic[-1], mnemonic_length - 1)
+        pending_seed: PendingSeed = self.controller.pending_seed
+        pending_seed.mnemonic = pending_seed.seed(
+                without_checksum=True
+            ).phrase(
+                self.settings.get_value(
+                    Setting.MONERO_WORDLIST_LANGUAGE
+                )
+            ).insecure()
         return Destination(ToolsCalcFinalWordDoneView)
 
 
 class ToolsCalcFinalWordDoneView(View):
 
     def run(self):
-        mnemonic = self.controller.jar.pending_mnemonic
-        mnemonic_word_length = len(mnemonic)
-        final_word = mnemonic[-1]
+        pending_seed = self.controller.pending_seed
+        pending_seed.network = self.settings.get_value(Setting.NETWORKS)[0]
+        seed: Seed = pending_seed.seed()
         LOAD = ButtonData('Load seed')
         DISCARD = ButtonData.DISCARD
         button_data = [LOAD, DISCARD]
         selected_menu_num = ToolsCalcFinalWordDoneScreen(
-            final_word=final_word,
-            mnemonic_word_length=mnemonic_word_length,
-            fingerprint=self.controller.jar.get_pending_mnemonic_fingerprint(self.settings.get_value(SettingsConstants.SETTING__NETWORKS)[0]),  # TODO: 2024-06-26, solve multi network issue
+            final_word=pending_seed.get(-1),
+            mnemonic_word_length=pending_seed.length,
+            fingerprint=seed.fingerprint,
             button_data=button_data,
         ).display()
         if selected_menu_num == RET_CODE__BACK_BUTTON:
             return Destination(BackStackView)
-        self.controller.jar.convert_pending_mnemonic_to_pending_seed()
         if button_data[selected_menu_num] == LOAD:
             return Destination(SeedFinalizeView)
         if button_data[selected_menu_num] == DISCARD:
@@ -391,13 +378,11 @@ class ToolsAddressExplorerSelectSourceView(View):
     TYPE_POLYSEED = ("Enter Polyseed", FontAwesomeIconConstants.KEYBOARD)
 
     def run(self):
-        seeds = self.controller.jar.seeds
-        button_data = []
-        for seed in seeds:
-            button_str = seed.fingerprint
-            button_data.append((button_str, IconConstants.FINGERPRINT))
+        button_data = [
+            (seed.fingerprint, IconConstants.FINGERPRINT)
+            for seed in SeedJar.seeds
+        ]
         button_data = button_data + [self.SCAN_SEED, self.SCAN_WALLET, self.TYPE_13WORD, self.TYPE_25WORD, self.TYPE_POLYSEED]
-        
         selected_menu_num = self.run_screen(
             ButtonListScreen,
             title="Address Explorer",
@@ -411,17 +396,18 @@ class ToolsAddressExplorerSelectSourceView(View):
 
         # Most of the options require us to go through a side flow(s) before we can
         # continue to the address explorer. Set the Controller-level flow so that it
-        # knows to re-route us once the side flow is complete.        
-        self.controller.resume_main_flow = Controller.FLOW__ADDRESS_EXPLORER
+        # knows to re-route us once the side flow is complete.
+        self.controller.resume_main_flow = Flow.ADDRESS_EXPLORER
 
-        if len(seeds) > 0 and selected_menu_num < len(seeds):
+        if SeedJar.count() > 0 and selected_menu_num < SeedJar.count():
             # User selected one of the n seeds
             return Destination(
-                SeedExportXpubScriptTypeView,
-                view_args=dict(
-                    seed_num=selected_menu_num,
-                    sig_type=SettingsConstants.SINGLE_SIG,
-                )
+                # SeedExportXpubScriptTypeView,  # TODO: Address Explorer View
+                view_args={
+                    'seed': SeedJar.forFingerprint(
+                        button_data[selected_menu_num]
+                    ),
+                }
             )
         if button_data[selected_menu_num] == self.SCAN_SEED:
             from xmrsigner.views.scan_views import ScanSeedQRView
@@ -431,13 +417,13 @@ class ToolsAddressExplorerSelectSourceView(View):
             return Destination(ScanWalletDescriptorView)
         if button_data[selected_menu_num] in [self.TYPE_13WORD, self.TYPE_25WORD]:
             from xmrsigner.views.seed_views import SeedMnemonicEntryView
-            if button_data[selected_menu_num] == self.TYPE_13WORD:
-                self.controller.jar.init_pending_mnemonic(num_words=13)
-            else:
-                self.controller.jar.init_pending_mnemonic(num_words=25)
+            self.controller.pending_seed = PendingSeed(
+                isLegacy=button_data[selected_menu_num] == self.TYPE_13WORD
+            )
             return Destination(SeedMnemonicEntryView)
         if button_data[selected_menu_num] == self.TYPE_POLYSEED:
             from xmrsigner.views.seed_views import PolyseedMnemonicEntryView
+            self.controller.pending_seed = PendingSeed(seed_type=SeedType.POLYSEED)
             return Destination(PolyseedMnemonicEntryView)
 
 
@@ -446,7 +432,7 @@ class ToolsAddressExplorerAddressTypeView(View):  # TODO: 2024-06-17, holy clust
     RECEIVE = "Receive Addresses"
     CHANGE = "Change Addresses"
 
-    def __init__(self, seed_num: int = None, script_type: str = None, custom_derivation: str = None):
+    def __init__(self, seed: Seed, script_type: str|None = None, custom_derivation: str|None = None):
         """
         If the explorer source is a seed, `seed_num` and `script_type` must be
         specified. `custom_derivation` can be specified as needed.
@@ -455,20 +441,13 @@ class ToolsAddressExplorerAddressTypeView(View):  # TODO: 2024-06-17, holy clust
         `script_type`, and `custom_derivation` should be `None`.
         """
         super().__init__()
-        self.seed_num = seed_num
-        network = self.settings.get_value(SettingsConstants.SETTING__NETWORKS)[0]  # TODO: 2024-06-26, solve multi network issue
+        self.seed: Seed = seed
 
         # Store everything in the Controller's `address_explorer_data` so we don't have
         # to keep passing vals around from View to View and recalculating.
         data = {
-            'seed_num': seed_num,
-            'network': self.settings.get_value(SettingsConstants.SETTING__NETWORKS)[0]  # TODO: 2024-06-26, solve multi network issue
+            'seed': seed,
         }
-        if self.seed_num is not None:
-            self.seed = self.controller.jar.seeds[seed_num]
-            data["seed_num"] = self.seed
-        else:
-            data["wallet_descriptor"] = self.controller.multisig_wallet_descriptor
         self.controller.address_explorer_data = data
 
     def run(self):
@@ -483,13 +462,13 @@ class ToolsAddressExplorerAddressTypeView(View):  # TODO: 2024-06-17, holy clust
         selected_menu_num = self.run_screen(
             ToolsAddressExplorerAddressTypeScreen,
             button_data=button_data,
-            fingerprint=self.seed.fingerprint if self.seed_num is not None else None,
+            fingerprint=self.seed.fingerprint,
             wallet_descriptor_display_name=wallet_descriptor_display_name
         )
 
         if selected_menu_num == RET_CODE__BACK_BUTTON:
             # If we entered this flow via an already-loaded seed's SeedOptionsView, we
-            # need to clear the `resume_main_flow` so that we don't get stuck in a 
+            # need to clear the `resume_main_flow` so that we don't get stuck in a
             # SeedOptionsView redirect loop.
             # TODO: Refactor to a cleaner `BackStack.get_previous_View_cls()`
             if len(self.controller.back_stack) > 1 and self.controller.back_stack[-2].View_cls == SeedOptionsView:
@@ -497,7 +476,7 @@ class ToolsAddressExplorerAddressTypeView(View):  # TODO: 2024-06-17, holy clust
                 self.controller.resume_main_flow = None
                 self.controller.address_explorer_data = None
             return Destination(BackStackView)
-        
+
         if button_data[selected_menu_num] in [self.RECEIVE, self.CHANGE]:
             return Destination(ToolsAddressExplorerAddressListView, view_args=dict(is_change=button_data[selected_menu_num] == self.CHANGE))
 
@@ -538,7 +517,7 @@ class ToolsAddressExplorerAddressListView(View):
 
                 if "xpub" in data:
                     # Single sig explore from seed
-                    if "script_type" in data and data["script_type"] != SettingsConstants.CUSTOM_DERIVATION:
+                    if "script_type" in data and data["script_type"] != 'DOES_NOT_MATTER':
                         # Standard derivation path
                         for i in range(self.start_index, self.start_index + addrs_per_screen):
                             address = embit_utils.get_single_sig_address(xpub=data["xpub"], script_type=data["script_type"], index=i, is_change=self.is_change, embit_network=data["embit_network"])
@@ -547,7 +526,7 @@ class ToolsAddressExplorerAddressListView(View):
                     else:
                         # TODO: Custom derivation path
                         raise Exception("Custom Derivation address explorer not yet implemented")
-                
+
                 elif "wallet_descriptor" in data:
                     descriptor: Descriptor = data["wallet_descriptor"]
                     if descriptor.is_basic_multisig:
@@ -591,11 +570,11 @@ class ToolsAddressExplorerAddressListView(View):
 
         if selected_menu_num == RET_CODE__BACK_BUTTON:
             return Destination(BackStackView)
-        
+
         if selected_menu_num == len(addresses):
             # User clicked NEXT
             return Destination(ToolsAddressExplorerAddressListView, view_args=dict(is_change=self.is_change, start_index=self.start_index + addrs_per_screen))
-        
+
         # Preserve the list's current scroll so we can return to the same spot
         initial_scroll = self.screen.buttons[0].scroll_y
 
@@ -621,14 +600,13 @@ class ToolsAddressExplorerAddressView(View):
         self.is_change = is_change
         self.start_index = start_index
         self.parent_initial_scroll = parent_initial_scroll
-    
+
     def run(self):
         from xmrsigner.gui.screens.screen import QRDisplayScreen
         self.run_screen(
             QRDisplayScreen,
             qr_encoder=MoneroAddressEncoder(self.address),
         )
-    
         # Exiting/Cancelling the QR display screen always returns to the list
         return Destination(
             ToolsAddressExplorerAddressListView,

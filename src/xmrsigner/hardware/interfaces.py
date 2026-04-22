@@ -1,6 +1,5 @@
 from PIL.Image import Image
 from numpy import array as NumpyArray
-from typing import Tuple, Union
 
 from xmrsigner.models.singleton import Singleton
 
@@ -13,19 +12,19 @@ class CameraInterface(Singleton):
 
     def start_video_stream_mode(
         self,
-        resolution: Tuple[int, int] = (512, 384),
+        resolution: tuple[int, int] = (512, 384),
         framerate: int = 12,
         format: str = 'bgr'
     ) -> None:
         pass
 
-    def read_video_stream(self, as_image: bool = False) -> Union[Image, NumpyArray]:
+    def read_video_stream(self, as_image: bool = False) -> Image|NumpyArray:
         pass
 
     def stop_video_stream_mode(self) -> None:
         pass
 
-    def start_single_frame_mode(self, resolution: Tuple[int, int] = (720, 480)) -> None:
+    def start_single_frame_mode(self, resolution: tuple[int, int] = (720, 480)) -> None:
         pass
 
     def capture_frame(self) -> Image:
@@ -39,7 +38,7 @@ class PiVideoStreamInterface:
 
     def __init__(
             self,
-            resolution: Tuple[int, int] = (320, 240),
+            resolution: tuple[int, int] = (320, 240),
             framerate: int = 32,
             format: str = 'bgr',
             **kwargs

@@ -7,6 +7,7 @@ from xmrsigner.models.settings_definition import (
     Type,
     Option,
     Network,
+    CameraRotation,
     SettingsConstants,
     SettingsDefinition,
     MicroSdAction

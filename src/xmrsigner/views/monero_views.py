@@ -2,7 +2,7 @@ from ots.enums import SeedType
 from ots.seed import Seed
 from ots.seed_jar import SeedJar
 from ots.transaction import (
-    Transaction,
+    TransferDescription,
     TxDescription
 )
 
@@ -136,7 +136,7 @@ class OverviewView(View):
             selected_menu_num = WarningScreen(
                 status_headline='No valid Transaction',
                 text="This Transaction seems to be invalid.",
-                button_data=[ButtonData.CONTINUE],
+                button_data=[ButtonData.CONTINUE()],
             ).display()
             return Destination(MainMenuView)
         self.controller.tx_description = txd
@@ -165,7 +165,7 @@ class NoChangeWarningView(View):
         selected_menu_num = WarningScreen(
             status_headline="Full Spend!",
             text="This Transaction spends its entire input value. No change is coming back to your wallet.",
-            button_data=[ButtonData.CONTINUE],
+            button_data=[ButtonData.CONTINUE()],
         ).display()
 
         if selected_menu_num == RET_CODE__BACK_BUTTON:
@@ -229,7 +229,7 @@ class TxAddressDetailsView(View):
         if self.address_num < len(txd.recipients) - 1:
             button_data = [ButtonData('Next Recipient')]
         else:
-            button_data = [ButtonData.NEXT]
+            button_data = [ButtonData.NEXT()]
         print(txd.recipients)
         print(f'self.address_num: {self.address_num}')
         print(txd.recipients[self.address_num])
@@ -255,7 +255,7 @@ class TxAddressDetailsView(View):
 
 class TxChangeDetailsView(View):
 
-    NEXT = ButtonData.NEXT
+    NEXT = ButtonData.NEXT()
 
     def __init__(self, change_address_num):
         super().__init__()
@@ -334,8 +334,6 @@ class FinalizeView(View):
         if not self.controller.tx_description:
             # Should not be able to get here
             return Destination(MainMenuView)
-        tx_description: TxDescription = self.controller.tx_description
-        transaction: Transaction = self.controller.transaction
         selected_menu_num = self.run_screen(
             TxFinalizeScreen,
             button_data=[self.APPROVE_TX]

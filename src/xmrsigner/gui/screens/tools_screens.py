@@ -306,7 +306,7 @@ class ToolsCalcFinalWordScreen(ButtonListScreen):
         ))
         # And now the *actual* final word after merging the bit data
         self.components.append(TextArea(
-            text=f'Final Word: '{self.actual_final_word}'',
+            text=f"Final Word: '{self.actual_final_word}'",
             screen_y=self.components[-1].screen_y + self.components[-1].height + 2*GUIConstants.COMPONENT_PADDING,
             height_ignores_below_baseline=True,  # Keep the next line (bits display) snugged up, regardless of text rendering below the baseline
         ))

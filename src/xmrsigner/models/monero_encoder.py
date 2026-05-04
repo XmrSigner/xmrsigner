@@ -1,4 +1,5 @@
 from ots.seed import Seed
+from ots.address import Address
 
 from xmrsigner.models.base_encoder import BaseStaticQrEncoder
 from xmrsigner.models.ur_encoder import UrQrEncoder
@@ -14,7 +15,7 @@ from xmrsigner.models.settings_definition import QrDensity
 
 class MoneroAddressEncoder(BaseStaticQrEncoder):
 
-    def __init__(self, address: str|Address:
+    def __init__(self, address: str|Address):
         super().__init__()
         self.address: str = address if type(address) == str else address.base58
 

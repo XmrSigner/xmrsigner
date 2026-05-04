@@ -1,11 +1,12 @@
 from ots.enums import Network, SeedType
+from ots.seed import Seed, MoneroSeed, LegacySeed, Polyseed
 
 
 class PendingSeed:
 
     def __init__(
         self,
-        mnemonic: list[str] = []
+        mnemonic: list[str] = [],
         type: SeedType = SeedType.MONERO,
         network: Network = Network.MAIN,
         password: str = '',  # key encryption password for Polyseed
@@ -15,7 +16,9 @@ class PendingSeed:
     ):
         self._mnemonic: list[str|None] = mnemonic
         self.type: SeedType = type
-        self.network: Network = network,
+        self.network: Network = network
+        self.password: str = password
+        self.passphrase: str = passphrase
         self.height: int = height
         self.isLegacy: bool = isLegacy
         self._mnemonic += [None] * (self.length_expected - self.length)
@@ -90,6 +93,12 @@ class PendingSeed:
         self,
         without_checksum: bool = False
     ) -> Seed:
+        print(f'''
+mnemonic: {' '.join(self._mnemonic)}
+length: {self.length}
+mising: {self.missing}
+type: {self.type}
+        ''')
         if (
             (self.missing > 0
              and not (
@@ -97,7 +106,10 @@ class PendingSeed:
                  and self.type == SeedType.MONERO
                  )
              )
-            or (self.missing > 1 or self._mnemonic[-1] is not None)
+            or (self.missing > 1
+                and not without_checksum
+                and self.type == SeedType.MONERO
+            )
         ):
             raise Exception('Missing words in mnemonic')
         if self.type == SeedType.POLYSEED:

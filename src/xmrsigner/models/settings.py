@@ -8,8 +8,10 @@ from xmrsigner.models.settings_definition import (
     Option,
     Network,
     CameraRotation,
+    Visibility,
     SettingsConstants,
     SettingsDefinition,
+    SelectionOption,
     MicroSdAction
 )
 from xmrsigner.models.singleton import Singleton
@@ -67,7 +69,7 @@ class Settings(Singleton):
             # Parse multi-value settings; integer-ize where needed
             values = [
                 int(v) if v.isdigit() else v
-                for v in value.split(',') if settings_entry.type == Type.MULTISELECT else [value]
+                for v in (value.split(',') if settings_entry.type == Type.MULTISELECT else [value])
             ]
             options = {opt.config_value: opt for opt in settings_entry.selection_options}
             if settings_entry.attr == Setting.PERSISTENT_SETTINGS:

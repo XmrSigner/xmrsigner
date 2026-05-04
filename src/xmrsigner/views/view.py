@@ -14,7 +14,10 @@ from xmrsigner.models.settings import (
     Settings,
     Setting
 )
-from xmrsigner.models.settings_definition import SettingsDefinition
+from xmrsigner.models.settings_definition import (
+    SettingsDefinition,
+    SettingsEntry
+)
 from xmrsigner.models.threads import BaseThread
 
 
@@ -161,7 +164,7 @@ class Destination:
         """
             Equality test IGNORES the skip_current_view and clear_history options
         """
-        return (isinstance(obj, Destination) and 
+        return (isinstance(obj, Destination) and
             obj.View_cls == self.View_cls and
             obj.view_args == self.view_args)
 
@@ -177,11 +180,10 @@ class MainMenuView(View):
     SCAN = ("Scan", IconConstants.SCAN)
     SEEDS = ("Seeds", IconConstants.SEEDS)
     TOOLS = ("Tools", IconConstants.TOOLS)
-    WALLET = ("Wallet", FontAwesomeIconConstants.WALLET)
 
     def run(self):
         from xmrsigner.gui.screens.screen import MainMenuScreen
-        button_data = [self.SCAN, self.SEEDS, self.TOOLS, self.WALLET]
+        button_data = [self.SCAN, self.SEEDS, self.TOOLS]
         selected_menu_num = self.run_screen(
             MainMenuScreen,
             title="Home",
@@ -191,22 +193,15 @@ class MainMenuView(View):
         if selected_menu_num == RET_CODE__SETTINGS_BUTTON:
             from xmrsigner.views.settings_views import SettingsMenuView
             return Destination(SettingsMenuView)
-
         if button_data[selected_menu_num] == self.SCAN:
             from xmrsigner.views.scan_views import ScanView
             return Destination(ScanView)
-        
-        elif button_data[selected_menu_num] == self.SEEDS:
+        if button_data[selected_menu_num] == self.SEEDS:
             from xmrsigner.views.seed_views import SeedsMenuView
             return Destination(SeedsMenuView)
-
-        elif button_data[selected_menu_num] == self.TOOLS:
+        if button_data[selected_menu_num] == self.TOOLS:
             from xmrsigner.views.tools_views import ToolsMenuView
             return Destination(ToolsMenuView)
-
-        elif button_data[selected_menu_num] == self.WALLET:
-            from xmrsigner.views.wallet_views import WalletMenuView
-            return Destination(WalletMenuView)
 
 
 @dataclass

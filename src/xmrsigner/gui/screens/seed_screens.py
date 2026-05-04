@@ -48,8 +48,8 @@ from xmrsigner.hardware.buttons import (
 
 @dataclass
 class SeedMnemonicEntryScreen(BaseTopNavScreen):
-    initial_letters: list[str]
-    wordlist: list[str]
+    initial_letters: list[str]|None = None
+    wordlist: list[str]|None = None
 
     def __post_init__(self):
         super().__post_init__()
@@ -970,7 +970,7 @@ class SeedReviewPassphraseScreen(ButtonListScreen):
 @dataclass
 class SeedTranscribeSeedQRFormatScreen(ButtonListScreen):
 
-    seed: Seed
+    seed: Seed|None = None
 
     def __post_init__(self):
         self.is_bottom_list = True

@@ -1,4 +1,4 @@
-from ots.enums import AddressType
+from ots.enums import AddressType, Network
 from ots.address import Address, AddressString
 from ots.seed import MoneroSeed, Polyseed, LegacySeed, Seed
 

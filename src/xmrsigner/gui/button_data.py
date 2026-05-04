@@ -103,42 +103,34 @@ class ButtonData:
         return out
 
     @classmethod
-    @property
     def DONE(cls) -> 'ButtonData':
         return cls('Done')
 
     @classmethod
-    @property
     def NEXT(cls) -> 'ButtonData':
         return cls('Next')
 
     @classmethod
-    @property
     def PREVIOUS(cls) -> 'ButtonData':
         return cls('Previous')
 
     @classmethod
-    @property
     def OK(cls) -> 'ButtonData':
         return cls('OK')
 
     @classmethod
-    @property
     def BACK(cls) -> 'ButtonData':
         return cls('Back')
 
     @classmethod
-    @property
     def CONTINUE(cls) -> 'ButtonData':
         return cls('Continue')
 
     @classmethod
-    @property
     def HOME(cls) -> 'ButtonData':
         return cls('Home')
 
     @classmethod
-    @property
     def DISCARD(cls) -> 'ButtonData':
         return cls('Discard').with_label_color(GUIConstants.RED)
 

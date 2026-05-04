@@ -14,7 +14,7 @@ class UrQrEncoder(BaseQrEncoder):
         qr_ur_bytes = UR(self.ur_type, self.ur_payload)
         self.qr_max_fragment_size = {
             QrDensity.LOW: 10,
-            QrDensity.MEDIUM: 30
+            QrDensity.MEDIUM: 30,
             QrDensity.HIGH: 120
         }[qr_density]
         self.ur2_encode = UREncoder(ur=qr_ur_bytes, max_fragment_len=self.qr_max_fragment_size)

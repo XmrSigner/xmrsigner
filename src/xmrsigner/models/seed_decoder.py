@@ -10,7 +10,7 @@ from xmrsigner.models.base_decoder import BaseSingleFrameQrDecoder, DecodeQRStat
 from xmrsigner.models.qr_type import QrType
 from xmrsigner.helpers.seedwordindex import SeedWordIndex  # TODO: remove!
 from xmrsigner.helpers.compactseed import CompactSeed
-from xmrsigner.helpers.wordlists import words
+from xmrsigner.models.wordlists import words
 
 
 class SeedQrDecoder(BaseSingleFrameQrDecoder):
@@ -37,7 +37,7 @@ class SeedQrDecoder(BaseSingleFrameQrDecoder):
                     return DecodeQRStatus.INVALID
                 wordlist = words(SeedType.POLYSEED if num_words == 16 else SeedType.MONERO, SeedLanguage.fromCode('en'))
                 seed_words = SeedWordIndex(wordlist).from_indices_string(segment)
-                self.seed_phrase = MoneroSeed.decode(' '.join(seed_words).phrase(SeedLanguage.fromCode('en')).insecure().split() if len(seed_words) in (12, 24) else seed_words  # if there are only 12/24 words the checksum word is missing and we add it
+                self.seed_phrase = MoneroSeed.decode(' '.join(seed_words).phrase(SeedLanguage.fromCode('en')).insecure().split()) if len(seed_words) in (12, 24) else seed_words  # if there are only 12/24 words the checksum word is missing and we add it
                 if self.is_validphrase_word_count():
                     self.complete = True
                     self.collected_segments = 1

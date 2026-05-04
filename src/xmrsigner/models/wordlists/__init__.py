@@ -1,5 +1,5 @@
 from ots.enums import SeedType
-from ots.seed import SeedLanguage
+from ots.seed_language import SeedLanguage
 
 from .wordlist import Wordlist
 from .monero.monero import MoneroWordlist
@@ -150,5 +150,5 @@ def wordlist(seed_type: SeedType, code: str) -> Wordlist:
         return polyseed(code)
     raise Exception(f'Undefined SeedType: {seed_type}!')
 
-def words(seed_type: SeedType, language: SeedLanguage) -> list[str]:
-    return wordlist(seed_type, language.code).words
+def words(seed_type: SeedType, language: SeedLanguage|str) -> list[str]:
+    return wordlist(seed_type, language.code if isinstance(language, SeedLanguage) else language).words

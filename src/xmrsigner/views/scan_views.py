@@ -37,7 +37,7 @@ class ScanView(View):
         # Define the decoder here to make it available to child classes' is_valid_qr_type
         # checks and so we can inject data into it in the test suite's `before_run()`.
         self.wordlist_language = self.settings.get_value(Setting.MONERO_WORDLIST_LANGUAGE)  # TODO: 2024-08-08, not sure if this is a good idea, refactor one day
-        self.decoder: DecodeQR = DecodeQR(wordlist_language_code=self.wordlist_language)
+        self.decoder: DecodeQR = DecodeQR(wordlist_language=self.wordlist_language)
 
 
     @property

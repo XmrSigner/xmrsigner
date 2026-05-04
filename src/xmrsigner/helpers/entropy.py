@@ -1,6 +1,7 @@
 from hashlib import sha256
 from os import popen
 from time import time
+from math import ceil
 from PIL.Image import Image
 
 
@@ -72,7 +73,7 @@ class DiceEntropy(VerifyableEntropy):
             raise ValueError('Not enough input entropy for the desired output entropy')
         if type(dices) != str:
             dices = ''.join([str(dice) for dice in dices])
-        self.hash_bytes = self.sha256_chain(dices.encode())
+        self.hash_bytes = self.sha256_chain(dices.encode())[:ceil(target_entropy/8)]
 
     def __bytes__(self) -> bytes:
         return self.hash_bytes

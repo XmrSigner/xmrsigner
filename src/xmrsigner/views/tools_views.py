@@ -34,8 +34,12 @@ from xmrsigner.helpers.entropy import (
     CameraEntropy,
     DiceEntropy
 )
-from xmrsigner.models.wordlist import words
-from xmrsigner.models.settings_definition import Setting
+from xmrsigner.models.pending_seed import PendingSeed
+from xmrsigner.models.wordlists import words
+from xmrsigner.models.settings_definition import (
+    Setting,
+    Option
+)
 from xmrsigner.models.monero_encoder import MoneroAddressEncoder
 from xmrsigner.views.seed_views import (
     SeedDiscardView,
@@ -222,7 +226,7 @@ class ToolsDiceEntropyEntryView(View):
         seed = MoneroSeed.create(bytes(DiceEntropy(ret, 256)))
         self.controller.pending_seed = PendingSeed(
             seed.phrase(
-                self.settings.get_value(Setting.MONERO_WORDLIST_LANGUAGE)
+                SeedLanguage.fromCode(self.settings.get_value(Setting.MONERO_WORDLIST_LANGUAGE).value)
             ).insecure().split()
         )
         # Cannot return BACK to this View
@@ -236,17 +240,22 @@ class ToolsDicePolyseedView(View):
 
     def run(self):
         ret = ToolsDiceEntropyEntryScreen(
-            return_after_n_chars=100,  # 256bit
+            return_after_n_chars=59,  # 152bit
         ).display()
         if ret == RET_CODE__BACK_BUTTON:
             return Destination(BackStackView)
         print(f"Dice rolls: {ret}")
+        print(f'entropy bytes: {len(bytes(DiceEntropy(ret, 152)))}')
         seed = Polyseed.create(
-            bytes(DiceEntropy(ret)),
+            bytes(DiceEntropy(ret, 152)),
             time=0,  # TODO: add current timestamp
             passphrase = ''  # TODO: add passphrase if desired
         )
-        dice_seed_phrase = seed.phrase(self.settings.get_value(Setting.POLYSEED_WORDLIST_LANGUAGE)).insecure()
+        dice_seed_phrase = seed.phrase(
+            SeedLanguage.fromCode(
+                self.settings.get_value(Setting.POLYSEED_WORDLIST_LANGUAGE).value
+            ),
+        ).insecure()
         print(f"""Mnemonic: "{dice_seed_phrase}" """)
         # Add the mnemonic as an in-memory Seed
         self.controller.pending_seed = PendingSeed(dice_seed_phrase.split(), type=SeedType.POLYSEED)
@@ -329,7 +338,7 @@ class ToolsCalcFinalWordShowFinalWordView(View):  # TODO: 2024-06-04, rename, be
 
     def __init__(self, coin_flips: str|None = None):
         super().__init__()
-        self.coin_flips str|None = coin_flips
+        self.coin_flips: str|None = coin_flips
 
     def run(self):
         pending_seed: PendingSeed = self.controller.pending_seed
@@ -350,7 +359,7 @@ class ToolsCalcFinalWordDoneView(View):
         pending_seed.network = self.settings.get_value(Setting.NETWORKS)[0]
         seed: Seed = pending_seed.seed()
         LOAD = ButtonData('Load seed')
-        DISCARD = ButtonData.DISCARD
+        DISCARD = ButtonData.DISCARD()
         button_data = [LOAD, DISCARD]
         selected_menu_num = ToolsCalcFinalWordDoneScreen(
             final_word=pending_seed.get(-1),

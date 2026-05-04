@@ -314,7 +314,7 @@ class SettingsQRConfirmationScreen(ButtonListScreen):
 
     def __post_init__(self):
         # Customize defaults
-        self.button_data = [ButtonData.HOME]
+        self.button_data = [ButtonData.HOME()]
         self.show_back_button = False
         super().__post_init__()
 

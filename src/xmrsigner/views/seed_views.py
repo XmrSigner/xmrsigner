@@ -12,7 +12,10 @@ from xmrsigner.gui.components import (
     FontAwesomeIconConstants,
     IconConstants
 )
-from xmrsigner.gui.button_data import ButtonData, FingerprintButtonData
+from xmrsigner.gui.button_data import (
+    ButtonData,
+    FingerprintButtonData
+)
 from xmrsigner.gui.screens import (
     RET_CODE__BACK_BUTTON,
     ButtonListScreen,
@@ -29,14 +32,17 @@ from xmrsigner.models.decode_qr import DecodeQR
 from xmrsigner.models.seed_encoder import SeedQrEncoder, CompactSeedQrEncoder
 from xmrsigner.models.qr_type import QrType
 from xmrsigner.models.pending_seed import PendingSeed
-from xmrsigner.models.settings import Settings, Setting
+from xmrsigner.models.settings import (
+    Settings,
+    Setting,
+    Option
+)
 from xmrsigner.models.settings_definition import Network as NetworkChoice
 from xmrsigner.models.threads import BaseThread, ThreadsafeCounter
 from xmrsigner.models.wordlists import words
 from xmrsigner.views.wallet_views import (
     WalletViewKeyQRView,
     WalletViewKeyJsonQRView,
-    LoadWalletView,
     ImportOutputsView,
     ExportKeyImagesView
 )
@@ -145,7 +151,7 @@ class SeedMnemonicEntryView(View):
             seed_screens.SeedMnemonicEntryScreen,
             title=f'Seed Word #{self.cur_word_index + 1}',  # Human-readable 1-indexing!
             initial_letters=list(self.cur_word) if self.cur_word else ['a'],
-            wordlist=words(SeedType.MONERO, self.settings.get_value(Setting.MONERO_WORDLIST_LANGUAGE)),
+            wordlist=words(SeedType.MONERO, self.settings.get_value(Setting.MONERO_WORDLIST_LANGUAGE).value),
         )
         if ret == RET_CODE__BACK_BUTTON:
             if self.cur_word_index > 0:
@@ -217,7 +223,7 @@ class PolyseedMnemonicEntryView(SeedMnemonicEntryView):
 class SeedMnemonicInvalidView(View):
 
     EDIT = ButtonData('Review & Edit')
-    DISCARD = ButtonData.DISCARD
+    DISCARD = ButtonData.DISCARD()
 
     def __init__(self):
         super().__init__()
@@ -354,7 +360,7 @@ class SeedReviewPassphraseView(View):
 class SeedDiscardView(View):
 
     KEEP = ButtonData('Keep Seed')
-    DISCARD = ButtonData.DISCARD
+    DISCARD = ButtonData.DISCARD()
 
     def __init__(self, seed: Seed|None = None):
         super().__init__()
@@ -397,7 +403,7 @@ class SeedOptionsView(View):
     VIEW_ONLY_WALLET_JSON = ButtonData('View only Wallet (json)').with_icon(IconConstants.QRCODE)
     BACKUP = ButtonData('Backup Seed').with_icon(FontAwesomeIconConstants.VAULT).with_right_icon(IconConstants.CHEVRON_RIGHT)
     CONVERT_POOLYSEED = ButtonData('To Monero seed').with_icon(IconConstants.CHEVRON_RIGHT)
-    DISCARD = ButtonData.DISCARD.with_icon(FontAwesomeIconConstants.TRASH_CAN).with_icon_color(GUIConstants.RED)
+    DISCARD = ButtonData.DISCARD().with_icon(FontAwesomeIconConstants.TRASH_CAN).with_icon_color(GUIConstants.RED)
 
     def __init__(self, seed: Seed):
         super().__init__()
@@ -524,9 +530,9 @@ class SeedWordsView(View):
 
     def __init__(self, seed: Seed|None, passphrase: str|None = None, page_index: int = 0):
         super().__init__()
-        self.seed: Seed|None = self.seed = self.controller.pending_seed.seed() if seed is None else seed
+        self.seed: Seed|None = self.controller.pending_seed.seed() if seed is None else seed
         self.pending_seed = self.controller.pending_seed
-        wordlist_language: Language = self.settings.get_value(Setting.MONERO_WORDLIST_LANGUAGE if self.seed.type != SeedType.POLYSEED else Setting.POLYSEED_WORDLIST_LANGUAGE)
+        self.wordlist_language: Language = self.settings.get_value(Setting.MONERO_WORDLIST_LANGUAGE if self.seed.type != SeedType.POLYSEED else Setting.POLYSEED_WORDLIST_LANGUAGE)
         self.passphrase: str = passphrase or ''
         if self.passphrase == '' and self.seed.type == SeedType.POLYSEED and self.pending_seed.password != '':
             self.passphrase = self.pending_seed.password
@@ -535,11 +541,14 @@ class SeedWordsView(View):
         self.num_pages=int(ceil(seed_word_count/4))
 
     def run(self):
-        NEXT = ButtonData.NEXT
-        DONE = ButtonData.DONE
+        NEXT = ButtonData.NEXT()
+        DONE = ButtonData.DONE()
         # Slice the mnemonic to our current 4-word section
         words_per_page = 4
-        mnemonic = self.seed.phrase(wordlist_language, self.passphrase).insecure().split()
+        mnemonic = self.seed.phrase(
+            SeedLanguage.fromCode(self.wordlist_language.value),
+            self.passphrase
+        ).insecure().split()
         words = mnemonic[self.page_index * words_per_page:(self.page_index + 1) * words_per_page]
         button_data = []
         if self.page_index < self.num_pages - 1 or self.seed is None:
@@ -558,11 +567,19 @@ class SeedWordsView(View):
             return Destination(BackStackView)
         if button_data[selected_menu_num] == NEXT:
             if self.seed is None and self.page_index == self.num_pages - 1:
-                return Destination(SeedWordsBackupTestPromptView, view_args={'seed': self.seed})
+                return Destination(SeedWordsBackupTestPromptView, view_args={
+                    'seed': self.seed,
+                    'password': self.controller.pending_seed.password,
+                    'passphrase': self.controller.pending_seed.passphrase
+                })
             return Destination(SeedWordsView, view_args={'seed': self.seed, 'page_index': self.page_index + 1})
         if button_data[selected_menu_num] == DONE:
             # Must clear history to avoid BACK button returning to private info
-            return Destination(SeedWordsBackupTestPromptView, view_args={'seed': self.seed})
+            return Destination(SeedWordsBackupTestPromptView, view_args={
+                'seed': self.seed,
+                'password': self.controller.pending_seed.password,
+                'passphrase': self.controller.pending_seed.passphrase
+            })
 
 
 """****************************************************************************
@@ -570,9 +587,16 @@ class SeedWordsView(View):
 ****************************************************************************"""
 class SeedWordsBackupTestPromptView(View):
 
-    def __init__(self, seed: Seed):
+    def __init__(
+        self,
+        seed: Seed,
+        password: str = '',
+        passphrase: str = ''
+    ):
         super().__init__()
         self.seed: Seed = seed
+        self.password: str = password
+        self.passphrase: str = passphrase
 
     def run(self):
         VERIFY = ButtonData('Verify')
@@ -582,24 +606,39 @@ class SeedWordsBackupTestPromptView(View):
             button_data=button_data,
         ).display()
         if button_data[selected_menu_num] == VERIFY:
-            return Destination(SeedWordsBackupTestView, view_args=dict(seed=self.seed))
+            return Destination(SeedWordsBackupTestView, view_args={
+                'seed': self.seed
+            })
         if button_data[selected_menu_num] == SKIP:
             if self.seed is not None:
-                return Destination(SeedOptionsView, view_args=dict(seed=self.seed))
+                return Destination(SeedOptionsView, view_args={
+                    'seed': self.seed
+                })
             return Destination(SeedFinalizeView)
 
 
 class SeedWordsBackupTestView(View):
 
-    def __init__(self, seed: Seed|None, confirmed_list: list[bool] = None, cur_index: int = None):
+    def __init__(
+            self,
+            seed: Seed|None,
+            confirmed_list: list[bool]|None = None,
+            cur_index: int = None,
+            password: str = '',
+            passphrase: str = ''
+    ):
         super().__init__()
-        self.seed = seed
-        if self.seed is None:  # TODO: fix
-            self.seed = self.controller.jar.get_pending_seed()
-        self.mnemonic_list = self.seed.mnemonic_display_list
-        self.confirmed_list = confirmed_list
-        if not self.confirmed_list:
-            self.confirmed_list = []
+        self.seed: Seed|None = seed
+        self.password: str = password
+        self.passphrase: str = passphrase
+        if self.seed is None:
+            self.seed = self.controller.pending_seed.seed()
+        self.wordlist_language: Language = self.settings.get_value(Setting.MONERO_WORDLIST_LANGUAGE if self.seed.type != SeedType.POLYSEED else Setting.POLYSEED_WORDLIST_LANGUAGE)
+        self.mnemonic_list: list[str] = self.seed.phrase(
+            SeedLanguage.fromCode(self.wordlist_language.value),
+            self.password if self.seed.type == SeedType.POLYSEED else self.passphrase
+        ).insecure().split()
+        self.confirmed_list = confirmed_list or []
         self.cur_index = cur_index
 
     def run(self):
@@ -610,7 +649,10 @@ class SeedWordsBackupTestView(View):
         real_word = self.mnemonic_list[self.cur_index]
         button_data = [real_word]
         while len(button_data) < 4:
-            new_word = choice(self.seed.get_wordlist(self.seed.wordlist_language_code))
+            new_word = choice(words(
+                self.seed.type,
+                SeedLanguage.fromCode(self.wordlist_language.value)
+            ))
             if new_word not in button_data:
                 button_data.append(new_word)
         shuffle(button_data)
@@ -625,19 +667,24 @@ class SeedWordsBackupTestView(View):
             self.confirmed_list.append(self.cur_index)
             if len(self.confirmed_list) == len(self.mnemonic_list):
                 # Successfully confirmed the full mnemonic!
-                return Destination(SeedWordsBackupTestSuccessView, view_args=dict(seed=self.seed))
+                return Destination(SeedWordsBackupTestSuccessView, view_args={
+                    'seed': self.seed
+                })
             # Continue testing the remaining words
-            return Destination(SeedWordsBackupTestView, view_args=dict(seed=self.seed, confirmed_list=self.confirmed_list))
+            return Destination(SeedWordsBackupTestView, view_args={
+                'seed': self.seed,
+                'confirmed_list': self.confirmed_list
+            })
         else:
             # Picked the WRONG WORD!
             return Destination(
                 SeedWordsBackupTestMistakeView,
-                view_args=dict(
-                    seed=self.seed,
-                    cur_index=self.cur_index,
-                    wrong_word=button_data[selected_menu_num],
-                    confirmed_list=self.confirmed_list,
-                )
+                view_args={
+                    'seed': self.seed,
+                    'cur_index': self.cur_index,
+                    'wrong_word': button_data[selected_menu_num],
+                    'confirmed_list': self.confirmed_list
+                }
             )
 
 
@@ -648,7 +695,7 @@ class SeedWordsBackupTestMistakeView(View):
             seed: Seed,
             cur_index: int,
             wrong_word: str,
-            confirmed_list: list[bool] = None
+            confirmed_list: list[bool]|None = None
     ):
         super().__init__()
         self.seed: Seed = seed
@@ -668,7 +715,9 @@ class SeedWordsBackupTestMistakeView(View):
             button_data=button_data,
         ).display()
         if button_data[selected_menu_num] == REVIEW:
-            return Destination(SeedWordsView, view_args={'seed': self.seed})
+            return Destination(SeedWordsView, view_args={
+                'seed': self.seed
+            })
         if button_data[selected_menu_num] == RETRY:
             return Destination(
                 SeedWordsBackupTestView,
@@ -692,10 +741,12 @@ class SeedWordsBackupTestSuccessView(View):
             show_back_button=False,
             status_headline='Success!',
             text='All mnemonic backup words were successfully verified!',
-            button_data=[ButtonData.OK]
+            button_data=[ButtonData.OK()]
         ).display()
         if self.seed is not None:
-            return Destination(SeedOptionsView, view_args=dict(seed=self.seed), clear_history=True)
+            return Destination(SeedOptionsView, view_args={
+                'seed': self.seed
+            }, clear_history=True)
         else:
             return Destination(SeedFinalizeView)
 
@@ -840,7 +891,7 @@ class SeedTranscribeSeedQRConfirmQRPromptView(View):
 
     def run(self):
         SCAN = ButtonData('Confirm SeedQR').with_icon(FontAwesomeIconConstants.QRCODE)
-        DONE = ButtonData.DONE
+        DONE = ButtonData.DONE()
         button_data = [SCAN, DONE]
         selected_menu_option = seed_screens.SeedTranscribeSeedQRConfirmQRPromptScreen(
             title='Confirm SeedQR?',

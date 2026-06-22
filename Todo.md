@@ -138,6 +138,7 @@
             - [x] Enabled
             - [x] Disabled
 ## Other things
+- [ ] Update tests
 - [ ] Modify [Monero GUI](https://github.com/DiosDelRayo/monero-gui)
 - [ ] remove old font if unused
 - [ ] check how to generate font to include monero logo

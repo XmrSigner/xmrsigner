@@ -1,124 +1,89 @@
 # Inline Todo
 
-Total: 41
+Total: 31
 
 ## Index
 - [Urgent](#urgent)
 - [By File](#by-file)
-- [By Tags](#by-tags)
 - [External Todo](Todo.md)
 
 ## Urgent
 
 ### 2024-06-04
-- `src/xmrsigner/views/tools_views.py`:340
+- `src/xmrsigner/views/tools_views.py:406`
   2024-06-04, rename, because it is missleading, the only thing what will be calculated is the checksum word
 
-### 2024-06-17
-- `src/xmrsigner/gui/screens/tools_screens.py`:383
-  2024-06-17, added with rebase from main to 0.7.0 of seedsigner, lot of work to do
-- `src/xmrsigner/views/tools_views.py`:59
-  2024-06-17, activate when it works
-- `src/xmrsigner/views/tools_views.py`:61
-  2024-06-17, activate when it works
-- `src/xmrsigner/views/tools_views.py`:443
-  2024-06-17, holy clusterfuck, added with rebase from main to 0.7.0 of seedsigner, lot of work to do
-
-### 2024-06-26
-- `src/xmrsigner/views/seed_views.py`:333
-  2024-06-26, solve multi network issue
-- `src/xmrsigner/views/tools_views.py`:369
-  2024-06-26, solve multi network issue
-- `src/xmrsigner/views/tools_views.py`:458
-  2024-06-26, solve multi network issue
-- `src/xmrsigner/views/tools_views.py`:464
-  2024-06-26, solve multi network issue
-- `src/xmrsigner/views/view.py`:245
-  2024-06-26, solve multi network issue
-- `src/xmrsigner/views/view.py`:249
-  2024-06-26, solve multi network issue
-
 ### 2024-06-30
-- `src/xmrsigner/models/settings.py`:16
+- `src/xmrsigner/models/settings.py:25`
   2024-06-30 don't know what will uname return on win32, check
 
-### 2024-07-15
-- `src/xmrsigner/views/seed_views.py`:836
-  expire 2024-07-15, from there come this numbers, is this not some data comming from QR code constraints? Would it no be wise to get the number from there instead of this??? Test if smaller are viable
-
 ### 2024-07-23
-- `src/xmrsigner/views/scan_views.py`:129
-  2024-07-23, implement
-- `src/xmrsigner/views/scan_views.py`:133
-  2024-07-23, implement
-
-### 2024-07-26
-- `src/xmrsigner/helpers/monero.py`:234
-  2024-07-26, this should be in monero-python
+- `src/xmrsigner/views/scan_views.py:224`
+  2024-07-23, implement in SeedOptions
+- `src/xmrsigner/views/scan_views.py:234`
+  2024-07-23, implement in SeedOptions
 
 ### 2024-07-27
-- `src/xmrsigner/views/monero_views.py`:239
+- `src/xmrsigner/views/monero_views.py:258`
   2024-07-27, decide what to do about
-- `src/xmrsigner/views/monero_views.py`:269
+- `src/xmrsigner/views/monero_views.py:288`
   2024-07-27, decide to check or remove
-- `src/xmrsigner/views/monero_views.py`:391
+- `src/xmrsigner/views/monero_views.py:413`
   2024-07-27, code missing here!
-- `src/xmrsigner/views/wallet_views.py`:151
-  2024-07-27, thought: redirect to address viewer as soon it exists
+- `src/xmrsigner/views/seed_views.py:538`
+  2024-07-27, thought: ask user if he wants to see the address explorer to tranfer funds to the wallet
 
 ### 2024-07-28
-- `src/xmrsigner/gui/components.py`:790
+- `src/xmrsigner/gui/components.py:600`
   2024-07-28, render only with Monero Logo
-- `src/xmrsigner/gui/components.py`:867
+- `src/xmrsigner/gui/components.py:677`
   2024-07-28, render only with Monero Logo
 
 ### 2024-08-02
-- `src/xmrsigner/gui/components.py`:780
+- `src/xmrsigner/gui/components.py:590`
   2024-08-02, change to Monero icon
 
-### 2024-08-04
-- `src/xmrsigner/views/wallet_views.py`:225
-  2024-08-04, implement
-
-### 2024-08-08
-- `src/xmrsigner/views/scan_views.py`:43
-  2024-08-08, not sure if this is a good idea, refactor one day
-
-### 2024-08-09
-- `src/xmrsigner/views/seed_views.py`:442
-  2024-08-09, implement
-- `src/xmrsigner/views/wallet_views.py`:209
-  2024-08-09 implement
-
 ### No time constraint
-- `src/test/xmrsigner/helpers/polyseed_mnemonic_generation.py`:13
+- `src/test/xmrsigner/helpers/polyseed_mnemonic_generation.py:13`
   not working yet, some issue in polyseed-python
-- `src/xmrsigner/gui/components.py`:217
+- `src/xmrsigner/gui/constants.py:152`
   don't need BTC, need XMR glyph is still Bitcoin
-- `src/xmrsigner/gui/components.py`:218
+- `src/xmrsigner/gui/constants.py:153`
   don't need BTC, need XMR glyph is still Bitcoin
-- `src/xmrsigner/hardware/buttons.py`:149
+- `src/xmrsigner/hardware/buttons.py:148`
   **#SEEDSIGNER** Implement `release_lock` functionality as a global somewhere. Mixes up design
-- `src/xmrsigner/helpers/monero_time.py`:1
-  move this to monero-python, network related part should maybe move to .network?
-- `src/xmrsigner/helpers/ur2/cbor_lite.py`:246
+- `src/xmrsigner/helpers/qr.py:62`
+  why??? Remove, is there is not a very good reason for it...
+- `src/xmrsigner/helpers/qr.py:64`
+  WTF, implement in python? Check what was the reason or if i makes any sense.
+- `src/xmrsigner/helpers/seedwordindex.py:1`
+  remove after migration to OTS
+- `src/xmrsigner/helpers/ur2/cbor_lite.py:246`
   Check that this is the right way -- do we need to use struct.unpack()?
-- `src/xmrsigner/helpers/ur2/fountain_decoder.py`:37
+- `src/xmrsigner/helpers/ur2/fountain_decoder.py:37`
   Not efficient
-- `src/xmrsigner/helpers/ur2/fountain_decoder.py`:55
+- `src/xmrsigner/helpers/ur2/fountain_decoder.py:55`
   Handle None?
-- `src/xmrsigner/helpers/ur2/fountain_decoder.py`:200
+- `src/xmrsigner/helpers/ur2/fountain_decoder.py:200`
   Does this need to make a copy of p?
-- `src/xmrsigner/helpers/ur2/fountain_encoder.py`:35
+- `src/xmrsigner/helpers/ur2/fountain_encoder.py:35`
   Do something better with this check
-- `src/xmrsigner/models/base_decoder.py`:29
+- `src/xmrsigner/models/base_decoder.py:29`
   **#SEEDSIGNER** standardize this approach across all decoders (example: SignMessageQrDecoder)
-- `src/xmrsigner/views/screensaver.py`:12
+- `src/xmrsigner/models/ur_encoder.py:23`
+  why not qr.qrimage instead???
+- `src/xmrsigner/views/monero_views.py:167`
+  make conditional: only if dire warning is enabled
+- `src/xmrsigner/views/screensaver.py:15`
   This early code is now outdated vis-a-vis Screen vs View distinctions
-- `src/xmrsigner/views/tools_views.py`:493
+- `src/xmrsigner/views/seed_views.py:240`
+  really? Think that is to remove...
+- `src/xmrsigner/views/seed_views.py:364`
+  Warning screen: "password required!?
+- `src/xmrsigner/views/seed_views.py:468`
+  check
+- `src/xmrsigner/views/tools_views.py:551`
   Refactor to a cleaner `BackStack.get_previous_View_cls()`
-- `src/xmrsigner/views/tools_views.py`:547
-  Custom derivation path
 
 ## By File
 
@@ -127,32 +92,32 @@ Total: 41
   not working yet, some issue in polyseed-python
 
 ### `src/xmrsigner/gui/components.py`
-- Line 217: None 
-  don't need BTC, need XMR glyph is still Bitcoin
-- Line 218: None 
-  don't need BTC, need XMR glyph is still Bitcoin
-- Line 780: 2024-08-02 
+- Line 590: 2024-08-02 
   2024-08-02, change to Monero icon
-- Line 790: 2024-07-28 
+- Line 600: 2024-07-28 
   2024-07-28, render only with Monero Logo
-- Line 867: 2024-07-28 
+- Line 677: 2024-07-28 
   2024-07-28, render only with Monero Logo
 
-### `src/xmrsigner/gui/screens/tools_screens.py`
-- Line 383: 2024-06-17 
-  2024-06-17, added with rebase from main to 0.7.0 of seedsigner, lot of work to do
+### `src/xmrsigner/gui/constants.py`
+- Line 152: None 
+  don't need BTC, need XMR glyph is still Bitcoin
+- Line 153: None 
+  don't need BTC, need XMR glyph is still Bitcoin
 
 ### `src/xmrsigner/hardware/buttons.py`
-- Line 149: None **#SEEDSIGNER** 
+- Line 148: None **#SEEDSIGNER** 
   Implement `release_lock` functionality as a global somewhere. Mixes up design
 
-### `src/xmrsigner/helpers/monero.py`
-- Line 234: 2024-07-26 
-  2024-07-26, this should be in monero-python
+### `src/xmrsigner/helpers/qr.py`
+- Line 62: None 
+  why??? Remove, is there is not a very good reason for it...
+- Line 64: None 
+  WTF, implement in python? Check what was the reason or if i makes any sense.
 
-### `src/xmrsigner/helpers/monero_time.py`
+### `src/xmrsigner/helpers/seedwordindex.py`
 - Line 1: None 
-  move this to monero-python, network related part should maybe move to .network?
+  remove after migration to OTS
 
 ### `src/xmrsigner/helpers/ur2/cbor_lite.py`
 - Line 246: None 
@@ -175,75 +140,45 @@ Total: 41
   standardize this approach across all decoders (example: SignMessageQrDecoder)
 
 ### `src/xmrsigner/models/settings.py`
-- Line 16: 2024-06-30 
+- Line 25: 2024-06-30 
   2024-06-30 don't know what will uname return on win32, check
 
+### `src/xmrsigner/models/ur_encoder.py`
+- Line 23: None 
+  why not qr.qrimage instead???
+
 ### `src/xmrsigner/views/monero_views.py`
-- Line 239: 2024-07-27 
+- Line 167: None 
+  make conditional: only if dire warning is enabled
+- Line 258: 2024-07-27 
   2024-07-27, decide what to do about
-- Line 269: 2024-07-27 
+- Line 288: 2024-07-27 
   2024-07-27, decide to check or remove
-- Line 391: 2024-07-27 
+- Line 413: 2024-07-27 
   2024-07-27, code missing here!
 
 ### `src/xmrsigner/views/scan_views.py`
-- Line 43: 2024-08-08 
-  2024-08-08, not sure if this is a good idea, refactor one day
-- Line 129: 2024-07-23 
-  2024-07-23, implement
-- Line 133: 2024-07-23 
-  2024-07-23, implement
+- Line 224: 2024-07-23 
+  2024-07-23, implement in SeedOptions
+- Line 234: 2024-07-23 
+  2024-07-23, implement in SeedOptions
 
 ### `src/xmrsigner/views/screensaver.py`
-- Line 12: None 
+- Line 15: None 
   This early code is now outdated vis-a-vis Screen vs View distinctions
 
 ### `src/xmrsigner/views/seed_views.py`
-- Line 333: 2024-06-26 
-  2024-06-26, solve multi network issue
-- Line 442: 2024-08-09 
-  2024-08-09, implement
-- Line 836: 2024-07-15 
-  expire 2024-07-15, from there come this numbers, is this not some data comming from QR code constraints? Would it no be wise to get the number from there instead of this??? Test if smaller are viable
+- Line 240: None 
+  really? Think that is to remove...
+- Line 364: None 
+  Warning screen: "password required!?
+- Line 468: None 
+  check
+- Line 538: 2024-07-27 
+  2024-07-27, thought: ask user if he wants to see the address explorer to tranfer funds to the wallet
 
 ### `src/xmrsigner/views/tools_views.py`
-- Line 59: 2024-06-17 
-  2024-06-17, activate when it works
-- Line 61: 2024-06-17 
-  2024-06-17, activate when it works
-- Line 340: 2024-06-04 
+- Line 406: 2024-06-04 
   2024-06-04, rename, because it is missleading, the only thing what will be calculated is the checksum word
-- Line 369: 2024-06-26 
-  2024-06-26, solve multi network issue
-- Line 443: 2024-06-17 
-  2024-06-17, holy clusterfuck, added with rebase from main to 0.7.0 of seedsigner, lot of work to do
-- Line 458: 2024-06-26 
-  2024-06-26, solve multi network issue
-- Line 464: 2024-06-26 
-  2024-06-26, solve multi network issue
-- Line 493: None 
+- Line 551: None 
   Refactor to a cleaner `BackStack.get_previous_View_cls()`
-- Line 547: None 
-  Custom derivation path
-
-### `src/xmrsigner/views/view.py`
-- Line 245: 2024-06-26 
-  2024-06-26, solve multi network issue
-- Line 249: 2024-06-26 
-  2024-06-26, solve multi network issue
-
-### `src/xmrsigner/views/wallet_views.py`
-- Line 151: 2024-07-27 
-  2024-07-27, thought: redirect to address viewer as soon it exists
-- Line 209: 2024-08-09 
-  2024-08-09 implement
-- Line 225: 2024-08-04 
-  2024-08-04, implement
-
-## By Tags
-
-### **#SEEDSIGNER**
-- `src/xmrsigner/hardware/buttons.py`:149
-  Implement `release_lock` functionality as a global somewhere. Mixes up design
-- `src/xmrsigner/models/base_decoder.py`:29
-  standardize this approach across all decoders (example: SignMessageQrDecoder)

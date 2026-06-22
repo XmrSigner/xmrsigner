@@ -228,24 +228,6 @@ class ErrorView(View):
         return self.next_destination
 
 
-@dataclass
-class NetworkMismatchErrorView(ErrorView):
-
-    title: str = "Network Mismatch"
-    show_back_button: bool = False
-    button_text: str = "Change Setting"
-    next_destination: Destination = None
-
-    def __post_init__(self):
-        super().__post_init__()
-        if not self.text:
-            self.text = f"Current network setting ({self.settings.get_value_display_name(Setting.NETWORKS)[0]}) doesn't match current action."  # TODO: 2024-06-26, solve multi network issue
-
-        if not self.next_destination:
-            from xmrsigner.views.settings_views import SettingsEntryUpdateSelectionView
-            self.next_destination = Destination(SettingsEntryUpdateSelectionView, view_args=dict(attr_name=Setting.NETWORKS)[0], clear_history=True)  # TODO: 2024-06-26, solve multi network issue
-
-
 class NotYetImplementedView(View):
     """
         Temporary View to use during dev.

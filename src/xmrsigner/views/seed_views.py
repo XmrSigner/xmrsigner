@@ -529,8 +529,13 @@ class NoOutputsImportedView(View):
         self.seed: Seed = seed
 
     def run(self):
-        self.run_screen(LargeIconStatusScreen, title='Load Outputs', text=f"Wallet {self.seed.fingerprint} has not received funds yet.", status_headline='No balance found!')
-        return Destination(MainMenuView)  # TODO: 2024-07-27, thought: redirect to address viewer as soon it exists
+        self.run_screen(
+            LargeIconStatusScreen,
+            title='Load Outputs',
+            text=f"Wallet {self.seed.fingerprint} has not received funds yet.",
+            status_headline='No balance found!'
+        )
+        return Destination(MainMenuView)  # TODO: 2024-07-27, thought: ask user if he wants to see the address explorer to tranfer funds to the wallet
 
 
 class ImportOutputsView(View):

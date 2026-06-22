@@ -101,11 +101,11 @@ class InlineTodo:
             if todo.date != current_date:
                 current_date = todo.date
                 f.write(f"\n### {current_date if current_date else 'No time constraint'}\n")
-            f.write(f"- `{todo.file}`:{todo.line}\n")
+            f.write(f"- `{todo.file}:{todo.line}`\n")
             tags_str = ' '.join([f'**#{tag}**' for tag in todo.tags])
             if len(tags_str) > 0:
                 tags_str += ' '
-            f.write(f"  {tags_str}{todo.content}\n")
+            f.write(f"  {tags_str}{todo.content.strip()}\n")
 
     def write_by_file(self, f) -> None:
         f.write('\n## By File\n')
@@ -118,7 +118,7 @@ class InlineTodo:
             if len(tags_str) > 0:
                 tags_str += ' '
             f.write(f"- Line {todo.line}: {todo.date} {tags_str}\n")
-            f.write(f"  {todo.content}\n")
+            f.write(f"  {todo.content.strip()}\n")
 
     def write_by_tags(self, f) -> None:
         f.write('\n## By Tags\n')
@@ -128,8 +128,8 @@ class InlineTodo:
             if len(self.tags_list[tag]) > 0:
                 f.write(f'\n### **#{tag}**\n')
                 for todo in self.tags_list.get(tag, []):
-                    f.write(f"- `{todo.file}`:{todo.line}{' (' + todo.date + ')' if todo.date else ''}\n")
-                    f.write(f"  {todo.content}\n")
+                    f.write(f"- `{todo.file}:{todo.line}`{' (' + todo.date + ')' if todo.date else ''}\n")
+                    f.write(f"  {todo.content.strip()}\n")
 
     def generate(self) -> None:
         # Generate the output file
@@ -164,7 +164,7 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
     inline_todo = InlineTodo(
-        args.source_directory, args.out_file, args.by_urgency, args.by_file, args.by_tags, 
+        args.source_directory, args.out_file, args.by_urgency, args.by_file, args.by_tags,
         args.show_total, args.external_todo
     )
     inline_todo.parse()

@@ -221,7 +221,7 @@ class ScanUR2View(ScanView):
         return self.decoder.is_ur
 
 
-class ScanOutputsView(ScanUR2View):  # TODO: 2024-07-23, implement
+class ScanOutputsView(ScanUR2View):  # TODO: 2024-07-23, implement in SeedOptions
 
     instructions_text = "Scan Outputs UR"
     invalid_qr_type_message = "Expected a UR"
@@ -231,7 +231,7 @@ class ScanOutputsView(ScanUR2View):  # TODO: 2024-07-23, implement
         return self.decoder.is_outputs
 
 
-class ScanUnsignedTransactionView(ScanUR2View):  # TODO: 2024-07-23, implement
+class ScanUnsignedTransactionView(ScanUR2View):  # TODO: 2024-07-23, implement in SeedOptions
 
     instructions_text = "Scan Unsigned TX UR"
     invalid_qr_type_message = "Expected a UR"

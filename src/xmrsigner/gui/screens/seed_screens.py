@@ -11,10 +11,6 @@ from xmrsigner.models.threads import (
     BaseThread,
     ThreadsafeCounter
 )
-from xmrsigner.models.settings_definition import (
-    SettingsConstants,
-    SettingsDefinition
-)
 from xmrsigner.gui.screens import (
     RET_CODE__BACK_BUTTON,
     BaseScreen,
@@ -23,17 +19,18 @@ from xmrsigner.gui.screens import (
     KeyboardScreen,
     WarningEdgesMixin
 )
+from xmrsigner.gui.constants import Padding
 from xmrsigner.gui.components import (
-    GUIConstants,
+    Theme,
     Button,
-    FontAwesomeIconConstants,
+    FontAwesome,
     Fonts,
     FormattedAddress,
     IconButton,
     IconTextLine,
     IconConstants,
     TextArea,
-    GUIConstants,
+    Theme,
     reflow_text_into_pages
 )
 from xmrsigner.gui.keyboard import (
@@ -48,6 +45,7 @@ from xmrsigner.hardware.buttons import (
 
 @dataclass
 class SeedMnemonicEntryScreen(BaseTopNavScreen):
+
     initial_letters: list[str]|None = None
     wordlist: list[str]|None = None
 
@@ -70,9 +68,9 @@ class SeedMnemonicEntryScreen(BaseTopNavScreen):
             rows=5,
             cols=6,
             rect=(
-                GUIConstants.EDGE_PADDING,
+                Padding.EDGE,
                 text_entry_display_y + text_entry_display_height + 6,
-                GUIConstants.EDGE_PADDING + self.keyboard_width,
+                Padding.EDGE + self.keyboard_width,
                 self.canvas_height
             ),
             auto_wrap=[Keyboard.WRAP_LEFT, Keyboard.WRAP_RIGHT]
@@ -81,19 +79,20 @@ class SeedMnemonicEntryScreen(BaseTopNavScreen):
         self.text_entry_display = TextEntryDisplay(
             canvas=self.canvas,
             rect=(
-                GUIConstants.EDGE_PADDING,
+                Padding.EDGE,
                 text_entry_display_y,
-                GUIConstants.EDGE_PADDING + self.keyboard.width,
+                Padding.EDGE + self.keyboard.width,
                 text_entry_display_y + text_entry_display_height
             ),
             is_centered=False,
-            cur_text="".join(self.initial_letters)
+            cur_text=''.join(self.initial_letters)
         )
 
         self.letters = self.initial_letters
 
         # Initialize the current matches
         self.possible_words = []
+        self.calc_possible_words()
         if len(self.letters) > 1:
             self.letters.append(" ")    # "Lock in" the last letter as if KEY_PRESS
             self.calc_possible_alphabet()
@@ -102,45 +101,45 @@ class SeedMnemonicEntryScreen(BaseTopNavScreen):
         else:
             self.keyboard.set_selected_key(selected_letter=self.letters[-1])
 
-        self.matches_list_x = GUIConstants.EDGE_PADDING + self.keyboard.width + GUIConstants.COMPONENT_PADDING
+        self.matches_list_x = Padding.EDGE + self.keyboard.width + Padding.COMPONENT
         self.matches_list_y = self.top_nav.height
-        self.highlighted_row_y = int((self.canvas_height - GUIConstants.BUTTON_HEIGHT)/2)
+        self.highlighted_row_y = int((self.canvas_height - Theme.BUTTON_HEIGHT)/2)
 
         self.matches_list_highlight_button = Button(
             text="abcdefghijklmnopqrstuvwxyz",
             is_text_centered=False,
-            font_name=GUIConstants.FIXED_WIDTH_EMPHASIS_FONT_NAME,
-            font_size=GUIConstants.BUTTON_FONT_SIZE+4,
+            font_name=Theme.FIXED_WIDTH_EMPHASIS_FONT_NAME,
+            font_size=Theme.BUTTON_FONT_SIZE+4,
             screen_x=self.matches_list_x,
             screen_y=self.highlighted_row_y,
-            width=self.canvas_width - self.matches_list_x + GUIConstants.COMPONENT_PADDING,
-            height=int(0.75*GUIConstants.BUTTON_HEIGHT),
+            width=self.canvas_width - self.matches_list_x + Padding.COMPONENT,
+            height=int(0.75*Theme.BUTTON_HEIGHT),
         )
-        arrow_button_width = GUIConstants.BUTTON_HEIGHT + GUIConstants.EDGE_PADDING
-        arrow_button_height = int(0.75*GUIConstants.BUTTON_HEIGHT)
+        arrow_button_width = Theme.BUTTON_HEIGHT + Padding.EDGE
+        arrow_button_height = int(0.75*Theme.BUTTON_HEIGHT)
         self.matches_list_up_button = IconButton(
-            icon_name=FontAwesomeIconConstants.ANGLE_UP,
-            icon_size=GUIConstants.ICON_INLINE_FONT_SIZE + 2,
+            icon_name=FontAwesome.ANGLE_UP,
+            icon_size=Theme.ICON_INLINE_FONT_SIZE + 2,
             is_text_centered=False,
-            screen_x=self.canvas_width - arrow_button_width + GUIConstants.COMPONENT_PADDING,
-            screen_y=self.highlighted_row_y - 3*GUIConstants.COMPONENT_PADDING - GUIConstants.BUTTON_HEIGHT,
+            screen_x=self.canvas_width - arrow_button_width + Padding.COMPONENT,
+            screen_y=self.highlighted_row_y - 3*Padding.COMPONENT - Theme.BUTTON_HEIGHT,
             width=arrow_button_width,
             height=arrow_button_height,
         )
         self.matches_list_down_button = IconButton(
-            icon_name=FontAwesomeIconConstants.ANGLE_DOWN,
-            icon_size=GUIConstants.ICON_INLINE_FONT_SIZE + 2,
+            icon_name=FontAwesome.ANGLE_DOWN,
+            icon_size=Theme.ICON_INLINE_FONT_SIZE + 2,
             is_text_centered=False,
-            screen_x=self.canvas_width - arrow_button_width + GUIConstants.COMPONENT_PADDING,
-            screen_y=self.highlighted_row_y + GUIConstants.BUTTON_HEIGHT + 3*GUIConstants.COMPONENT_PADDING,
+            screen_x=self.canvas_width - arrow_button_width + Padding.COMPONENT,
+            screen_y=self.highlighted_row_y + Theme.BUTTON_HEIGHT + 3*Padding.COMPONENT,
             width=arrow_button_width,
             height=arrow_button_height,
         )
 
-        self.word_font = Fonts.get_font(GUIConstants.FIXED_WIDTH_EMPHASIS_FONT_NAME, GUIConstants.BUTTON_FONT_SIZE+4)
+        self.word_font = Fonts.get_font(Theme.FIXED_WIDTH_EMPHASIS_FONT_NAME, Theme.BUTTON_FONT_SIZE+4)
         (left, top, right, bottom) = self.word_font.getbbox("abcdefghijklmnopqrstuvwxyz", anchor="ls")
         self.word_font_height = -1 * top
-        self.matches_list_row_height = self.word_font_height + GUIConstants.COMPONENT_PADDING
+        self.matches_list_row_height = self.word_font_height + Padding.COMPONENT
 
 
     def calc_possible_alphabet(self, new_letter = False):
@@ -162,7 +161,7 @@ class SeedMnemonicEntryScreen(BaseTopNavScreen):
 
 
     def calc_possible_words(self):
-        self.possible_words = [i for i in self.wordlist if i.startswith("".join(self.letters).strip())]
+        self.possible_words = [i for i in self.wordlist if i.startswith(''.join(self.letters).strip())]
         self.selected_possible_words_index = 0
 
 
@@ -182,7 +181,7 @@ class SeedMnemonicEntryScreen(BaseTopNavScreen):
                     self.canvas_width,
                     self.matches_list_y
                 ),
-                fill=GUIConstants.BACKGROUND_COLOR
+                fill=Theme.BACKGROUND_COLOR
             )
             return
         img = Image.new(
@@ -191,13 +190,13 @@ class SeedMnemonicEntryScreen(BaseTopNavScreen):
                 self.canvas_width - self.matches_list_x,
                 self.canvas_height
             ),
-            GUIConstants.BACKGROUND_COLOR
+            Theme.BACKGROUND_COLOR
         )
         draw = ImageDraw.Draw(img)
-        word_indent = GUIConstants.COMPONENT_PADDING
+        word_indent = Padding.COMPONENT
         highlighted_row = 3
         num_possible_rows = 11
-        y = self.highlighted_row_y - GUIConstants.LIST_ITEM_PADDING - 3 * self.matches_list_row_height
+        y = self.highlighted_row_y - Padding.LIST_ITEM - 3 * self.matches_list_row_height
         if not highlight_word:
             list_starting_index = self.selected_possible_words_index - highlighted_row
             for row, i in enumerate(range(list_starting_index, list_starting_index + num_possible_rows)):
@@ -211,7 +210,7 @@ class SeedMnemonicEntryScreen(BaseTopNavScreen):
                     # No more possible words to render
                     break
                 if row < highlighted_row:
-                    cur_y = self.highlighted_row_y - GUIConstants.COMPONENT_PADDING - (highlighted_row - row - 1) * self.matches_list_row_height
+                    cur_y = self.highlighted_row_y - Padding.COMPONENT - (highlighted_row - row - 1) * self.matches_list_row_height
                 elif row > highlighted_row:
                     cur_y = self.highlighted_row_y + self.matches_list_highlight_button.height + (row - highlighted_row) * self.matches_list_row_height
                 # else draw the nth row
@@ -275,7 +274,7 @@ class SeedMnemonicEntryScreen(BaseTopNavScreen):
                 elif input in [HardwareButtonsConstants.KEY_RIGHT, HardwareButtonsConstants.KEY_LEFT]:
                     # no action in this context
                     continue
-            ret_val = self.keyboard.update_from_input(input)
+            ret_val = self.keyboard.update_from_input(input, next_active=True)
             if ret_val in Keyboard.EXIT_DIRECTIONS:
                 self.is_input_in_top_nav = True
                 self.top_nav.left_button.is_selected = True
@@ -388,12 +387,13 @@ class SeedMnemonicEntryScreen(BaseTopNavScreen):
 
 @dataclass
 class SeedFinalizeScreen(ButtonListScreen):
+
     fingerprint: str|None = None
     polyseed: bool = False
-    my_monero: bool = False
+    is_legacy: bool = False
     title: str = "Finalize Seed"
     is_bottom_list: bool = True
-    button_data: list = None
+    button_data: list|None = None
 
     def __post_init__(self):
         self.show_back_button = False
@@ -401,11 +401,11 @@ class SeedFinalizeScreen(ButtonListScreen):
 
         self.fingerprint_icontl = IconTextLine(
             icon_name=IconConstants.FINGERPRINT,
-            icon_color=GUIConstants.FINGERPRINT_POLYSEED_COLOR if self.polyseed else GUIConstants.FINGERPRINT_MONERO_SEED_COLOR if not self.my_monero else GUIConstants.FINGERPRINT_MY_MONERO_SEED_COLOR,
-            icon_size=GUIConstants.ICON_FONT_SIZE + 12,
+            icon_color=Theme.FINGERPRINT_POLYSEED_COLOR if self.polyseed else Theme.FINGERPRINT_MONERO_SEED_COLOR if not self.is_legacy else Theme.FINGERPRINT_LEGACY_SEED_COLOR,
+            icon_size=Theme.ICON_FONT_SIZE + 12,
             label_text="fingerprint",
             value_text=self.fingerprint,
-            font_size=GUIConstants.BODY_FONT_SIZE + 2,
+            font_size=Theme.BODY_FONT_SIZE + 2,
             is_text_centered=True,
             screen_y=self.top_nav.height + int((self.buttons[0].screen_y - self.top_nav.height) / 2) - 30
         )
@@ -414,15 +414,16 @@ class SeedFinalizeScreen(ButtonListScreen):
 
 @dataclass
 class SeedOptionsScreen(ButtonListScreen):
+
     # Customize defaults
     is_bottom_list: bool = True
     fingerprint: str = None
     polyseed: bool = False
-    my_monero: bool = False
+    is_legacy: bool = False
 
     def __post_init__(self):
         self.top_nav_icon_name = IconConstants.FINGERPRINT
-        self.top_nav_icon_color = GUIConstants.FINGERPRINT_POLYSEED_COLOR if self.polyseed else GUIConstants.FINGERPRINT_MONERO_SEED_COLOR if not self.my_monero else GUIConstants.FINGERPRINT_MY_MONERO_SEED_COLOR
+        self.top_nav_icon_color = Theme.FINGERPRINT_POLYSEED_COLOR if self.polyseed else Theme.FINGERPRINT_MONERO_SEED_COLOR if not self.is_legacy else Theme.FINGERPRINT_LEGACY_SEED_COLOR
         self.title = self.fingerprint
         self.is_button_text_centered = False
         self.is_bottom_list = True
@@ -431,11 +432,12 @@ class SeedOptionsScreen(ButtonListScreen):
 
 @dataclass
 class SeedWordsScreen(WarningEdgesMixin, ButtonListScreen):
+
     words: list[str] = None
     page_index: int = 0
     num_pages: int = 3
     is_bottom_list: bool = True
-    status_color: str = GUIConstants.DIRE_WARNING_COLOR
+    status_color: str = Theme.DIRE_WARNING_COLOR
     words_per_page: int = 4
 
 
@@ -443,12 +445,12 @@ class SeedWordsScreen(WarningEdgesMixin, ButtonListScreen):
         super().__post_init__()
 
         self.body_x = 0
-        self.body_y = self.top_nav.height - int(GUIConstants.COMPONENT_PADDING / 2)
+        self.body_y = self.top_nav.height - int(Padding.COMPONENT / 2)
         self.body_height = self.buttons[0].screen_y - self.body_y
 
         # Have to supersample the whole body since it's all at the small font size
         supersampling_factor = 1
-        font = Fonts.get_font(GUIConstants.BODY_FONT_NAME, (GUIConstants.TOP_NAV_TITLE_FONT_SIZE + 2) * supersampling_factor)
+        font = Fonts.get_font(Theme.BODY_FONT_NAME, (Theme.TOP_NAV_TITLE_FONT_SIZE + 2) * supersampling_factor)
 
         # Calc horizontal center based on longest word
         max_word_width = 0
@@ -458,28 +460,28 @@ class SeedWordsScreen(WarningEdgesMixin, ButtonListScreen):
                 max_word_width = right
 
         # Measure the max digit height for the numbering boxes, from baseline
-        number_font = Fonts.get_font(GUIConstants.BODY_FONT_NAME, GUIConstants.BUTTON_FONT_SIZE * supersampling_factor)
+        number_font = Fonts.get_font(Theme.BODY_FONT_NAME, Theme.BUTTON_FONT_SIZE * supersampling_factor)
         (left, top, right, bottom) = number_font.getbbox("24", anchor="ls")
         number_height = -1 * top
         number_width = right
-        number_box_width = number_width + int(GUIConstants.COMPONENT_PADDING/2 * supersampling_factor)
+        number_box_width = number_width + int(Padding.COMPONENT/2 * supersampling_factor)
         number_box_height = number_box_width
 
-        number_box_x = int((self.canvas_width * supersampling_factor - number_box_width - GUIConstants.COMPONENT_PADDING*supersampling_factor - max_word_width))/2
-        number_box_y = GUIConstants.COMPONENT_PADDING * supersampling_factor
+        number_box_x = int((self.canvas_width * supersampling_factor - number_box_width - Padding.COMPONENT*supersampling_factor - max_word_width))/2
+        number_box_y = Padding.COMPONENT * supersampling_factor
 
         # Set up our temp supersampled rendering surface
         self.body_img = Image.new(
             "RGB",
             (self.canvas_width * supersampling_factor, self.body_height * supersampling_factor),
-            GUIConstants.BACKGROUND_COLOR
+            Theme.BACKGROUND_COLOR
         )
         draw = ImageDraw.Draw(self.body_img)
 
         for index, word in enumerate(self.words):
             draw.rounded_rectangle(
                 (number_box_x, number_box_y, number_box_x + number_box_width, number_box_y + number_box_height),
-                fill=GUIConstants.BUTTON_BACKGROUND_COLOR,
+                fill=Theme.BUTTON_BACKGROUND_COLOR,
                 radius=5 * supersampling_factor
             )
             baseline_y = number_box_y + number_box_height - int((number_box_height - number_height)/2)
@@ -487,20 +489,20 @@ class SeedWordsScreen(WarningEdgesMixin, ButtonListScreen):
                 (number_box_x + int(number_box_width/2), baseline_y),
                 font=number_font,
                 text=str(self.page_index * self.words_per_page + index + 1),
-                fill=GUIConstants.INFO_COLOR,
+                fill=Theme.INFO_COLOR,
                 anchor="ms"  # Middle (centered), baSeline
             )
 
             # Now draw the word
             draw.text(
-                (number_box_x + number_box_width + (GUIConstants.COMPONENT_PADDING * supersampling_factor), baseline_y),
+                (number_box_x + number_box_width + (Padding.COMPONENT * supersampling_factor), baseline_y),
                 font=font,
                 text=word,
-                fill=GUIConstants.BODY_FONT_COLOR,
+                fill=Theme.BODY_FONT_COLOR,
                 anchor="ls",  # Left, baSeline
             )
 
-            number_box_y += number_box_height + (int(1.5*GUIConstants.COMPONENT_PADDING) * supersampling_factor)
+            number_box_y += number_box_height + (int(1.5*Padding.COMPONENT) * supersampling_factor)
 
         # Resize to target and sharpen final image
         self.body_img = self.body_img.resize((self.canvas_width, self.body_height), Image.LANCZOS)
@@ -510,6 +512,7 @@ class SeedWordsScreen(WarningEdgesMixin, ButtonListScreen):
 
 @dataclass
 class SeedWordsBackupTestPromptScreen(ButtonListScreen):
+
     def __post_init__(self):
         self.title = "Verify Backup?"
         self.show_back_button = False
@@ -525,6 +528,7 @@ class SeedWordsBackupTestPromptScreen(ButtonListScreen):
 
 @dataclass
 class SeedAddPassphraseScreen(BaseTopNavScreen):
+
     title: str = 'Add Passphrase'
     passphrase: str = ''
 
@@ -555,17 +559,17 @@ class SeedAddPassphraseScreen(BaseTopNavScreen):
         text_entry_display_y = self.top_nav.height
         text_entry_display_height = 30
 
-        keyboard_start_y = text_entry_display_y + text_entry_display_height + GUIConstants.COMPONENT_PADDING
+        keyboard_start_y = text_entry_display_y + text_entry_display_height + Padding.COMPONENT
         self.keyboard_abc = Keyboard(
             draw=self.renderer.draw,
             charset=keys_lower,
             rows=4,
             cols=max_cols,
             rect=(
-                GUIConstants.COMPONENT_PADDING,
+                Padding.COMPONENT,
                 keyboard_start_y,
-                self.canvas_width - GUIConstants.COMPONENT_PADDING - self.right_panel_buttons_width,
-                self.canvas_height - GUIConstants.EDGE_PADDING
+                self.canvas_width - Padding.COMPONENT - self.right_panel_buttons_width,
+                self.canvas_height - Padding.EDGE
             ),
             additional_keys=[
                 Keyboard.KEY_SPACE_5,
@@ -582,10 +586,10 @@ class SeedAddPassphraseScreen(BaseTopNavScreen):
             rows=4,
             cols=max_cols,
             rect=(
-                GUIConstants.COMPONENT_PADDING,
+                Padding.COMPONENT,
                 keyboard_start_y,
-                self.canvas_width - GUIConstants.COMPONENT_PADDING - self.right_panel_buttons_width,
-                self.canvas_height - GUIConstants.EDGE_PADDING
+                self.canvas_width - Padding.COMPONENT - self.right_panel_buttons_width,
+                self.canvas_height - Padding.EDGE
             ),
             additional_keys=[
                 Keyboard.KEY_SPACE_5,
@@ -603,10 +607,10 @@ class SeedAddPassphraseScreen(BaseTopNavScreen):
             rows=3,
             cols=5,
             rect=(
-                GUIConstants.COMPONENT_PADDING,
+                Padding.COMPONENT,
                 keyboard_start_y,
-                self.canvas_width - GUIConstants.COMPONENT_PADDING - self.right_panel_buttons_width,
-                self.canvas_height - GUIConstants.EDGE_PADDING
+                self.canvas_width - Padding.COMPONENT - self.right_panel_buttons_width,
+                self.canvas_height - Padding.EDGE
             ),
             additional_keys=[
                 Keyboard.KEY_CURSOR_LEFT,
@@ -623,10 +627,10 @@ class SeedAddPassphraseScreen(BaseTopNavScreen):
             rows=4,
             cols=6,
             rect=(
-                GUIConstants.COMPONENT_PADDING,
+                Padding.COMPONENT,
                 keyboard_start_y,
-                self.canvas_width - GUIConstants.COMPONENT_PADDING - self.right_panel_buttons_width,
-                self.canvas_height - GUIConstants.EDGE_PADDING
+                self.canvas_width - Padding.COMPONENT - self.right_panel_buttons_width,
+                self.canvas_height - Padding.EDGE
             ),
             additional_keys=[
                 Keyboard.KEY_SPACE_2,
@@ -644,10 +648,10 @@ class SeedAddPassphraseScreen(BaseTopNavScreen):
             rows=4,
             cols=6,
             rect=(
-                GUIConstants.COMPONENT_PADDING,
+                Padding.COMPONENT,
                 keyboard_start_y,
-                self.canvas_width - GUIConstants.COMPONENT_PADDING - self.right_panel_buttons_width,
-                self.canvas_height - GUIConstants.EDGE_PADDING
+                self.canvas_width - Padding.COMPONENT - self.right_panel_buttons_width,
+                self.canvas_height - Padding.EDGE
             ),
             additional_keys=[
                 Keyboard.KEY_SPACE_2,
@@ -662,7 +666,7 @@ class SeedAddPassphraseScreen(BaseTopNavScreen):
         self.text_entry_display = TextEntryDisplay(
             canvas=self.renderer.canvas,
             rect=(
-                GUIConstants.EDGE_PADDING,
+                Padding.EDGE,
                 text_entry_display_y,
                 self.canvas_width - self.right_panel_buttons_width,
                 text_entry_display_y + text_entry_display_height
@@ -673,26 +677,26 @@ class SeedAddPassphraseScreen(BaseTopNavScreen):
         )
 
         # Nudge the buttons off the right edge w/padding
-        hw_button_x = self.canvas_width - self.right_panel_buttons_width + GUIConstants.COMPONENT_PADDING
+        hw_button_x = self.canvas_width - self.right_panel_buttons_width + Padding.COMPONENT
 
         # Calc center button position first
-        hw_button_y = int((self.canvas_height - GUIConstants.BUTTON_HEIGHT)/2)
+        hw_button_y = int((self.canvas_height - Theme.BUTTON_HEIGHT)/2)
 
         self.hw_button1 = Button(
             text=self.KEYBOARD__UPPERCASE_BUTTON_TEXT,
             is_text_centered=False,
-            font_name=GUIConstants.FIXED_WIDTH_EMPHASIS_FONT_NAME,
-            font_size=GUIConstants.BUTTON_FONT_SIZE + 4,
+            font_name=Theme.FIXED_WIDTH_EMPHASIS_FONT_NAME,
+            font_size=Theme.BUTTON_FONT_SIZE + 4,
             width=self.right_panel_buttons_width,
             screen_x=hw_button_x,
-            screen_y=hw_button_y - 3*GUIConstants.COMPONENT_PADDING - GUIConstants.BUTTON_HEIGHT,
+            screen_y=hw_button_y - 3*Padding.COMPONENT - Theme.BUTTON_HEIGHT,
         )
 
         self.hw_button2 = Button(
             text=self.KEYBOARD__DIGITS_BUTTON_TEXT,
             is_text_centered=False,
-            font_name=GUIConstants.FIXED_WIDTH_EMPHASIS_FONT_NAME,
-            font_size=GUIConstants.BUTTON_FONT_SIZE + 4,
+            font_name=Theme.FIXED_WIDTH_EMPHASIS_FONT_NAME,
+            font_size=Theme.BUTTON_FONT_SIZE + 4,
             width=self.right_panel_buttons_width,
             screen_x=hw_button_x,
             screen_y=hw_button_y,
@@ -700,10 +704,10 @@ class SeedAddPassphraseScreen(BaseTopNavScreen):
 
         self.hw_button3 = IconButton(
             icon_name=IconConstants.CHECK,
-            icon_color=GUIConstants.SUCCESS_COLOR,
+            icon_color=Theme.SUCCESS_COLOR,
             width=self.right_panel_buttons_width,
             screen_x=hw_button_x,
-            screen_y=hw_button_y + 3*GUIConstants.COMPONENT_PADDING + GUIConstants.BUTTON_HEIGHT,
+            screen_y=hw_button_y + 3*Padding.COMPONENT + Theme.BUTTON_HEIGHT,
         )
 
 
@@ -898,14 +902,14 @@ class SeedAddPassphraseScreen(BaseTopNavScreen):
             self.renderer.show_image()
 
 
-
 @dataclass
 class SeedReviewPassphraseScreen(ButtonListScreen):
-    fingerprint_without: str = None
-    fingerprint_with: str = None
+
+    fingerprint_without: str|None = None
+    fingerprint_with: str|None = None
     polyseed: bool = False
-    my_monero: bool = False
-    passphrase: str = None
+    is_legacy: bool = False
+    passphrase: str|None = None
 
     def __post_init__(self):
         # Customize defaults
@@ -916,19 +920,19 @@ class SeedReviewPassphraseScreen(ButtonListScreen):
 
         self.components.append(IconTextLine(
             icon_name=IconConstants.FINGERPRINT,
-            icon_color=GUIConstants.FINGERPRINT_POLYSEED_COLOR if self.polyseed else GUIConstants.FINGERPRINT_MONERO_SEED_COLOR if not self.my_monero else GUIConstants.FINGERPRINT_MY_MONERO_SEED_COLOR,
+            icon_color=Theme.FINGERPRINT_POLYSEED_COLOR if self.polyseed else Theme.FINGERPRINT_MONERO_SEED_COLOR if not self.is_legacy else Theme.FINGERPRINT_LEGACY_SEED_COLOR,
             label_text="changes fingerprint",
             value_text=f"{self.fingerprint_without} >> {self.fingerprint_with}",
             is_text_centered=True,
-            screen_y = self.buttons[0].screen_y - GUIConstants.COMPONENT_PADDING - int(GUIConstants.BODY_FONT_SIZE*2.5)
+            screen_y = self.buttons[0].screen_y - Padding.COMPONENT - int(Theme.BODY_FONT_SIZE*2.5)
         ))
 
         if self.passphrase != self.passphrase.strip() or '  ' in self.passphrase:
             self.passphrase = self.passphrase.replace(' ', '\u2589')
 
-        available_height = self.components[-1].screen_y - self.top_nav.height + GUIConstants.COMPONENT_PADDING
-        max_font_size = GUIConstants.TOP_NAV_TITLE_FONT_SIZE + 8
-        min_font_size = GUIConstants.TOP_NAV_TITLE_FONT_SIZE - 4
+        available_height = self.components[-1].screen_y - self.top_nav.height + Padding.COMPONENT
+        max_font_size = Theme.TOP_NAV_TITLE_FONT_SIZE + 8
+        min_font_size = Theme.TOP_NAV_TITLE_FONT_SIZE - 4
         font_size = max_font_size
         max_lines = 3
         passphrase = [self.passphrase]
@@ -936,7 +940,7 @@ class SeedReviewPassphraseScreen(ButtonListScreen):
         for font_size in range(max_font_size, min_font_size, -2):
             if found_solution:
                 break
-            font = Fonts.get_font(font_name=GUIConstants.FIXED_WIDTH_FONT_NAME, size=font_size)
+            font = Fonts.get_font(Theme.FIXED_WIDTH_FONT_NAME, size=font_size)
             char_width, char_height = get_font_size(font, 'X')
             for num_lines in range(1, max_lines+1):
                 # Break the passphrase into n lines
@@ -945,19 +949,18 @@ class SeedReviewPassphraseScreen(ButtonListScreen):
                 for i in range(0, len(self.passphrase), chars_per_line):
                     passphrase.append(self.passphrase[i:i+chars_per_line])
                 # See if it fits in this configuration
-                if char_width * len(passphrase[0]) <= self.canvas_width - 2*GUIConstants.EDGE_PADDING:
+                if char_width * len(passphrase[0]) <= self.canvas_width - 2*Padding.EDGE:
                     # Width is good...
                     if num_lines * char_height <= available_height:
                         # And the height is good!
                         found_solution = True
                         break
-
         # Set up each line of text
-        screen_y = self.top_nav.height + int((available_height - char_height*num_lines)/2) - GUIConstants.COMPONENT_PADDING
+        screen_y = self.top_nav.height + int((available_height - char_height*num_lines)/2) - Padding.COMPONENT
         for line in passphrase:
             self.components.append(TextArea(
                 text=line,
-                font_name=GUIConstants.FIXED_WIDTH_FONT_NAME,
+                font_name=Theme.FIXED_WIDTH_FONT_NAME,
                 font_size=font_size,
                 is_text_centered=True,
                 screen_y=screen_y,
@@ -965,6 +968,70 @@ class SeedReviewPassphraseScreen(ButtonListScreen):
             ))
             screen_y += char_height + 2
 
+
+@dataclass
+class PolyseedReviewPasswordScreen(ButtonListScreen):
+
+    fingerprint: str = ''
+    password: str = ''
+
+    def __post_init__(self):
+        # Customize defaults
+        self.title = 'Verify Password'
+        self.is_bottom_list = True
+
+        super().__post_init__()
+
+        self.components.append(IconTextLine(
+            icon_name=IconConstants.FINGERPRINT,
+            icon_color=Theme.FINGERPRINT_POLYSEED_COLOR,
+            label_text="fingerprint",
+            value_text=self.fingerprint,
+            is_text_centered=True,
+            screen_y = self.buttons[0].screen_y - Padding.COMPONENT - int(Theme.BODY_FONT_SIZE*2.5)
+        ))
+
+        if self.password != self.password.strip() or '  ' in self.password:
+            self.password = self.password.replace(' ', '\u2589')
+
+        available_height = self.components[-1].screen_y - self.top_nav.height + Padding.COMPONENT
+        max_font_size = Theme.TOP_NAV_TITLE_FONT_SIZE + 8
+        min_font_size = Theme.TOP_NAV_TITLE_FONT_SIZE - 4
+        font_size = max_font_size
+        max_lines = 3
+        password = [self.password]
+        found_solution = False
+        for font_size in range(max_font_size, min_font_size, -2):
+            if found_solution:
+                break
+            font = Fonts.get_font(Theme.FIXED_WIDTH_FONT_NAME, size=font_size)
+            char_width, char_height = get_font_size(font, 'X')
+            for num_lines in range(1, max_lines+1):
+                # Break the password into n lines
+                chars_per_line = ceil(len(self.password) / num_lines)
+                password = []
+                for i in range(0, len(self.password), chars_per_line):
+                    password.append(self.password[i:i+chars_per_line])
+                # See if it fits in this configuration
+                if char_width * len(password[0]) <= self.canvas_width - 2*Padding.EDGE:
+                    # Width is good...
+                    if num_lines * char_height <= available_height:
+                        # And the height is good!
+                        found_solution = True
+                        break
+
+        # Set up each line of text
+        screen_y = self.top_nav.height + int((available_height - char_height*num_lines)/2) - Padding.COMPONENT
+        for line in password:
+            self.components.append(TextArea(
+                text=line,
+                font_name=Theme.FIXED_WIDTH_FONT_NAME,
+                font_size=font_size,
+                is_text_centered=True,
+                screen_y=screen_y,
+                allow_text_overflow=True
+            ))
+            screen_y += char_height + 2
 
 
 @dataclass
@@ -985,32 +1052,32 @@ class SeedTranscribeSeedQRFormatScreen(ButtonListScreen):
             }[(self.seed.type, self.seed.isLegacy)],
             is_text_centered=False,
             auto_line_break=True,
-            screen_x=GUIConstants.EDGE_PADDING,
-            screen_y=self.top_nav.height + GUIConstants.COMPONENT_PADDING,
+            screen_x=Padding.EDGE,
+            screen_y=self.top_nav.height + Padding.COMPONENT,
         ))
         self.components.append(IconTextLine(
             label_text="Compact",
             value_text="Raw entropy bits",
             is_text_centered=False,
-            screen_x=GUIConstants.EDGE_PADDING,
-            screen_y=self.components[-1].screen_y + self.components[-1].height + 2*GUIConstants.COMPONENT_PADDING,
+            screen_x=Padding.EDGE,
+            screen_y=self.components[-1].screen_y + self.components[-1].height + 2*Padding.COMPONENT,
         ))
 
 
 @dataclass
 class SeedTranscribeSeedQRWholeQRScreen(WarningEdgesMixin, ButtonListScreen):
 
-    qr_data: str = None
-    num_modules: int = None
+    qr_data: str|bytes|None = None
+    num_modules: int|None = None
 
     def __post_init__(self):
         self.title = "Transcribe SeedQR"
         self.button_data = [f"Begin {self.num_modules}x{self.num_modules}"]
         self.is_bottom_list = True
-        self.status_color = GUIConstants.DIRE_WARNING_COLOR
+        self.status_color = Theme.DIRE_WARNING_COLOR
         super().__post_init__()
 
-        qr_height = self.buttons[0].screen_y - self.top_nav.height - GUIConstants.COMPONENT_PADDING
+        qr_height = self.buttons[0].screen_y - self.top_nav.height - Padding.COMPONENT
         qr_width = qr_height
 
         qr: Qr = Qr()
@@ -1027,7 +1094,8 @@ class SeedTranscribeSeedQRWholeQRScreen(WarningEdgesMixin, ButtonListScreen):
 
 @dataclass
 class SeedTranscribeSeedQRZoomedInScreen(BaseScreen):
-    qr_data: str = None
+
+    qr_data: str|bytes|None = None
     num_modules: int = None
 
     def __post_init__(self):
@@ -1076,29 +1144,29 @@ class SeedTranscribeSeedQRZoomedInScreen(BaseScreen):
         draw.rectangle((self.canvas_width - self.mask_width - 1, self.mask_height, self.canvas_width, self.canvas_height - self.mask_height), fill=mask_rgba)
 
         # Draw a box around the cutout portion of the mask for better visibility
-        draw.line((self.mask_width, self.mask_height, self.mask_width, self.canvas_height - self.mask_height), fill=GUIConstants.ACCENT_COLOR)
-        draw.line((self.canvas_width - self.mask_width, self.mask_height, self.canvas_width - self.mask_width, self.canvas_height - self.mask_height), fill=GUIConstants.ACCENT_COLOR)
-        draw.line((self.mask_width, self.mask_height, self.canvas_width - self.mask_width, self.mask_height), fill=GUIConstants.ACCENT_COLOR)
-        draw.line((self.mask_width, self.canvas_height - self.mask_height, self.canvas_width - self.mask_width, self.canvas_height - self.mask_height), fill=GUIConstants.ACCENT_COLOR)
+        draw.line((self.mask_width, self.mask_height, self.mask_width, self.canvas_height - self.mask_height), fill=Theme.ACCENT_COLOR)
+        draw.line((self.canvas_width - self.mask_width, self.mask_height, self.canvas_width - self.mask_width, self.canvas_height - self.mask_height), fill=Theme.ACCENT_COLOR)
+        draw.line((self.mask_width, self.mask_height, self.canvas_width - self.mask_width, self.mask_height), fill=Theme.ACCENT_COLOR)
+        draw.line((self.mask_width, self.canvas_height - self.mask_height, self.canvas_width - self.mask_width, self.canvas_height - self.mask_height), fill=Theme.ACCENT_COLOR)
 
         msg = "click to exit"
-        font = Fonts.get_font(GUIConstants.BODY_FONT_NAME, GUIConstants.BODY_FONT_SIZE)
+        font = Fonts.get_font(Theme.BODY_FONT_NAME, Theme.BODY_FONT_SIZE)
         (left, top, right, bottom) = font.getbbox(msg, anchor="ls")
         msg_height = -1 * top
         msg_width = right
         # draw.rectangle(
         #     (
-        #         int((self.canvas_width - msg_width)/2 - GUIConstants.COMPONENT_PADDING),
-        #         self.canvas_height - msg_height - GUIConstants.COMPONENT_PADDING,
-        #         int((self.canvas_width + msg_width)/2 + GUIConstants.COMPONENT_PADDING),
+        #         int((self.canvas_width - msg_width)/2 - Padding.COMPONENT),
+        #         self.canvas_height - msg_height - Padding.COMPONENT,
+        #         int((self.canvas_width + msg_width)/2 + Padding.COMPONENT),
         #         self.canvas_height
         #     ),
-        #     fill=GUIConstants.BACKGROUND_COLOR,
+        #     fill=Theme.BACKGROUND_COLOR,
         # )
         # draw.text(
-        #     (int(self.canvas_width/2), self.canvas_height - int(GUIConstants.COMPONENT_PADDING/2)),
+        #     (int(self.canvas_width/2), self.canvas_height - int(Padding.COMPONENT/2)),
         #     msg,
-        #     fill=GUIConstants.BODY_FONT_COLOR,
+        #     fill=Theme.BODY_FONT_COLOR,
         #     font=font,
         #     anchor="ms"  # Middle, baSeline
         # )
@@ -1106,10 +1174,10 @@ class SeedTranscribeSeedQRZoomedInScreen(BaseScreen):
             canvas=self.block_mask,
             image_draw=draw,
             text=msg,
-            background_color=GUIConstants.BACKGROUND_COLOR,
+            background_color=Theme.BACKGROUND_COLOR,
             is_text_centered=True,
-            screen_y=self.canvas_height - GUIConstants.BODY_FONT_SIZE - GUIConstants.COMPONENT_PADDING,
-            height=GUIConstants.BODY_FONT_SIZE + GUIConstants.COMPONENT_PADDING,
+            screen_y=self.canvas_height - Theme.BODY_FONT_SIZE - Padding.COMPONENT,
+            height=Theme.BODY_FONT_SIZE + Padding.COMPONENT,
         ).render()
 
 
@@ -1120,10 +1188,10 @@ class SeedTranscribeSeedQRZoomedInScreen(BaseScreen):
 
         block_labels = Image.new("RGBA", (self.canvas_width, self.canvas_height), (255,255,255,0))
         draw = ImageDraw.Draw(block_labels)
-        draw.rectangle((self.mask_width, 0, self.canvas_width - self.mask_width, self.pixels_per_block), fill=GUIConstants.ACCENT_COLOR)
-        draw.rectangle((0, self.mask_height, self.pixels_per_block, self.canvas_height - self.mask_height), fill=GUIConstants.ACCENT_COLOR)
+        draw.rectangle((self.mask_width, 0, self.canvas_width - self.mask_width, self.pixels_per_block), fill=Theme.ACCENT_COLOR)
+        draw.rectangle((0, self.mask_height, self.pixels_per_block, self.canvas_height - self.mask_height), fill=Theme.ACCENT_COLOR)
 
-        label_font = Fonts.get_font(GUIConstants.FIXED_WIDTH_EMPHASIS_FONT_NAME, GUIConstants.TOP_NAV_TITLE_FONT_SIZE + 8)
+        label_font = Fonts.get_font(Theme.FIXED_WIDTH_EMPHASIS_FONT_NAME, Theme.TOP_NAV_TITLE_FONT_SIZE + 8)
         x_label = block_labels_x[cur_block_x]
         (left, top, right, bottom) = label_font.getbbox(x_label, anchor="ls")
         x_label_height = -1 * top
@@ -1131,7 +1199,7 @@ class SeedTranscribeSeedQRZoomedInScreen(BaseScreen):
         draw.text(
             (int(self.canvas_width/2), self.pixels_per_block - int((self.pixels_per_block - x_label_height)/2)),
             text=x_label,
-            fill=GUIConstants.BUTTON_SELECTED_FONT_COLOR,
+            fill=Theme.BUTTON_SELECTED_FONT_COLOR,
             font=label_font,
             anchor="ms",  # Middle, baSeline
         )
@@ -1142,7 +1210,7 @@ class SeedTranscribeSeedQRZoomedInScreen(BaseScreen):
         draw.text(
             (int(self.pixels_per_block/2), int((self.canvas_height + y_label_height) / 2)),
             text=y_label,
-            fill=GUIConstants.BUTTON_SELECTED_FONT_COLOR,
+            fill=Theme.BUTTON_SELECTED_FONT_COLOR,
             font=label_font,
             anchor="ms",  # Middle, baSeline
         )
@@ -1212,6 +1280,7 @@ class SeedTranscribeSeedQRZoomedInScreen(BaseScreen):
 
 @dataclass
 class SeedTranscribeSeedQRConfirmQRPromptScreen(ButtonListScreen):
+
     def __post_init__(self):
         self.is_bottom_list = True
         super().__post_init__()
@@ -1226,7 +1295,8 @@ class SeedTranscribeSeedQRConfirmQRPromptScreen(ButtonListScreen):
 
 @dataclass
 class AddressVerificationSigTypeScreen(ButtonListScreen):
-    text: str = ""
+
+    text: str = ''
 
     def __post_init__(self):
         self.is_bottom_list = True
@@ -1240,13 +1310,16 @@ class AddressVerificationSigTypeScreen(ButtonListScreen):
 
 @dataclass
 class SelectSeedScreen(ButtonListScreen):
-    text: str = ""
+
+    text: str = ''
 
     def __post_init__(self):
         self.is_bottom_list = True
         super().__post_init__()
 
-        self.components.append(TextArea(
-            text=self.text,
-            screen_y=self.top_nav.height,
-        ))
+        self.components.append(
+            TextArea(
+                text=self.text,
+                screen_y=self.top_nav.height,
+            )
+        )

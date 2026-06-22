@@ -1,3 +1,4 @@
+from ots.address import Address
 from time import sleep
 
 from dataclasses import dataclass
@@ -8,8 +9,15 @@ from xmrsigner.hardware.buttons import HardwareButtonsConstants
 from xmrsigner.hardware.camera import Camera
 from xmrsigner.models.decode_qr import DecodeQR, DecodeQRStatus
 from xmrsigner.models.threads import BaseThread
-from xmrsigner.gui.screens.screen import BaseScreen, ButtonListScreen
-from xmrsigner.gui.components import GUIConstants, Fonts, TextArea
+from xmrsigner.gui.screens.screen import (
+    BaseScreen,
+    BaseTopNavScreen,
+    ButtonListScreen,
+    LargeIconStatusScreen
+)
+from xmrsigner.gui.constants import Padding
+from xmrsigner.gui.constants import Icon as IconConstants
+from xmrsigner.gui.components import Theme, Fonts, TextArea
 
 
 @dataclass
@@ -77,7 +85,7 @@ class ScanScreen(BaseScreen):
 
         def run(self):
             from timeit import default_timer as timer
-            instructions_font = Fonts.get_font(GUIConstants.BODY_FONT_NAME, GUIConstants.BUTTON_FONT_SIZE)
+            instructions_font = Fonts.get_font(Theme.BODY_FONT_NAME, Theme.BUTTON_FONT_SIZE)
             while self.keep_running:
                 start = timer()
                 frame = self.camera.read_video_stream(as_image=True)
@@ -98,19 +106,19 @@ class ScanScreen(BaseScreen):
                             # Temp solution: render a slight 1px shadow behind the text
                             draw.text(xy=(
                                         int(self.renderer.canvas_width / 2 + 2),
-                                        self.renderer.canvas_height - GUIConstants.EDGE_PADDING + 2
+                                        self.renderer.canvas_height - Padding.EDGE + 2
                                      ),
                                      text=scan_text,
-                                     fill=GUIConstants.BRIGHTNESS_TEXT_COLOR,
+                                     fill=Theme.BRIGHTNESS_TEXT_COLOR,
                                      font=instructions_font,
                                      anchor="ms")
                             # Render the onscreen instructions
                             draw.text(xy=(
                                         int(self.renderer.canvas_width/2),
-                                        self.renderer.canvas_height - GUIConstants.EDGE_PADDING
+                                        self.renderer.canvas_height - Padding.EDGE
                                      ),
                                      text=scan_text,
-                                     fill=GUIConstants.BODY_FONT_COLOR,
+                                     fill=Theme.BODY_FONT_COLOR,
                                      font=instructions_font,
                                      anchor="ms")
                         self.renderer.show_image(frame, show_direct=True)
@@ -135,3 +143,19 @@ class ScanScreen(BaseScreen):
                 if self.hw_inputs.check_for_low(HardwareButtonsConstants.KEY_RIGHT) or self.hw_inputs.check_for_low(HardwareButtonsConstants.KEY_LEFT):
                     self.camera.stop_video_stream_mode()
                     break
+
+
+@dataclass
+class ScanViewOnlyWalletScreen(LargeIconStatusScreen):
+    address: Address|None = None
+
+    def __post_init__(self):
+        if self.address is None:
+            raise Exception('Wallet address is missing.')
+        self.show_back_button = False
+        self.title = 'View only Wallet!'
+        self.status_icon_name = IconConstants.ERROR
+        self.status_icon_size = Theme.ICON_PRIMARY_SCREEN_SIZE
+        self.status_color = Theme.WARNING_COLOR
+        self.status_headline = f'\nWallet {self.address.fingerprint} ({self.address.base58[:6]}...{self.address.base58[-6:]}) is view only!'
+        super().__post_init__()

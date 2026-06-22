@@ -1,10 +1,146 @@
 # Todo
 - [x] transition to ots library
+- [x] make networks work
 - [ ] test migration to ots and fix issues
-- [ ] make networks work
+    - [ ] Flows
+        - [x] Seeds
+            - [x] Scan seed
+                - [x] Scan seed phrase
+                - [x] Scan seed Qr
+                - [x] Scan Wallet (non-view only)
+            - [x] Enter LegacySeed
+            - [x] Enter MoneroSeed
+            - [x] Enter Polyseed
+        - [ ] Tools
+            - [x] Create MoneroSeed from Camera
+                - [x] Choose Network
+                - [x] Choose time/height
+                - [x] Add passphrase
+                - [x] set controller.date or controller.timestamp on polyseed creation
+            - [x] Create MoneroSeed from Dice
+                - [x] Choose Network
+                - [x] Choose time/height
+                - [x] Add passphrase
+                - [x] set controller.date or controller.timestamp on polyseed creation
+            - [x] Create Polyseed from Camera
+                - [x] Choose Network
+                - [x] Choose time/height
+                - [x] Add passphrase
+                - [x] Add password
+                - [x] set controller.date or controller.timestamp on polyseed creation
+            - [x] Create Polyseed from Dice
+                - [x] Choose Network
+                - [x] Choose time/height
+                - [x] Add passphrase
+                - [x] Add password
+                - [x] set controller.date or controller.timestamp on polyseed creation
+            - [x] Pick own words
+            - [x] AddressExplorer
+            - [x] Search Address
+        - [ ] SeedOptions
+            - [x] Scan for seed
+            - [x] AddressExplorer
+            - [x] Export key images
+            - [x] View only wallet
+                - [x] None
+                - [x] Wallet Uri
+                - [x] Json
+                - [x] All
+            - [ ] Backup seed
+                - [ ] View seed phrase
+                    - [ ] add passphrase (if monero seed) => Implementation missing
+                    - [ ] add password (if polyseed) => Implementation missing
+                - [ ] Backup seed Qr
+                    - [ ] add passphrase (if monero seed) => Implementation missing
+                    - [ ] add password (if polyseed) => Implementation missing
+                - [ ] Backup compact seed Qr
+                    - [ ] add passphrase (if monero seed) => Implementation missing
+                    - [ ] add password (if polyseed) => Implementation missing
+            - [x] To Monero seed (Polyseed only)
+            - [x] Discard
+        - [ ] Scan
+            - [x] Scan seed phrase
+            - [x] Scan seed Qr
+            - [x] Scan compact seed Qr
+            - [x] Address -> search address in wallets of seeds
+            - [x] Wallet
+                - [x] non view only -> seed
+                - [x] view only -> Information screen
+            - [x] Timestamp
+            - [x] Date
+            - [ ] Outputs => yet untested
+            - [ ] Transaction => yet untested
+        - [x] Settings
+            - [x] Settings > Advanced
+            - [x] I/O Test
+    - [ ] Settings
+        - [ ] Backup Test => Implementation missing
+            - [ ] Enabled
+            - [ ] Disabled
+            - [ ] Required
+        - [ ] Backup Test Method => Implementation missing
+            - [ ] Complete
+            - [ ] Partial
+            - [ ] One Word
+        - [ ] Persistant Settings => yet untested
+        - [ ] Denomination Display
+            - [ ] XMR only => yet untested
+            - [ ] Atomic units only => yet untested
+            - [ ] Threshold at 0.01 => yet untested
+            - [ ] XMR|pXMR hybrid => yet untested
+        - [x] Moneroseed Passphrase
+            - [x] Enabled
+            - [x] Disabled
+            - [x] Required
+        - [x] Donate
+        - [x] About
+    - [ ] Settings > Advanced
+        - [x] Wallet Qr Format
+            - [x] Wallet Uri
+            - [x] Json
+        - [x] Monero Networks
+            - [x] One selected
+            - [x] Two selected
+            - [x] All selected
+            - [x] None selected
+        - [x] Qr Code Density
+            - [x] Low
+            - [x] Medium
+            - [x] High
+        - [x] Polyseed passphrase
+            - [x] Enabled
+            - [x] Disabled
+            - [x] Required
+        - [x] Camera Rotation
+            - [x] 0 deg
+            - [x] 90 deg
+            - [x] 180 deg
+            - [x] 270 deg
+        - [x] Compact Seed Qr
+            - [x] Enabled
+            - [x] Disabled
+        - [x] Message Signing => hide
+            - [x] Enabled
+            - [x] Disabled
+        - [ ] Show privacy warnings
+            - [ ] Enabled => yet untested
+            - [ ] Disabled => yet untested
+        - [x] Low security
+            - [x] Enabled
+            - [x] Disabled
+        - [ ] Show dire warnings
+            - [ ] Enabled => yet untested
+            - [ ] Disabled => yet untested
+        - [x] Show Qr Brightsness tips
+            - [x] Enabled
+            - [x] Disabled
+        - [x] Show Partner logos
+            - [x] Enabled
+            - [x] Disabled
 ## Other things
 - [ ] Modify [Monero GUI](https://github.com/DiosDelRayo/monero-gui)
 - [ ] remove old font if unused
 - [ ] check how to generate font to include monero logo
+- [x] jump in seed word keyboard only to active keys
 ---
 see also: [Inline Todo](INLINE_TODO.md)

@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 
-from xmrsigner.gui.components import FontAwesomeIconConstants, IconConstants
+from xmrsigner.gui.components import FontAwesome, IconConstants
 from xmrsigner.gui.screens.screen import (
     RET_CODE__SETTINGS_BUTTON,
     RET_CODE__BACK_BUTTON,

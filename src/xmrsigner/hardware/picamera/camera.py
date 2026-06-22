@@ -9,7 +9,7 @@ from xmrsigner.hardware.interfaces import CameraInterface
 from xmrsigner.hardware.picamera.pivideostream import PiVideoStream
 from xmrsigner.models.settings import (
     Settings,
-    SettingsConstants
+    Setting
 )
 
 
@@ -24,7 +24,7 @@ class Camera(CameraInterface):
         # This is the only way to access the one and only Controller
         if cls._instance is None:
             cls._instance = cls.__new__(cls)
-        cls._instance._camera_rotation = int(Settings.get_instance().get_value(SettingsConstants.SETTING__CAMERA_ROTATION))
+        cls._instance._camera_rotation = int(Settings.get_instance().get_value(Setting.CAMERA_ROTATION))
         return cls._instance
 
     def start_video_stream_mode(

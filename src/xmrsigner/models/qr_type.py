@@ -28,3 +28,5 @@ class QrType(Enum):
     BYTES_UR = 'bytes_ur'
 
     INVALID = 'invalid'
+    DATE = 'date'
+    TIMESTAMP = 'timestamp'

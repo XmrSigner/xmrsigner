@@ -20,7 +20,13 @@ class UrQrEncoder(BaseQrEncoder):
         self.ur2_encode = UREncoder(ur=qr_ur_bytes, max_fragment_len=self.qr_max_fragment_size)
 
     def next_part_image(self, width=240, height=240, border=3, background_color='bdbdbd'):
-        return self.qr.qrimage_io(self.next_part(), width, height, border, background_color=background_color)
+        return self.qr.qrimage_io(  # TODO: why not qr.qrimage instead???
+            self.next_part(),
+            width,
+            height,
+            border,
+            background_color=background_color
+        )
 
     def seq_len(self):
         return self.ur2_encode.fountain_encoder.seq_len()

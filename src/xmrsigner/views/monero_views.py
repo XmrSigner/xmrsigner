@@ -1,10 +1,13 @@
-from ots.enums import SeedType
+from datetime import date
+from ots.enums import SeedType, Network
 from ots.seed import Seed
+from ots.address import Address
 from ots.seed_jar import SeedJar
 from ots.transaction import (
     TransferDescription,
     TxDescription
 )
+from ots.exceptions import OtsWalletAddressNotFoundException
 
 from xmrsigner.controller import Controller, Flow
 from xmrsigner.gui.button_data import (
@@ -12,12 +15,17 @@ from xmrsigner.gui.button_data import (
     FingerprintButtonData
 )
 from xmrsigner.gui.components import (
-    GUIConstants,
-    FontAwesomeIconConstants,
+    Theme,
+    FontAwesome,
     IconConstants
 )
 from xmrsigner.models.monero_encoder import MoneroSignedTxQrEncoder
 from xmrsigner.models.settings_definition import Setting
+from xmrsigner.models.pending_seed import (
+    PendingSeed,
+    PendingSeedPhrase,
+    PendingSeedIndices
+)
 from xmrsigner.gui.screens.monero_screens import (
     TxOverviewScreen,
     TxMathScreen,
@@ -32,9 +40,10 @@ from xmrsigner.gui.screens.screen import (
     DireWarningScreen,
     LoadingScreenThread,
     QRDisplayScreen,
-    WarningScreen
+    WarningScreen,
+    LargeIconStatusScreen
 )
-from xmrsigner.views.wallet_views import ImportOutputsView
+from xmrsigner.views.seed_views import ImportOutputsView, SeedOptionsView
 from xmrsigner.views.view import (
     BackStackView,
     MainMenuView,
@@ -46,9 +55,9 @@ from xmrsigner.views.view import (
 
 class MoneroSelectSeedView(View):
 
-    SCAN_SEED = ButtonData('Scan a seed').with_icon(FontAwesomeIconConstants.QRCODE)
-    TYPE_13WORD = ButtonData('Enter 13-word seed').with_icon(FontAwesomeIconConstants.KEYBOARD)
-    TYPE_25WORD = ButtonData('Enter 25-word seed').with_icon(FontAwesomeIconConstants.KEYBOARD)
+    SCAN_SEED = ButtonData('Scan a seed').with_icon(FontAwesome.QRCODE)
+    TYPE_13WORD = ButtonData('Enter 13-word seed').with_icon(FontAwesome.KEYBOARD)
+    TYPE_25WORD = ButtonData('Enter 25-word seed').with_icon(FontAwesome.KEYBOARD)
 
     def __init__(self, flow: Flow):
         super().__init__()
@@ -56,7 +65,7 @@ class MoneroSelectSeedView(View):
 
     def run(self):
         button_data = []
-        for seed in SeedJar.seeds():
+        for seed in SeedJar.items():
             button_data.append(
                 FingerprintButtonData(
                     seed.fingerprint,
@@ -102,9 +111,9 @@ class MoneroSelectSeedView(View):
         if button_data[selected_menu_num] in [self.TYPE_13WORD, self.TYPE_25WORD]:
             from xmrsigner.views.seed_views import SeedMnemonicEntryView
             if button_data[selected_menu_num] == self.TYPE_13WORD:
-                self.controller.pending_seed = PendingSeed(isLegacy=True)
+                self.controller.pending_seed = PendingSeedPhrase(isLegacy=True)
             else:
-                self.controller.pending_seed = PendingSeed()
+                self.controller.pending_seed = PendingSeedPhrase()
             return Destination(SeedMnemonicEntryView)
 
 
@@ -155,7 +164,7 @@ class OverviewView(View):
             self.controller.transaction = None
             self.controller.selected_seed = None
             return Destination(BackStackView)
-        if txd.change_amount == 0:
+        if txd.change_amount == 0:  # TODO: make conditional: only if dire warning is enabled
             return Destination(NoChangeWarningView)
         return Destination(MathView)
 
@@ -308,7 +317,11 @@ class TxChangeDetailsView(View):
 
 class AddressVerificationFailedView(View):
 
-    def __init__(self, is_change: bool = True, is_multisig: bool = False):
+    def __init__(
+            self,
+            is_change: bool = True,
+            is_multisig: bool = False
+    ):
         super().__init__()
         self.is_change = is_change
 
@@ -348,18 +361,19 @@ class SignedQRDisplayView(View):
     def __init__(self):
         super().__init__()
         self.seed: Seed = self.controller.selected_seed
-        self.wallet: MoneroWallet = self.controller.get_wallet(self.seed.network)
         self.loading_screen = None
         if not self.controller.transaction:
             return Destination(MainMenuView)
         # Parsing could take a while. Run the loading screen while we wait.
         from xmrsigner.gui.screens.screen import LoadingScreenThread
-        self.loading_screen = LoadingScreenThread(text=f'Sign Tx for seed {self.seed.fingerprint}...')
+        self.loading_screen = LoadingScreenThread(
+            text=f'Sign Tx for seed {self.seed.fingerprint}...'
+        )
         self.loading_screen.start()
 
     def run(self):
         try:
-            signed_tx: bytes = self.seed.wallet.signTransaction(self.controller.transaction)
+            signed_tx: bytes = self.seed.signTransaction(self.controller.transaction)
             if not signed_tx:
                 raise Exception('No valid transaction')
             qr_encoder = MoneroSignedTxQrEncoder(
@@ -398,18 +412,141 @@ class SigningErrorView(View):
         )
         # TODO: 2024-07-27, code missing here!
         if selected_menu_num == 0:
-            # clear seed selected for psbt signing since it did not add a valid signature
+            # clear seed selected for signing since it did not add a valid signature
             self.controller.selected_seed = None
             return Destination(SelectSeedView, clear_history=True)
         if selected_menu_num == RET_CODE__BACK_BUTTON:
             return Destination(BackStackView)
 
+
 class DateOrBlockHeightView(View):
 
+    def __init__(
+        self,
+        network: Network|None = None,
+        is_block_height: int|None = None,
+        current_height: int|None = None,
+        current_date: date|None = None
+    ):
+        super().__init__()
+        self.network: Network = network or Network.MAIN
+        self.is_block_height: bool = is_block_height or False
+        self.current_height: int|None = height
+        self.current_date: date|None = current_date
+
+
     def run(self):
-        result: Union[str, int] = self.run_screen(
-            DateOrBlockHeightScreen
+        result: str|int = self.run_screen(
+            DateOrBlockHeightScreen,
+            network = self.network,
+            is_block_height = self.is_block_height,
+            current_height = self.current_height,
+            current_date = self.current_date
         )
         if result == RET_CODE__BACK_BUTTON:
             return Destination(BackStackView)
-        self.controller.block_height = int(result)
+
+
+class MoneroAddressSearchView(View):
+
+    def __init__(
+        self,
+        address: Address,
+        seed: Seed|None = None
+    ):
+        super().__init__()
+        self.address: Address = address
+        self.seed: Seed|None = seed
+        if self.seed is not None and self.controller.selected_seed == self.seed:
+            self.controller.selected_seed = None
+
+    def index(
+        self,
+        seed: Seed,
+        address: Address
+    ) -> tuple[int, int]|None:
+        try:
+            return seed.wallet.addressIndex(address)
+        except OtsWalletAddressNotFoundException:
+            return None
+
+    def run(self):
+        idx: tuple|None = None
+        seed: Seed|None = None
+        try:
+            from xmrsigner.gui.screens.screen import LoadingScreenThread
+            self.loading_screen = LoadingScreenThread(text=f'Search address {self.address.fingerprint[:4]}...{self.address.fingerprint[-4:]}...')
+            self.loading_screen.start()
+            seeds: list[Seed] = [ self.seed ] if self.seed is not None else [SeedJar.forIndex(i) for i in range(SeedJar.count())]
+            for seed in seeds:
+                idx = self.index(seed, self.address)
+                if idx is not None:
+                    break
+        finally:
+            # Everything is set. Stop the loading screen
+            self.loading_screen.stop()
+        if idx is None:
+            # Address not found info
+            self.run_screen(
+                LargeIconStatusScreen,
+                title = 'Address not found',
+                show_back_button=False,
+                status_icon_name = IconConstants.ERROR,
+                status_icon_size = Theme.ICON_PRIMARY_SCREEN_SIZE,
+                status_color = Theme.WARNING_COLOR,
+                status_headline = 'Not found!',
+                text = 'No seed with address found.',
+                button_data = [ ButtonData('Ok') ]
+            )
+            return Destination(MainMenuView, clear_history=True)
+        return Destination(
+            MoneroAddressDetailsView,
+            view_args={
+                'address': self.address,
+                'seed': seed,
+                'account': idx[0],
+                'index': idx[1]
+            },
+            clear_history=True
+        )
+
+
+class MoneroAddressDetailsView(View):
+
+    def __init__(
+        self,
+        address: Address,
+        seed: Seed,
+        account: int,
+        index: int
+    ):
+        super().__init__()
+        self.address: Address = address
+        self.seed: Seed = seed
+        self.account: int = account
+        self.index: int = index
+
+    def run(self):
+        ret = self.run_screen(
+            LargeIconStatusScreen,
+            title = 'Address found',
+            show_back_button=False,
+            status_icon_name = IconConstants.SUCCESS,
+            status_icon_size = Theme.ICON_PRIMARY_SCREEN_SIZE,
+            status_color = Theme.SUCCESS_COLOR,
+            status_headline = f'Index {self.account:02d}/{self.index:03d}',
+            text = f'\nin seed {self.seed.fingerprint}.',
+            button_data = [
+                ButtonData('Close'),
+                ButtonData(f'Seed: {self.seed.fingerprint}').with_right_icon(IconConstants.CHEVRON_RIGHT)
+            ]
+        )
+        if ret == 1:
+            return Destination(
+                SeedOptionsView,
+                view_args={
+                    'seed': self.seed
+                },
+                clear_history=True
+            )
+        return Destination(MainMenuView, clear_history=True)

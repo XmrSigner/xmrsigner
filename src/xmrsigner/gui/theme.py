@@ -1,0 +1,84 @@
+from .constants import (
+    Color,
+    FontAwesome,
+    Padding,
+    Font
+)
+from .constants import Icon as IconConstants
+
+class Theme:
+    BACKGROUND_COLOR: Color = Color.BLACK
+    WARNING_COLOR: Color = Color.YELLOW
+    DIRE_WARNING_COLOR: Color = Color.RED_FADED
+    DISCARD_COLOR: Color = Color.RED
+    SUCCESS_COLOR: Color = Color.GREEN
+    ACCENT_COLOR: Color = Color.MONERO_ORANGE
+    ACCENT_COLOR_FADED: Color = Color.MONERO_ORANGE_FADED
+    MAINNET_COLOR: Color = ACCENT_COLOR
+    TESTNET_COLOR: Color = Color.GREEN_PASTEL
+    STAGENET_COLOR: Color = Color.BLUE_PASTEL
+    INFO_COLOR: Color = Color.BLUE
+    VERSION_COLOR: Color = ACCENT_COLOR
+
+    ICON_FONT_NAME__FONT_AWESOME: Font = Font.AWESOME
+    ICON_FONT_NAME__XMRSIGNER: Font = Font.ICON
+    ICON_FONT_SIZE: int = 22
+    ICON_INLINE_FONT_SIZE: int = 24
+    ICON_LARGE_BUTTON_SIZE: int = 36
+    ICON_PRIMARY_SCREEN_SIZE: int = 50
+
+    TOP_NAV_TITLE_FONT_NAME: Font = Font.OPEN_SANS_SEMI_BOLD
+    TOP_NAV_TITLE_FONT_SIZE: int = 20
+    TOP_NAV_HEIGHT: int = 48
+    TOP_NAV_BUTTON_SIZE: int = 32
+
+    BODY_FONT_NAME: Font = Font.OPEN_SANS_REGULAR
+    BODY_FONT_SIZE: int = 17
+    BODY_FONT_MAX_SIZE: int = TOP_NAV_TITLE_FONT_SIZE
+    BODY_FONT_MIN_SIZE: int = 15
+    BODY_FONT_COLOR: Color = Color.WHITE_FADED
+    BODY_LINE_SPACING: int = Padding.COMPONENT
+
+    FIXED_WIDTH_FONT_NAME: Font = Font.INCONSOLATA_REGULAR
+    FIXED_WIDTH_EMPHASIS_FONT_NAME: Font = Font.INCONSOLATA_SEMI_BOLD
+
+    LABEL_FONT_SIZE: int = BODY_FONT_MIN_SIZE
+    LABEL_FONT_COLOR: Color = Color.GRAY
+
+    BUTTON_FONT_NAME: Font = Font.OPEN_SANS_SEMI_BOLD
+    BUTTON_FONT_SIZE: int = 18
+    BUTTON_FONT_COLOR: Color = Color.WHITE_FADED
+    BUTTON_BACKGROUND_COLOR: Color = Color.BLACK_FADED
+    BUTTON_HEIGHT: int = 32
+    BUTTON_SELECTED_FONT_COLOR: Color = BACKGROUND_COLOR
+
+    FINGERPRINT_MONERO_SEED_COLOR: Color = Color.BLUE
+    FINGERPRINT_POLYSEED_COLOR: Color = Color.PURPLE
+    FINGERPRINT_LEGACY_SEED_COLOR: Color = Color.RED
+    LOADING_SCREEN_LOGO_IMAGE: str = 'xmr_logo_60x60.png'
+    LOADING_SCREEN_ARC_COLOR: Color = ACCENT_COLOR
+    LOADING_SCREEN_ARC_TRAILING_COLOR: Color = ACCENT_COLOR_FADED
+    BRIGHTNESS_TEXT_COLOR: Color = Color.BLACK
+    ARROW_COLOR: Color = Color.BLACK
+    QRCODE_FILL_COLOR: Color = Color.BLACK
+    XMRSIGNER_DOMAIN: str = 'xmrsigner.github.io'
+    XMRSIGNER_DONATION_TEXT: str = f'XmrSigner is 100% free & open source, funded solely by the Monero community.\n\nDonate onchain at: {XMRSIGNER_DOMAIN}/donate'
+
+    XMRSIGNER_UPDATE_URL: str = f'{XMRSIGNER_DOMAIN}/download'
+
+    KEYBOARD_OUTLINE_COLOR: Color = Color.GRAY_DARK
+    KEYBOARD_HIGHLIGHT_COLOR: Color = ACCENT_COLOR
+    KEYBOARD_KEY_BACKGROUND_COLOR: Color = BUTTON_BACKGROUND_COLOR
+    KEYBOARD_KEY_BACKGROUND_COLOR_DEACTIVATED: Color = BACKGROUND_COLOR
+    KEYBOARD_KEY_COLOR: Color = Color.BLACK
+    KEYBOARD_KEY_COLOR_DEACTIVATED: Color = Color.GRAY_DARK
+    KEYBOARD_ADDITONAL_KEY_COLOR: Color = Color.GRAY_LIGHT
+    KEYBOARD_OTHER_KEY_COLOR: Color = Color.WHITE_DARK
+    KEYBOARD_CURSOR_COLOR: Color = Color.GRAY_DARKER
+    KEYBOARD_CURSOR_BAR_COLOR: Color = Color.GRAY_LIGHTER
+
+    @classmethod
+    def XMRSIGNER_ABOUT_TEXT(cls) -> str:
+        from xmrsigner.controller import Controller
+        version = Controller.VERSION
+        return f'XmrSigner Version {Controller.VERSION}\n\nYou can find the newest version always at: {cls.XMRSIGNER_UPDATE_URL}'

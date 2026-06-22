@@ -1,6 +1,12 @@
 from ots.enums import AddressType, Network
 from ots.address import Address, AddressString
-from ots.seed import MoneroSeed, Polyseed, LegacySeed, Seed
+from ots.seed import (
+    MoneroSeed,
+    Polyseed,
+    LegacySeed,
+    Seed,
+    SeedLanguage
+)
 
 from urllib.parse import urlparse, parse_qs
 from re import search
@@ -19,11 +25,15 @@ class MoneroAddressQrDecoder(BaseSingleFrameQrDecoder):
         super().__init__()
         self.address: Address|None = None
 
-    def add(self, segment: str, qr_type=QrType.MONERO_ADDRESS):
+    def add(
+        self,
+        segment: str,
+        qr_type=QrType.MONERO_ADDRESS
+    ) -> DecodeQRStatus:
         r = search(r'\b[1-9A-HJ-NP-Za-km-z]{95}\b|[1-9A-HJ-NP-Za-km-z]{106}', segment)
         if r != None:
             try:
-                self.address = Address.fromString(r.group(1))
+                self.address = Address.fromString(r.group(0))
                 self.complete = True
                 self.collected_segments = 1
                 return DecodeQRStatus.COMPLETE
@@ -40,7 +50,6 @@ class MoneroAddressQrDecoder(BaseSingleFrameQrDecoder):
             return False
 
 
-# TODO: there should be a possibility to enter a password/passphrase for the seed
 class MoneroWalletQrDecoder(BaseSingleFrameQrDecoder):
     """
     Decodes single frame representing a monero wallet
@@ -53,11 +62,14 @@ class MoneroWalletQrDecoder(BaseSingleFrameQrDecoder):
         self.spend_key: str|None = None
         self.height: int = 0
 
-    def parse_monero_wallet_uri(self, uri: str) -> tuple[str, str, str, str]:
+    def parse_monero_wallet_uri(
+        self,
+        uri: str
+    ) -> tuple[str, str, str, str]:
         ''' returns address, view_key, spend_key, height '''
         parsed_uri = urlparse(uri)
         query_params = parse_qs(parsed_uri.query)
-        if 'view_key' in query_params:
+        if 'view_key' in query_params or 'spend_key' in query_params:
             address = parsed_uri.path.split(':')[-1]
             view_key = query_params.get('view_key', [''])[0]
             spend_key = query_params.get('spend_key', [''])[0]
@@ -77,24 +89,46 @@ class MoneroWalletQrDecoder(BaseSingleFrameQrDecoder):
         height = query_params.get('height', [''])[0]
         return address, view_key, spend_key, height
 
-    def decode_mnemonic(self, mnemonic: str, network: Network = Network.MAIN) -> Seed:
+    def decode_mnemonic(
+        self,
+        mnemonic: str,
+        network: Network = Network.MAIN,
+        password: str = '',
+        passphrase: str = '',
+    ) -> Seed:
         word_count: int = len(mnemonic.split())
         if word_count in (24, 25):
-            return MoneroSeed.decode(mnemonic, network=network)
+            return MoneroSeed.decode(
+                mnemonic,
+                network=network,
+                passphrase=passphrase
+            )
         if word_count == 16:
-            return Polyseed.decode(mnemonic, network=network)
+            return Polyseed.decode(
+                mnemonic,
+                network=network,
+                password=password,
+                passphrase=passphrase
+            )
         if word_count in (12, 13):
-            return LegacySeed.decode(mnemonic, network=network)
+            return LegacySeed.decode(
+                mnemonic,
+                network=network
+            )
         raise Exception(f'Not a valid mnemonic, a mnemonic with {word_count} words does not exist!')
 
-    def add(self, segment, qr_type=QrType.MONERO_WALLET):
+    def add(
+        self,
+        segment,
+        qr_type=QrType.MONERO_WALLET
+    ) -> DecodeQRStatus:
         address, view_key, spend_key, height = self.parse_monero_wallet_uri(segment)
         if address != None:
             try:
                 self.address = Address.fromString(address)
-                self.view_key = view_key
-                self.spend_key = spend_key
-                self.height = int(height or 0)
+                self.view_key = view_key if view_key != '' else None
+                self.spend_key = spend_key if spend_key != '' else None
+                self.height = int(height if height != '' else 0)
                 self.complete = True
                 self.collected_segments = 1
                 return DecodeQRStatus.COMPLETE
@@ -104,9 +138,18 @@ class MoneroWalletQrDecoder(BaseSingleFrameQrDecoder):
 
     @property
     def seed(self) -> Seed|None:
-        if self.is_view_only:
-            return None
-        return MoneroSeed.create(self.spend_key, height=self.height, network=AddressString.network(self.address))
+        if not self.is_view_only:
+            return MoneroSeed.create(
+                bytes.fromhex(self.spend_key),
+                height=self.height,
+                network=self.address.network
+            )
+
+    @property
+    def seed_phrase(self) -> list[str]|None:
+        s = self.seed
+        if s:
+            return s.phrase(SeedLanguage.fromCode('en')).insecure().split()
 
     @property
     def is_valid(self):

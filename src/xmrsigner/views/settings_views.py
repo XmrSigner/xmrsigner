@@ -2,7 +2,7 @@ from logging import getLogger
 
 from xmrsigner.gui.button_data import ButtonData
 from xmrsigner.gui.components import (
-    FontAwesomeIconConstants,
+    FontAwesome,
     IconConstants
 )
 from xmrsigner.models.decode_qr import DecodeQR
@@ -21,8 +21,8 @@ from xmrsigner.models.settings import (
     Setting,
     Visibility
 )
+from xmrsigner.models.settings_definition import Type
 from xmrsigner.hardware.microsd import MicroSD
-from xmrsigner.views.monero_views import DateOrBlockHeightView
 
 
 logger = getLogger(__name__)
@@ -33,8 +33,14 @@ class SettingsMenuView(View):
     IO_TEST = ButtonData('I/O test')
     DONATE = ButtonData('Donate')
     ABOUT = ButtonData('About')
+    ADVANCED = ButtonData('Advanced', right_icon_name = IconConstants.CHEVRON_RIGHT)
 
-    def __init__(self, visibility: Visibility = Visibility.GENERAL, selected_attr: Setting|None = None, initial_scroll: int = 0):
+    def __init__(
+        self,
+        visibility: Visibility = Visibility.GENERAL,
+        selected_attr: Setting|None = None,
+        initial_scroll: int = 0
+    ):
         super().__init__()
         self.visibility: Visibility = visibility
         self.selected_attr: Setting = selected_attr
@@ -46,7 +52,6 @@ class SettingsMenuView(View):
             visibility=self.visibility
         )
         button_data=[e.display_name for e in settings_entries]
-
         selected_button: int = 0
         if self.selected_attr:
             for i, entry in enumerate(settings_entries):
@@ -56,13 +61,11 @@ class SettingsMenuView(View):
         if self.visibility == Visibility.GENERAL:
             title = 'Settings'
             # Set up the next nested level of menuing
-            button_data.append(('Advanced', None, None, None, IconConstants.CHEVRON_RIGHT))
-            next_destination = Destination(SettingsMenuView, view_args={'visibility': Visibility.ADVANCED})
+            button_data.append(self.ADVANCED)
             button_data.append(self.DONATE)
             button_data.append(self.ABOUT)
         elif self.visibility == Visibility.ADVANCED:
             title = 'Advanced'
-            next_destination = None
             button_data.append(self.IO_TEST)
         selected_menu_num = self.run_screen(
             ButtonListScreen,
@@ -80,10 +83,10 @@ class SettingsMenuView(View):
             if self.visibility == Visibility.ADVANCED:
                 return Destination(SettingsMenuView)
             return Destination(SettingsMenuView, view_args={'visibility': Visibility.ADVANCED})
-        if selected_menu_num == len(settings_entries):
-            return next_destination
         if len(button_data) > selected_menu_num and button_data[selected_menu_num] == self.IO_TEST:
             return Destination(IOTestView)
+        if len(button_data) > selected_menu_num and button_data[selected_menu_num] == self.ADVANCED:
+            return Destination(SettingsMenuView, view_args={'visibility': Visibility.ADVANCED})
         if len(button_data) > selected_menu_num and button_data[selected_menu_num] == self.DONATE:
             return Destination(DonateView)
         if len(button_data) > selected_menu_num and button_data[selected_menu_num] == self.ABOUT:
@@ -97,7 +100,12 @@ class SettingsEntryUpdateSelectionView(View):
     Enabled/Disabled, etc).
     """
 
-    def __init__(self, attr: Setting, parent_initial_scroll: int = 0, selected_button: int = None):
+    def __init__(
+        self,
+        attr: Setting,
+        parent_initial_scroll: int = 0,
+        selected_button: int = None
+    ):
         super().__init__()
         self.settings_entry = SettingsDefinition.get_settings_entry(attr)
         self.selected_button = selected_button
@@ -107,13 +115,14 @@ class SettingsEntryUpdateSelectionView(View):
         initial_value: SelectionOption = self.settings.get_value(self.settings_entry.attr)
         button_data = []
         checked_buttons = []
-        for i, value in enumerate(self.settings_entry.selection_options):
-            if type(value) == tuple:
-                value, display_name = value
-            else:
-                display_name = value
-            button_data.append(display_name)
-            if (type(initial_value) == list and value in initial_value) or value == initial_value:
+        selection_options: list[SelectionOption] = self.settings_entry.selection_options
+        print(f'initial_value: {initial_value}({type(initial_value)}')
+        print(f'selection_options: {selection_options}')
+        for i, option in enumerate(selection_options):
+            print(f'{option}: {type(option)}')
+            button_data.append(option.display)
+            print(f'{initial_value} == {option}? {initial_value==option}')
+            if (type(initial_value) == list and option in initial_value) or option == initial_value:
                 checked_buttons.append(i)
                 if self.selected_button is None:
                     # Highlight the selection (for multiselect highlight the first
@@ -141,11 +150,8 @@ class SettingsEntryUpdateSelectionView(View):
         )
         if ret_value == RET_CODE__BACK_BUTTON:
             return settings_menu_view_destination
-        value = self.settings_entry.get_selection_option_value(ret_value)
-        if self.settings_entry.type == Type.FREE_ENTRY:
-            updated_value = ret_value
-            destination = settings_menu_view_destination
-        elif self.settings_entry.type == Type.MULTISELECT:
+        value = selection_options[ret_value]
+        if self.settings_entry.type == Type.MULTISELECT:
             updated_value = list(initial_value)
             if ret_value not in checked_buttons:
                 # This is a new selection to add
@@ -180,6 +186,7 @@ class SettingsEntryUpdateSelectionView(View):
 
 
 class SettingsIngestSettingsQRView(View):
+
     def __init__(self, data: str):
         super().__init__()
 
@@ -197,6 +204,7 @@ class SettingsIngestSettingsQRView(View):
 
 
 class SettingsIngestSettingsQRView(View):
+
     def __init__(self, data: str):
         super().__init__()
         # May raise an Exception which will bubble up to the Controller to display to the
@@ -223,18 +231,21 @@ class SettingsIngestSettingsQRView(View):
     Misc
 ****************************************************************************"""
 class IOTestView(View):
+
     def run(self):
         self.run_screen(settings_screens.IOTestScreen)
         return Destination(SettingsMenuView)
 
 
 class DonateView(View):
+
     def run(self):
         self.run_screen(settings_screens.DonateScreen)
         return Destination(SettingsMenuView)
 
 
 class AboutView(View):
+
     def run(self):
         self.run_screen(settings_screens.AboutScreen)
         return Destination(SettingsMenuView)

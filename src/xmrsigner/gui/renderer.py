@@ -4,7 +4,7 @@ from threading import Lock
 
 from xmrsigner.gui.components import (
     Fonts,
-    GUIConstants
+    Theme
 )
 from xmrsigner.hardware.ST7789 import ST7789
 from xmrsigner.models.singleton import ConfigurableSingleton

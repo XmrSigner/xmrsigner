@@ -1,91 +1,91 @@
 from dataclasses import dataclass
 from PIL import Image, ImageDraw, ImageFont
 from xmrsigner.helpers.pillow import get_font_size
-from typing import Tuple
 
-from xmrsigner.gui.components import Fonts, GUIConstants
+from xmrsigner.gui.constants import Padding, Font
+from xmrsigner.gui.components import Fonts, Theme
 from xmrsigner.hardware.buttons import HardwareButtonsConstants
 
 class Keyboard:
-    WRAP_TOP = "wrap_top"
-    WRAP_BOTTOM = "wrap_bottom"
-    WRAP_LEFT = "wrap_left"
-    WRAP_RIGHT = "wrap_right"
+    WRAP_TOP = 'wrap_top'
+    WRAP_BOTTOM = 'wrap_bottom'
+    WRAP_LEFT = 'wrap_left'
+    WRAP_RIGHT = 'wrap_right'
 
-    EXIT_TOP = "exit_top"
-    EXIT_BOTTOM = "exit_bottom"
-    EXIT_LEFT = "exit_left"
-    EXIT_RIGHT = "exit_right"
+    EXIT_TOP = 'exit_top'
+    EXIT_BOTTOM = 'exit_bottom'
+    EXIT_LEFT = 'exit_left'
+    EXIT_RIGHT = 'exit_right'
     EXIT_DIRECTIONS = [EXIT_TOP, EXIT_BOTTOM, EXIT_LEFT, EXIT_RIGHT]
 
-    ENTER_TOP = "enter_top"
-    ENTER_BOTTOM = "enter_bottom"
-    ENTER_LEFT = "enter_left"
-    ENTER_RIGHT = "enter_right"
+    ENTER_TOP = 'enter_top'
+    ENTER_BOTTOM = 'enter_bottom'
+    ENTER_LEFT = 'enter_left'
+    ENTER_RIGHT = 'enter_right'
 
-    REGULAR_KEY_FONT = "regular"
-    COMPACT_KEY_FONT = "compact"
+    REGULAR_KEY_FONT = 'regular'
+    COMPACT_KEY_FONT = 'compact'
 
     KEY_BACKSPACE = {
-        "code": "DEL",
-        "letter": "del",
-        "font": COMPACT_KEY_FONT,
-        "size": 2,
+        'code': 'DEL',
+        'letter': 'del',
+        'font': COMPACT_KEY_FONT,
+        'size': 2,
     }
     KEY_SPACE = {
-        "code": "SPACE",
-        "letter": "space",
-        "font": COMPACT_KEY_FONT,
-        "size": 1,
+        'code': 'SPACE',
+        'letter': 'space',
+        'font': COMPACT_KEY_FONT,
+        'size': 1,
     }
     KEY_SPACE_2 = {
-        "code": "SPACE",
-        "letter": "space",
-        "font": COMPACT_KEY_FONT,
-        "size": 2,
+        'code': 'SPACE',
+        'letter': 'space',
+        'font': COMPACT_KEY_FONT,
+        'size': 2,
     }
     KEY_SPACE_3 = {
-        "code": "SPACE",
-        "letter": "space",
-        "font": COMPACT_KEY_FONT,
-        "size": 3,
+        'code': 'SPACE',
+        'letter': 'space',
+        'font': COMPACT_KEY_FONT,
+        'size': 3,
     }
     KEY_SPACE_4 = {
-        "code": "SPACE",
-        "letter": "space",
-        "font": COMPACT_KEY_FONT,
-        "size": 4,
+        'code': 'SPACE',
+        'letter': 'space',
+        'font': COMPACT_KEY_FONT,
+        'size': 4,
     }
     KEY_SPACE_5 = {
-        "code": "SPACE",
-        "letter": "space",
-        "font": COMPACT_KEY_FONT,
-        "size": 5,
+        'code': 'SPACE',
+        'letter': 'space',
+        'font': COMPACT_KEY_FONT,
+        'size': 5,
     }
     KEY_CURSOR_LEFT = {
-        "code": "CURSOR_LEFT",
-        "letter": "<",
-        "font": REGULAR_KEY_FONT,
-        "size": 1,
+        'code': 'CURSOR_LEFT',
+        'letter': '<',
+        'font': REGULAR_KEY_FONT,
+        'size': 1,
     }
     KEY_CURSOR_RIGHT = {
-        "code": "CURSOR_RIGHT",
-        "letter": ">",
-        "font": REGULAR_KEY_FONT,
-        "size": 1,
+        'code': 'CURSOR_RIGHT',
+        'letter': '>',
+        'font': REGULAR_KEY_FONT,
+        'size': 1,
     }
     KEY_PREVIOUS_PAGE = {
-        "code": "PREV",
-        "letter": "<",
-        "font": REGULAR_KEY_FONT,
-        "size": 1,
+        'code': 'PREV',
+        'letter': '<',
+        'font': REGULAR_KEY_FONT,
+        'size': 1,
     }
     ADDITIONAL_KEYS = {
-        KEY_SPACE["code"]: KEY_SPACE,
-        KEY_BACKSPACE["code"]: KEY_BACKSPACE,
-        KEY_CURSOR_LEFT["code"]: KEY_CURSOR_LEFT,
-        KEY_CURSOR_RIGHT["code"]: KEY_CURSOR_RIGHT,
-        KEY_PREVIOUS_PAGE["code"]: KEY_PREVIOUS_PAGE,
+        KEY_SPACE['code']: KEY_SPACE,
+        KEY_BACKSPACE['code']: KEY_BACKSPACE,
+        KEY_CURSOR_LEFT['code']: KEY_CURSOR_LEFT,
+        KEY_CURSOR_RIGHT['code']: KEY_CURSOR_RIGHT,
+        KEY_PREVIOUS_PAGE['code']: KEY_PREVIOUS_PAGE,
     }
 
     @dataclass
@@ -101,7 +101,7 @@ class Keyboard:
         keyboard: any
         index_x: int = None
         index_y: int = None
-        code: str = None  # key/code returned on press (e.g. "x" or "cursor_left")
+        code: str|None = None  # key/code returned on press (e.g. 'x' or 'cursor_left')
         size: int = 1
         is_active: bool = True
         is_selected: bool = False
@@ -114,26 +114,26 @@ class Keyboard:
         def render_key(self):
             font = self.keyboard.font
             if self.is_additional_key:
-                if Keyboard.ADDITIONAL_KEYS[self.code]["font"] == Keyboard.COMPACT_KEY_FONT:
+                if Keyboard.ADDITIONAL_KEYS[self.code]['font'] == Keyboard.COMPACT_KEY_FONT:
                     font = self.keyboard.additonal_key_compact_font
-            outline_color = GUIConstants.KEYBOARD_OUTLINE_COLOR
+            outline_color = Theme.KEYBOARD_OUTLINE_COLOR
             if not self.is_active:
-                rect_color = GUIConstants.KEYBOARD_KEY_BACKGROUND_COLOR_DEACTIVATED
-                font_color = GUIConstants.KEYBOARD_KEY_COLOR_DEACTIVATED  # Show the letter but render as gray
-                outline_color = GUIConstants.KEYBOARD_KEY_BACKGROUND_COLOR_DEACTIVATED
+                rect_color = Theme.KEYBOARD_KEY_BACKGROUND_COLOR_DEACTIVATED
+                font_color = Theme.KEYBOARD_KEY_COLOR_DEACTIVATED  # Show the letter but render as gray
+                outline_color = Theme.KEYBOARD_KEY_BACKGROUND_COLOR_DEACTIVATED
                 if self.is_selected:
                     # Inactive, selected just gets highlighted outline
-                    outline_color = GUIConstants.KEYBOARD_HIGHLIGHT_COLOR
+                    outline_color = Theme.KEYBOARD_HIGHLIGHT_COLOR
             elif self.is_selected:
-                rect_color = GUIConstants.KEYBOARD_HIGHLIGHT_COLOR  # Render solid background with the UI's hero color
-                font_color = GUIConstants.KEYBOARD_KEY_COLOR
+                rect_color = Theme.KEYBOARD_HIGHLIGHT_COLOR  # Render solid background with the UI's hero color
+                font_color = Theme.KEYBOARD_KEY_COLOR
             else:
                 if self.is_additional_key:
-                    rect_color = GUIConstants.KEYBOARD_KEY_BACKGROUND_COLOR_DEACTIVATED
-                    font_color = GUIConstants.KEYBOARD_ADDITONAL_KEY_COLOR
+                    rect_color = Theme.KEYBOARD_KEY_BACKGROUND_COLOR_DEACTIVATED
+                    font_color = Theme.KEYBOARD_ADDITONAL_KEY_COLOR
                 else:
-                    rect_color = GUIConstants.KEYBOARD_KEY_BACKGROUND_COLOR
-                    font_color = GUIConstants.KEYBOARD_OTHER_KEY_COLOR
+                    rect_color = Theme.KEYBOARD_KEY_BACKGROUND_COLOR
+                    font_color = Theme.KEYBOARD_OTHER_KEY_COLOR
             self.keyboard.draw.rounded_rectangle(
                 (
                     self.screen_x,
@@ -145,8 +145,8 @@ class Keyboard:
                 fill=rect_color,
                 radius=4
             )
-            # Fixed-width fonts will all have same height, ignoring below baseline (e.g. "Q" or "q")
-            (left, top, right, bottom) = font.getbbox("X", anchor="ls")
+            # Fixed-width fonts will all have same height, ignoring below baseline (e.g. 'Q' or 'q')
+            (left, top, right, bottom) = font.getbbox('X', anchor='ls')
             text_height = -1 * top
             self.keyboard.draw.text(
                 (
@@ -156,22 +156,22 @@ class Keyboard:
                 self.letter,
                 fill=font_color,
                 font=font,
-                anchor="ms"
+                anchor='ms'
             )
 
     def __init__(self,
                  draw: ImageDraw,
-                 charset="1234567890abcdefghijklmnopqrstuvwxyz",
-                 font_name=GUIConstants.FIXED_WIDTH_EMPHASIS_FONT_NAME,
+                 charset='1234567890abcdefghijklmnopqrstuvwxyz',
+                 font_name=Theme.FIXED_WIDTH_EMPHASIS_FONT_NAME,
                  font_size=24,
-                 selected_char="a",
+                 selected_char='a',
                  rows=4,
                  cols=10,
                  rect=(0,40, 240,240),
                  additional_keys=[KEY_BACKSPACE],
                  auto_wrap=[WRAP_TOP, WRAP_BOTTOM, WRAP_LEFT, WRAP_RIGHT],
                  render_now=True,
-                 highlight_color: str = GUIConstants.ACCENT_COLOR):
+                 highlight_color: str = Theme.ACCENT_COLOR):
         """
         `auto_wrap` specifies which edges the keyboard is allowed to loop back when
         navigating past the end.
@@ -183,21 +183,21 @@ class Keyboard:
         self.rect = rect
         self.font = Fonts.get_font(font_name, font_size)
         self.auto_wrap = auto_wrap
-        self.background_color = GUIConstants.BUTTON_BACKGROUND_COLOR
-        self.deactivated_background_color = GUIConstants.BACKGROUND_COLOR
-        self.additional_key_deactivated_background_color = GUIConstants.KEYBOARD_KEY_BACKGROUND_COLOR_DEACTIVATED
-        self.highlight_color = GUIConstants.KEYBOARD_HIGHLIGHT_COLOR
+        self.background_color = Theme.BUTTON_BACKGROUND_COLOR
+        self.deactivated_background_color = Theme.BACKGROUND_COLOR
+        self.additional_key_deactivated_background_color = Theme.KEYBOARD_KEY_BACKGROUND_COLOR_DEACTIVATED
+        self.highlight_color = Theme.KEYBOARD_HIGHLIGHT_COLOR
         # Does the specified layout work?
         additional_key_spaces = 0
         for additional_key in additional_keys:
-            additional_key_spaces += additional_key["size"]  # e.g. backspace takes up 2 slots
+            additional_key_spaces += additional_key['size']  # e.g. backspace takes up 2 slots
         if rows * cols < len(charset) + additional_key_spaces:
             raise Exception(f"charset will not fit in a {rows}x{cols} layout | additional_keys: {additional_keys}")
         if not selected_char:
             raise Exception("`selected_char` cannot be None")
         # Set up the rendering and state params
         self.active_keys = list(self.charset)
-        self.additonal_key_compact_font = Fonts.get_font("RobotoCondensed-Bold", 18)
+        self.additonal_key_compact_font = Fonts.get_font(Font.ROBOTO_CONDENSED_BOLD, 18)
         self.x_start = rect[0]
         self.y_start = rect[1]
         self.x_gap = 2
@@ -209,7 +209,7 @@ class Keyboard:
         self.additional_key_entered_from_x = None
         # Two-dimensional list of Key obj row data
         self.keys = []
-        self.selected_key = {"x": 0, "y": 0}  # Indices in the `keys` 2D list
+        self.selected_key = {'x': 0, 'y': 0}  # Indices in the `keys` 2D list
         cur_y = self.y_start
         for i in range(0, rows):
             cur_row = []
@@ -219,8 +219,8 @@ class Keyboard:
                 is_selected = False
                 if letter == selected_char:
                     is_selected = True
-                    self.selected_key["y"] = i
-                    self.selected_key["x"] = cur_index_x
+                    self.selected_key['y'] = i
+                    self.selected_key['x'] = cur_index_x
                 cur_row.append(self.Key(
                     letter=letter,
                     screen_x=cur_x,
@@ -240,18 +240,18 @@ class Keyboard:
                 # It's the last row; add the additional keys at the end
                 for additional_key in additional_keys:
                     self.keys[-1].append(self.Key(
-                        letter=additional_key["letter"],
-                        code=additional_key["code"],
+                        letter=additional_key['letter'],
+                        code=additional_key['code'],
                         screen_x=cur_x,
                         screen_y=cur_y,
                         index_x=cur_index_x,
                         index_y=i,
                         keyboard=self,
-                        size=additional_key["size"],
+                        size=additional_key['size'],
                         is_additional_key=True,
                     ))
-                    cur_x += self.key_width * additional_key["size"] + self.x_gap
-                    cur_index_x += additional_key["size"]
+                    cur_x += self.key_width * additional_key['size'] + self.x_gap
+                    cur_index_x += additional_key['size']
         if render_now:
             # Render the keys
             self.render_keys()
@@ -282,14 +282,14 @@ class Keyboard:
             for j, key in enumerate(row_keys):
                 if selected_letter and key.code == selected_letter:
                     key.is_selected = True
-                    self.selected_key["y"] = i
-                    self.selected_key["x"] = j
+                    self.selected_key['y'] = i
+                    self.selected_key['x'] = j
                 key.render_key()
 
     def get_selected_key(self):
-        return self.get_key_at(self.selected_key["x"], self.selected_key["y"])
+        return self.get_key_at(self.selected_key['x'], self.selected_key['y'])
 
-    def get_key_at(self, index_x, index_y):
+    def get_key_at(self, index_x, index_y) -> Key|None:
         if index_y < len(self.keys) - 1:
             # Not on the bottom row
             if index_x < len(self.keys[index_y]):
@@ -303,6 +303,89 @@ class Keyboard:
             if index_x >= effective_index and index_x < effective_index + cur_key.size:
                 return cur_key
             effective_index += cur_key.size
+        return None
+
+
+    def row_order(self, y: int, x: int) -> list[int]:
+        '''
+        order to search the closest active key in a row
+        '''
+
+        x = min(x, len(self.keys[y]) - 1)
+        order: list[int] = [x]
+        for i in zip(range(x + 1, len(self.keys[y])), reversed(range(x))):
+            for j in i:
+                order.append(j)
+        for i in range(x + (len(order) // 2) + 1, len(self.keys[y])):
+            order.append(i)
+        for i in reversed(range(0, x - (len(order) // 2))):
+            order.append(i)
+        return order
+
+    def get_next_active_key_right_from(self, y: int, x: int) -> Key|None:
+        if y >= len(self.keys) or x >= len(self.keys[y]):
+            return None
+        for i, key in enumerate(self.keys[y][(x+1):], x + 1):
+            if key.is_active:
+                return self.get_key_at(i, y)
+        if self.auto_wrap:
+            for i, key in enumerate(self.keys[y][:x]):
+                if key.is_active:
+                    return self.get_key_at(i, y)
+        return None
+
+    def get_next_active_key_left_from(self, y: int, x: int) -> Key|None:
+        if y >= len(self.keys) or x >= len(self.keys[y]):
+            return None
+        for i, key in enumerate(reversed(self.keys[y][:x]), 1):
+            if key.is_active:
+                return self.get_key_at(x - i, y)
+        if self.auto_wrap:
+            for i, key in enumerate(reversed(self.keys[y][x+1:]), 1):
+                if key.is_active:
+                    return self.get_key_at(len(self.keys[y]) - i, y)
+        return None
+
+    def get_next_active_key_above(
+        self,
+        x: int,
+        y: int,
+        ignore_exit: bool = False
+    ) -> Key|None:
+        if y >= len(self.keys) or y < 0:
+            return None
+        for i, row in enumerate(reversed(self.keys[:y]), 1):
+            for j in self.row_order(y - i, x):
+                if row[j].is_active:
+                    return self.get_key_at(j, y - i)
+        if not ignore_exit and y == 0 and Keyboard.WRAP_TOP not in self.auto_wrap:
+            return None
+        if self.auto_wrap:
+            for i, row in enumerate(reversed(self.keys[(y+1):]), 1):
+                for j in self.row_order(len(self.keys) - i, x):
+                    if row[j].is_active:
+                        return self.get_key_at(j, len(self.keys) - i)
+        return None
+
+    def get_next_active_key_below(
+        self,
+        x: int,
+        y: int,
+        ignore_exit: bool = False
+    ) -> Key|None:
+        if y >= len(self.keys) or y < 0:
+            return None
+        for i, row in enumerate(self.keys[(y+1):], 1):
+            for j in self.row_order(y + i, x):
+                if row[j].is_active:
+                    return self.get_key_at(j, y + i)
+        if not ignore_exit and (y + 1) == len(self.keys) and Keyboard.WRAP_TOP not in self.auto_wrap:
+            return None
+        if self.auto_wrap:
+            for i, row in enumerate(self.keys[:y]):
+                for j in self.row_order(y, x):
+                    if row[j].is_active:
+                        return self.get_key_at(j, i)
         return None
 
     def get_key_above(self, cur_x, cur_y):
@@ -343,86 +426,131 @@ class Keyboard:
             # No keys in this col in this row. Move down again and recheck.
             next_y += 1
 
-    def update_from_input(self, input, enter_from=None):
+    def update_from_input(
+            self, input,
+            next_active: bool = False  # jump to the next active key
+    ) -> str:
         """
         Managing code must handle its own input/update loop since other action buttons
-        will be active on the same screen outside of the keyboard rect (e.g. "Ok",
-        "Back", etc). Pass relevant input here to update the keyboard.
-
-        `enter_from` tells the keyboard that the external UI has caused a loop back
-        navigation.
-        (e.g. pressing up from a submit button below the keyboard = ENTER_BOTTOM)
+        will be active on the same screen outside of the keyboard rect (e.g. 'Ok',
+        'Back', etc). Pass relevant input here to update the keyboard.
 
         Returns the character currently highlighted or one of the EXIT_* codes if the
         user has navigated off the keyboard past an edge that is not in `auto_wrap`.
 
         Does NOT call self.renderer.show_image to avoid multiple calls on the same screen.
         """
-        key = self.get_key_at(self.selected_key["x"], self.selected_key["y"])
+        key = self.get_key_at(self.selected_key['x'], self.selected_key['y'])
         # Before we update, undo our previously self.selected_key key
         key.is_selected = False
         key.render_key()
         if input == HardwareButtonsConstants.KEY_RIGHT:
-            self.selected_key["x"] = key.index_x + key.size
-            new_key = self.get_key_at(self.selected_key["x"], self.selected_key["y"])
-            if new_key is None:
-                if Keyboard.WRAP_RIGHT in self.auto_wrap:
-                    # Loop it back to the right side
-                    self.selected_key["x"] = 0
-                else:
-                    # Undo selection change and notify controlling loop that we've left
-                    #   the keyboard
-                    self.selected_key["x"] -= 1
-                    return Keyboard.EXIT_RIGHT
+            if next_active:
+                new_key = self.get_next_active_key_right_from(self.selected_key['y'], self.selected_key['x'])
+                if new_key:
+                    self.selected_key['x'] = new_key.index_x
+            else:
+                self.selected_key['x'] = key.index_x + key.size
+                new_key = self.get_key_at(self.selected_key['x'], self.selected_key['y'])
+                if new_key is None:
+                    if Keyboard.WRAP_RIGHT in self.auto_wrap:
+                        # Loop it back to the right side
+                        self.selected_key['x'] = 0
+                    else:
+                        # Undo selection change and notify controlling loop that we've left
+                        #   the keyboard
+                        self.selected_key['x'] -= 1
+                        return Keyboard.EXIT_RIGHT
         elif input == HardwareButtonsConstants.KEY_LEFT:
-            key = self.get_selected_key()
-            self.selected_key["x"] = key.index_x - 1
-            if self.selected_key["x"] < 0:
-                if Keyboard.WRAP_LEFT in self.auto_wrap:
-                    # Loop it back to the left side
-                    self.selected_key["x"] = self.keys[self.selected_key["y"]][-1].index_x
-                else:
-                    # Undo selection change and notify controlling loop that we've left
-                    #   the keyboard
-                    self.selected_key["x"] += 1
-                    return Keyboard.EXIT_LEFT
+            if next_active:
+                new_key = self.get_next_active_key_left_from(self.selected_key['y'], self.selected_key['x'])
+                if new_key:
+                    self.selected_key['x'] = new_key.index_x
+            else:
+                key = self.get_selected_key()
+                self.selected_key['x'] = key.index_x - 1
+                if self.selected_key['x'] < 0:
+                    if Keyboard.WRAP_LEFT in self.auto_wrap:
+                        # Loop it back to the left side
+                        self.selected_key['x'] = self.keys[self.selected_key['y']][-1].index_x
+                    else:
+                        # Undo selection change and notify controlling loop that we've left
+                        #   the keyboard
+                        self.selected_key['x'] += 1
+                        return Keyboard.EXIT_LEFT
         elif input == HardwareButtonsConstants.KEY_DOWN:
-            new_index_x, new_index_y, keyboard_exit = self.get_key_below(self.selected_key["x"], self.selected_key["y"])
-            self.selected_key["x"] = new_index_x
-            self.selected_key["y"] = new_index_y
-            if keyboard_exit:
-                return keyboard_exit
+            if next_active:
+                new_key = self.get_next_active_key_below(self.selected_key['x'], self.selected_key['y'])
+                if new_key:
+                    self.selected_key['x'] = new_key.index_x
+                    self.selected_key['y'] = new_key.index_y
+                if not new_key and (self.selected_key['y'] + 1) == len(self.keys):
+                    return Keyboard.EXIT_TOP
+            else:
+                new_index_x, new_index_y, keyboard_exit = self.get_key_below(self.selected_key['x'], self.selected_key['y'])
+                self.selected_key['x'] = new_index_x
+                self.selected_key['y'] = new_index_y
+                if keyboard_exit:
+                    return keyboard_exit
         elif input == HardwareButtonsConstants.KEY_UP:
-            new_index_x, new_index_y, keyboard_exit = self.get_key_above(self.selected_key["x"], self.selected_key["y"])
-            self.selected_key["x"] = new_index_x
-            self.selected_key["y"] = new_index_y
-            if keyboard_exit:
-                return keyboard_exit
+            if next_active:
+                new_key = self.get_next_active_key_above(self.selected_key['x'], self.selected_key['y'])
+                if new_key:
+                    self.selected_key['x'] = new_key.index_x
+                    self.selected_key['y'] = new_key.index_y
+                if not new_key and self.selected_key['y'] == 0:
+                    return Keyboard.EXIT_TOP
+            else:
+                new_index_x, new_index_y, keyboard_exit = self.get_key_above(self.selected_key['x'], self.selected_key['y'])
+                self.selected_key['x'] = new_index_x
+                self.selected_key['y'] = new_index_y
+                if keyboard_exit:
+                    return keyboard_exit
         elif input == Keyboard.ENTER_LEFT:
             # User has returned to the keyboard along the left edge
             # Keep the last y position that was selected.
-            self.selected_key["x"] = 0
+            self.selected_key['x'] = 0
         elif input == Keyboard.ENTER_RIGHT:
             # User has returned to the keyboard along the right edge
             # Keep the last y position that was selected.
-            self.selected_key["x"] = self.keys[self.selected_key["y"]][-1].index_x
+            self.selected_key['x'] = self.keys[self.selected_key['y']][-1].index_x
         elif input == Keyboard.ENTER_TOP:
             # User has returned to the keyboard along the top edge
             # Keep the last x position that was selected.
-            self.selected_key["y"] = 0
+            if next_active:
+                new_key = self.get_next_active_key_below(
+                    self.selected_key['x'],
+                    len(self.keys) - 1,
+                    ignore_exit=True
+                )
+                if new_key:
+                    self.selected_key['y'] = new_key.index_y
+                    self.selected_key['x'] = new_key.index_x
+            else:
+                self.selected_key['y'] = 0
         elif input == Keyboard.ENTER_BOTTOM:
             # User has returned to the keyboard along the bottom edge
-            # Keep the last x position that was selected.
-            self.selected_key["y"] = len(self.keys) - 1
-            while True:
-                key = self.get_key_at(self.selected_key["x"], self.selected_key["y"])
-                if key is not None:
-                    break
-                else:
-                    # Can't enter here. Jump up a row
-                    self.selected_key["y"] -= 1
+            if next_active:
+                new_key = self.get_next_active_key_above(
+                    self.selected_key['x'],
+                    0, # len(self.keys),  # - 1,
+                    ignore_exit=True
+                )
+                if new_key:
+                    self.selected_key['y'] = new_key.index_y
+                    self.selected_key['x'] = new_key.index_x
+            else:
+                # Keep the last x position that was selected.
+                self.selected_key['y'] = len(self.keys) - 1
+                while True:
+                    key = self.get_key_at(self.selected_key['x'], self.selected_key['y'])
+                    if key is not None:
+                        break
+                    else:
+                        # Can't enter here. Jump up a row
+                        self.selected_key['y'] -= 1
         # Render the newly self.selected_key letter
-        key = self.get_key_at(self.selected_key["x"], self.selected_key["y"])
+        key = self.get_key_at(self.selected_key['x'], self.selected_key['y'])
         key.is_selected = True
         key.render_key()
         return key.code
@@ -435,8 +563,8 @@ class Keyboard:
             for j, key in enumerate(row_keys):
                 if selected_letter and key.code == selected_letter:
                     key.is_selected = True
-                    self.selected_key["y"] = i
-                    self.selected_key["x"] = j
+                    self.selected_key['y'] = i
+                    self.selected_key['x'] = j
                     return
         raise Exception(f"""`selected_letter` "{selected_letter}" not found in keyboard""")
 
@@ -444,30 +572,30 @@ class Keyboard:
         # De-select the current selected_key
         self.get_selected_key().is_selected = False
         if y < len(self.keys):
-            self.selected_key["y"] = y
+            self.selected_key['y'] = y
         else:
-            self.selected_key["y"] = len(self.keys) - 1
-        if x < len(self.keys[self.selected_key["y"]]):
-            self.selected_key["x"] = x
+            self.selected_key['y'] = len(self.keys) - 1
+        if x < len(self.keys[self.selected_key['y']]):
+            self.selected_key['x'] = x
         else:
-            self.selected_key["x"] = len(self.keys[self.selected_key["y"]]) - 1
+            self.selected_key['x'] = len(self.keys[self.selected_key['y']]) - 1
         # Select the new selected_key
-        self.get_key_at(self.selected_key["x"], self.selected_key["y"]).is_selected = True
+        self.get_key_at(self.selected_key['x'], self.selected_key['y']).is_selected = True
 
 
 class TextEntryDisplayConstants:
-    CURSOR_MODE__BAR = "bar"
-    CURSOR_MODE__BLOCK = "block"
+    CURSOR_MODE__BAR = 'bar'
+    CURSOR_MODE__BLOCK = 'block'
 
 
 @dataclass
 class TextEntryDisplay(TextEntryDisplayConstants):
     canvas: Image.Image
-    rect: Tuple[int,int,int,int]
-    font_name: str = GUIConstants.FIXED_WIDTH_EMPHASIS_FONT_NAME
+    rect: tuple[int,int,int,int]
+    font_name: str = Theme.FIXED_WIDTH_EMPHASIS_FONT_NAME
     font_size: int = 24
-    accent_color: str = GUIConstants.ACCENT_COLOR
-    background_color: str = GUIConstants.BUTTON_BACKGROUND_COLOR
+    accent_color: str = Theme.ACCENT_COLOR
+    background_color: str = Theme.BUTTON_BACKGROUND_COLOR
     cursor_mode: str = TextEntryDisplayConstants.CURSOR_MODE__BLOCK
     is_centered: bool = True
     cur_text: str = " "
@@ -489,21 +617,21 @@ class TextEntryDisplay(TextEntryDisplayConstants):
         if cur_text is not None:
             self.cur_text = cur_text
         # Start by rendering to a new Image that we'll composite in at the end
-        image = Image.new("RGB", (self.width + 1, self.height + 1), "black")
+        image = Image.new('RGB', (self.width + 1, self.height + 1), 'black')
         draw = ImageDraw.Draw(image)
-        draw.rounded_rectangle((0, 0, self.width, self.height), fill=GUIConstants.KEYBOARD_KEY_BACKGROUND_COLOR, radius=4)
-        (left, top, right, bottom) = self.font.getbbox("X", anchor="ls")  # measure from baseline
-        text_height = -1 * top  # "top" is negative when measuring from baseline; ignoring below baseline
+        draw.rounded_rectangle((0, 0, self.width, self.height), fill=Theme.KEYBOARD_KEY_BACKGROUND_COLOR, radius=4)
+        (left, top, right, bottom) = self.font.getbbox('X', anchor='ls')  # measure from baseline
+        text_height = -1 * top  # 'top' is negative when measuring from baseline; ignoring below baseline
         if self.cursor_mode == TextEntryDisplay.CURSOR_MODE__BLOCK:
             cursor_block_width = 18
             cursor_block_height = 33
             # Draw n-1 of the selected letters
-            (left, top, right, bottom) = self.font.getbbox(self.cur_text[:-1], anchor="ls")
+            (left, top, right, bottom) = self.font.getbbox(self.cur_text[:-1], anchor='ls')
             text_width = right
             if self.is_centered:
                 self.text_offset = int(self.width - text_width - cursor_block_width)/2
             else:
-                self.text_offset = GUIConstants.COMPONENT_PADDING
+                self.text_offset = Padding.COMPONENT
             cursor_block_offset = self.text_offset + text_width - 1
             if cursor_block_offset == 0:
                 cursor_block_offset = 1
@@ -512,17 +640,17 @@ class TextEntryDisplay(TextEntryDisplayConstants):
                 # Shift the display left
                 cursor_block_offset -= end_pos_x - self.width + 1
                 self.text_offset -= end_pos_x - self.width + 1
-            draw.text((self.text_offset, self.height - int(text_height/2)), self.cur_text[:-1], fill=GUIConstants.ACCENT_COLOR, font=self.font, anchor="ls")
+            draw.text((self.text_offset, self.height - int(text_height/2)), self.cur_text[:-1], fill=Theme.ACCENT_COLOR, font=self.font, anchor='ls')
             # Draw the highlighted cursor block
-            cursor_color = GUIConstants.KEYBOARD_CURSOR_COLOR
+            cursor_color = Theme.KEYBOARD_CURSOR_COLOR
             draw.rectangle((cursor_block_offset, 1, cursor_block_offset + cursor_block_width, self.height - 1), fill=cursor_color)
-            draw.text((cursor_block_offset + 1, self.height - int(text_height/2)), self.cur_text[-1], fill=GUIConstants.ACCENT_COLOR, font=self.font, anchor="ls")
+            draw.text((cursor_block_offset + 1, self.height - int(text_height/2)), self.cur_text[-1], fill=Theme.ACCENT_COLOR, font=self.font, anchor='ls')
         else:
             cursor_bar_serif_half_width = 4
             if self.is_centered:
                 # self.text_offset = int(self.width - tw)/2
                 raise Exception("Centered cursor bars not fully implemented")
-            (left, top, right, bottom) = self.font.getbbox(cur_text if cur_text else "", anchor="ls")  # measure from baseline
+            (left, top, right, bottom) = self.font.getbbox(cur_text if cur_text else "", anchor='ls')  # measure from baseline
             text_width = right
             end_pos_x = 3 + text_width + cursor_bar_serif_half_width + 3
             if end_pos_x < self.width:
@@ -540,7 +668,7 @@ class TextEntryDisplay(TextEntryDisplayConstants):
                     #   the right edge of the display.
                     self.text_offset = self.width - (tw_left + cursor_bar_serif_half_width + 3)
                 elif self.text_offset + tw_left < 3 + cursor_bar_serif_half_width:
-                    # Cursor is at the extreme left; have to push the full tw_left off 
+                    # Cursor is at the extreme left; have to push the full tw_left off
                     #   left edge of the display.
                     self.text_offset = 3 + cursor_bar_serif_half_width - tw_left
                 cursor_bar_x = self.text_offset + tw_left
@@ -552,10 +680,10 @@ class TextEntryDisplay(TextEntryDisplayConstants):
                 self.cur_text,
                 fill=self.accent_color,
                 font=self.font,
-                anchor="ls"
+                anchor='ls'
             )
-            # Render as an "I" bar
-            cursor_bar_color = GUIConstants.KEYBOARD_CURSOR_BAR_COLOR
+            # Render as an 'I' bar
+            cursor_bar_color = Theme.KEYBOARD_CURSOR_BAR_COLOR
             draw.line((cursor_bar_x, 3, cursor_bar_x, self.height - 3), fill=cursor_bar_color)
             draw.line((cursor_bar_x - cursor_bar_serif_half_width, 3, cursor_bar_x + cursor_bar_serif_half_width, 3), fill=cursor_bar_color)
             draw.line((cursor_bar_x - cursor_bar_serif_half_width, self.height - 3, cursor_bar_x + cursor_bar_serif_half_width, self.height - 3), fill=cursor_bar_color)

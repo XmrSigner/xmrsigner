@@ -7,11 +7,13 @@ from ots.enums import Network as OtsNetwork
 
 
 class MicroSdAction(Enum):
+
     INSERTED = 'add'
     REMOVED = 'remove'
 
 
 class SelectionOption:
+
     name: str
     value: str|int
 
@@ -24,16 +26,25 @@ class SelectionOption:
         return self.value.value
 
     def __str__(self) -> str:
-        return self.value
+        return self.value if type(self.value) == str else str(int)
 
 
 class Choice(SelectionOption, Enum):
+
     @classmethod
     def all(cls) -> list:
         return [c for c in cls]
 
 
+class BackupTestMethod(Choice):
+
+    COMPLETE = 25
+    PARTIAL = 4
+    ONE_WORD = 1
+
+
 class Network(Choice):
+
     MAIN = OtsNetwork.MAIN
     TEST = OtsNetwork.TEST
     STAGE = OtsNetwork.STAGE
@@ -42,8 +53,12 @@ class Network(Choice):
     def config_value(self) -> str|int:
         return self.name[0]
 
+    def __str__(self) -> str:
+        return self.value.name
+
 
 class Option(Choice):
+
     ENABLED = 'E'
     DISABLED = 'D'
     PROMPT = 'P'
@@ -71,6 +86,14 @@ class QrDisplayBrightness(Choice):
     BRIGHT = 80
     VERY_BRIGHT = 150
     MAX = 255
+
+    @classmethod
+    def _missing_(cls, value: int) -> 'QrDisplayBrightness':
+        min_diff: int|None = None
+        for e in cls:
+            if min_diff is None or abs(value - e.value) < abs(value - min_diff.value):
+                min_diff = e
+        return min_diff
 
 
 class Language(Choice):
@@ -120,6 +143,7 @@ class Language(Choice):
 
 
 class XmrDenomination(Choice):
+
     XMR = 'XMR'
     ATOMIC_UNITS = 'pXMR'
     TRESHOLD = 'thr'
@@ -136,6 +160,7 @@ class XmrDenomination(Choice):
 
 
 class CameraRotation(Choice):
+
     NONE = 0
     ROTATION_90 = 90
     ROTATION_180 = 180
@@ -150,17 +175,20 @@ class CameraRotation(Choice):
 
 
 class QrDensity(Choice):
+
     LOW = 'L'
     MEDIUM = 'M'
     HIGH = 'H'
 
 
 class ViewOnlyWalletFormat(Choice):
+
     WALLET_URI = 'U'
     JSON = 'J'
 
 
 class Category(Choice):
+
     SYSTEM = 'system'
     DISPLAY = 'display'
     WALLET = 'wallet'
@@ -168,6 +196,7 @@ class Category(Choice):
 
 
 class Visibility(Choice):
+
     GENERAL = 'general'
     ADVANCED = 'advanced'
     HIDDEN = 'hidden'   # For data-only (e.g. custom_derivation), not configurable by the user
@@ -178,6 +207,8 @@ class Setting(Choice):
     LANGUAGE = 'language'
     MONERO_WORDLIST_LANGUAGE = 'monero_wordlist_language'
     POLYSEED_WORDLIST_LANGUAGE = 'monero_wordlist_language'
+    BACKUP_TEST = 'backup_test'
+    BACKUP_TEST_METHOD = 'backup_test_method'
     PERSISTENT_SETTINGS = 'persistent_settings'
     XMR_DENOMINATION = 'denomination'
 
@@ -203,15 +234,16 @@ class Setting(Choice):
 
 
 class Type(Choice):
+
     ENABLED_DISABLED = 'enabled_disabled'
     ENABLED_DISABLED_PROMPT = 'enabled_disabled_prompt'
     ENABLED_DISABLED_PROMPT_REQUIRED = 'enabled_disabled_prompt_required'
     SELECT_1 = 'select_1'
     MULTISELECT = 'multiselect'
 
-class SettingsConstants:
-    PERSISTENT_SETTINGS__SD_INSERTED__HELP_TEXT = 'Store Settings on SD card'
-    PERSISTENT_SETTINGS__SD_REMOVED__HELP_TEXT = 'Insert SD card to enable'
+class PersistentSettings:
+    SD_INSERTED_HELP_TEXT = 'Store Settings on SD card'
+    SD_REMOVED_HELP_TEXT = 'Insert SD card to enable'
 
 
 @dataclass
@@ -338,135 +370,191 @@ class SettingsDefinition:
 
     settings_entries: list[SettingsEntry] = [
         # General options
-        SettingsEntry(category=Category.SYSTEM,
-                      attr=Setting.LANGUAGE,
-                      abbreviated_name="lang",
-                      display_name="Language",
-                      type=Type.SELECT_1,
-                      visibility=Visibility.HIDDEN,  # HIDDEN/DISABLED
-                      selection_options=[Language.ENGLISH],
-                      default_value=Language.ENGLISH),
-        SettingsEntry(category=Category.SYSTEM,
-                      attr=Setting.MONERO_WORDLIST_LANGUAGE,
-                      abbreviated_name="m_wl_lang",
-                      display_name="Mnemonic language",
-                      type=Type.SELECT_1,
-                      visibility=Visibility.HIDDEN,  # HIDDEN/DISABLED
-                      selection_options=Language.monero(),
-                      default_value=Language.ENGLISH),
-        SettingsEntry(category=Category.SYSTEM,
-                      attr=Setting.POLYSEED_WORDLIST_LANGUAGE,
-                      abbreviated_name="ps_wl_lang",
-                      display_name="Polyseed language",
-                      type=Type.SELECT_1,
-                      visibility=Visibility.HIDDEN,  # HIDDEN/DISABLED
-                      selection_options=Language.polyseed(),
-                      default_value=Language.ENGLISH),
-        SettingsEntry(category=Category.SYSTEM,
-                      attr=Setting.PERSISTENT_SETTINGS,
-                      abbreviated_name="persistent",
-                      display_name="Persistent settings",
-                      help_text=SettingsConstants.PERSISTENT_SETTINGS__SD_INSERTED__HELP_TEXT,
-                      default_value=Option.DISABLED),
-        SettingsEntry(category=Category.SYSTEM,
-                      attr=Setting.XMR_DENOMINATION,
-                      display_name="Denomination display",
-                      abbreviated_name="denom",
-                      type=Type.SELECT_1,
-                      selection_options=XmrDenomination.all(),
-                      default_value=XmrDenomination.TRESHOLD),
+        SettingsEntry(
+            category=Category.SYSTEM,
+            attr=Setting.LANGUAGE,
+            abbreviated_name="lang",
+            display_name="Language",
+            type=Type.SELECT_1,
+            visibility=Visibility.HIDDEN,  # HIDDEN/DISABLED
+            selection_options=[Language.ENGLISH],
+            default_value=Language.ENGLISH
+        ),
+        SettingsEntry(
+            category=Category.SYSTEM,
+            attr=Setting.MONERO_WORDLIST_LANGUAGE,
+            abbreviated_name="m_wl_lang",
+            display_name="Mnemonic language",
+            type=Type.SELECT_1,
+            visibility=Visibility.HIDDEN,  # HIDDEN/DISABLED
+            selection_options=Language.monero(),
+            default_value=Language.ENGLISH
+        ),
+        SettingsEntry(
+            category=Category.SYSTEM,
+            attr=Setting.POLYSEED_WORDLIST_LANGUAGE,
+            abbreviated_name="ps_wl_lang",
+            display_name="Polyseed language",
+            type=Type.SELECT_1,
+            visibility=Visibility.HIDDEN,  # HIDDEN/DISABLED
+            selection_options=Language.polyseed(),
+            default_value=Language.ENGLISH
+        ),
+        SettingsEntry(
+            category=Category.SYSTEM,
+            attr=Setting.BACKUP_TEST,
+            abbreviated_name="bckup_test",
+            display_name="Backup Test",
+            type=Type.SELECT_1,
+            selection_options=Option.required(),
+            default_value=Option.ENABLED
+        ),
+        SettingsEntry(
+            category=Category.SYSTEM,
+            attr=Setting.BACKUP_TEST_METHOD,
+            abbreviated_name="bckup_test_method",
+            display_name="Backup Test Method",
+            type=Type.SELECT_1,
+            selection_options=BackupTestMethod.all(),
+            default_value=BackupTestMethod.PARTIAL
+        ),
+        SettingsEntry(
+            category=Category.SYSTEM,
+            attr=Setting.PERSISTENT_SETTINGS,
+            abbreviated_name="persistent",
+            display_name="Persistent settings",
+            help_text=PersistentSettings.SD_INSERTED_HELP_TEXT,
+            default_value=Option.DISABLED
+        ),
+        SettingsEntry(
+            category=Category.SYSTEM,
+            attr=Setting.XMR_DENOMINATION,
+            display_name="Denomination display",
+            abbreviated_name="denom",
+            type=Type.SELECT_1,
+            selection_options=XmrDenomination.all(),
+            default_value=XmrDenomination.TRESHOLD
+        ),
         # Advanced options
-        SettingsEntry(category=Category.FEATURES,
-                      attr=Setting.VIEW_WALLET_QR_FORMAT,
-                      display_name="Wallet QR Format",
-                      abbreviated_name="wqrfmt",
-                      type=Type.MULTISELECT,
-                      visibility=Visibility.ADVANCED,
-                      selection_options=ViewOnlyWalletFormat.all(),
-                      default_value=[ViewOnlyWalletFormat.WALLET_URI]),
-        SettingsEntry(category=Category.FEATURES,
-                      attr=Setting.NETWORKS,
-                      display_name="Monero networks",
-                      type=Type.MULTISELECT,
-                      visibility=Visibility.ADVANCED,
-                      selection_options=Network.all(),
-                      default_value=[Network.MAIN]),
-        SettingsEntry(category=Category.FEATURES,
-                      attr=Setting.QR_DENSITY,
-                      display_name="QR code density",
-                      type=Type.SELECT_1,
-                      visibility=Visibility.ADVANCED,
-                      selection_options=QrDensity.all(),
-                      default_value=QrDensity.MEDIUM),
-        SettingsEntry(category=Category.FEATURES,
-                      attr=Setting.MONERO_SEED_PASSPHRASE,
-                      display_name="Monero seed passphrase",
-                      type=Type.SELECT_1,
-                      selection_options=Option.required(),
-                      default_value=Option.DISABLED),
-        SettingsEntry(category=Category.FEATURES,
-                      attr=Setting.POLYSEED_PASSPHRASE,
-                      display_name="Polyseed passphrase",
-                      type=Type.SELECT_1,
-                      visibility=Visibility.ADVANCED,
-                      selection_options=Option.required(),
-                      default_value=Option.ENABLED),
-        SettingsEntry(category=Category.FEATURES,
-                      attr=Setting.CAMERA_ROTATION,
-                      abbreviated_name="camera",
-                      display_name="Camera rotation",
-                      type=Type.SELECT_1,
-                      visibility=Visibility.ADVANCED,
-                      selection_options=CameraRotation.all(),
-                      default_value=CameraRotation.ROTATION_180),
-        SettingsEntry(category=Category.FEATURES,
-                      attr=Setting.COMPACT_SEEDQR,
-                      display_name="CompactSeedQR",
-                      visibility=Visibility.ADVANCED,
-                      default_value=Option.DISABLED),
-        SettingsEntry(category=Category.FEATURES,
-                      attr=Setting.MESSAGE_SIGNING,
-                      display_name="Message signing",
-                      visibility=Visibility.ADVANCED,
-                      default_value=Option.DISABLED),
-        SettingsEntry(category=Category.FEATURES,
-                      attr=Setting.PRIVACY_WARNINGS,
-                      abbreviated_name="priv_warn",
-                      display_name="Show privacy warnings",
-                      visibility=Visibility.ADVANCED,
-                      default_value=Option.ENABLED),
-        SettingsEntry(category=Category.FEATURES,
-                      attr=Setting.LOW_SECURITY ,
-                      abbreviated_name="low_sec",
-                      display_name="Low security",
-                      visibility=Visibility.ADVANCED,
-                      default_value=Option.DISABLED),
-        SettingsEntry(category=Category.FEATURES,
-                      attr=Setting.DIRE_WARNINGS,
-                      abbreviated_name="dire_warn",
-                      display_name="Show dire warnings",
-                      visibility=Visibility.ADVANCED,
-                      default_value=Option.ENABLED),
-        SettingsEntry(category=Category.FEATURES,
-                      attr=Setting.QR_BRIGHTNESS_TIPS,
-                      display_name="Show QR brightness tips",
-                      visibility=Visibility.ADVANCED,
-                      default_value=Option.ENABLED),
-        SettingsEntry(category=Category.FEATURES,
-                      attr=Setting.PARTNER_LOGOS,
-                      abbreviated_name="partners",
-                      display_name="Show partner logos",
-                      visibility=Visibility.ADVANCED,
-                      default_value=Option.DISABLED),
+        SettingsEntry(
+            category=Category.FEATURES,
+            attr=Setting.VIEW_WALLET_QR_FORMAT,
+            display_name="Wallet QR Format",
+            abbreviated_name="wqrfmt",
+            type=Type.MULTISELECT,
+            visibility=Visibility.ADVANCED,
+            selection_options=ViewOnlyWalletFormat.all(),
+            default_value=[ViewOnlyWalletFormat.WALLET_URI]
+        ),
+        SettingsEntry(
+            category=Category.FEATURES,
+            attr=Setting.NETWORKS,
+            display_name="Monero networks",
+            type=Type.MULTISELECT,
+            visibility=Visibility.ADVANCED,
+            selection_options=Network.all(),
+            default_value=[Network.MAIN]
+        ),
+        SettingsEntry(
+            category=Category.FEATURES,
+            attr=Setting.QR_DENSITY,
+            display_name="QR code density",
+            type=Type.SELECT_1,
+            visibility=Visibility.ADVANCED,
+            selection_options=QrDensity.all(),
+            default_value=QrDensity.MEDIUM
+        ),
+        SettingsEntry(
+            category=Category.FEATURES,
+            attr=Setting.MONERO_SEED_PASSPHRASE,
+            display_name="Monero seed passphrase",
+            type=Type.SELECT_1,
+            selection_options=Option.required(),
+            default_value=Option.ENABLED
+        ),
+        SettingsEntry(
+            category=Category.FEATURES,
+            attr=Setting.POLYSEED_PASSPHRASE,
+            display_name="Polyseed passphrase",
+            type=Type.SELECT_1,
+            visibility=Visibility.ADVANCED,
+            selection_options=Option.required(),
+            default_value=Option.ENABLED
+        ),
+        SettingsEntry(
+            category=Category.FEATURES,
+            attr=Setting.CAMERA_ROTATION,
+            abbreviated_name="camera",
+            display_name="Camera rotation",
+            type=Type.SELECT_1,
+            visibility=Visibility.ADVANCED,
+            selection_options=CameraRotation.all(),
+            default_value=CameraRotation.ROTATION_180
+        ),
+        SettingsEntry(
+            category=Category.FEATURES,
+            attr=Setting.COMPACT_SEEDQR,
+            display_name="CompactSeedQR",
+            visibility=Visibility.ADVANCED,
+            default_value=Option.DISABLED
+        ),
+        SettingsEntry(
+            category=Category.FEATURES,
+            attr=Setting.MESSAGE_SIGNING,
+            display_name="Message signing",
+            visibility=Visibility.HIDDEN,
+            default_value=Option.DISABLED
+        ),
+        SettingsEntry(
+            category=Category.FEATURES,
+            attr=Setting.PRIVACY_WARNINGS,
+            abbreviated_name="priv_warn",
+            display_name="Show privacy warnings",
+            visibility=Visibility.ADVANCED,
+            default_value=Option.ENABLED
+        ),
+        SettingsEntry(
+            category=Category.FEATURES,
+            attr=Setting.LOW_SECURITY ,
+            abbreviated_name="low_sec",
+            display_name="Low security",
+            visibility=Visibility.ADVANCED,
+            default_value=Option.DISABLED
+        ),
+        SettingsEntry(
+            category=Category.FEATURES,
+            attr=Setting.DIRE_WARNINGS,
+            abbreviated_name="dire_warn",
+            display_name="Show dire warnings",
+            visibility=Visibility.ADVANCED,
+            default_value=Option.ENABLED
+        ),
+        SettingsEntry(
+            category=Category.FEATURES,
+            attr=Setting.QR_BRIGHTNESS_TIPS,
+            display_name="Show QR brightness tips",
+            visibility=Visibility.ADVANCED,
+            default_value=Option.ENABLED
+        ),
+        SettingsEntry(
+            category=Category.FEATURES,
+            attr=Setting.PARTNER_LOGOS,
+            abbreviated_name="partners",
+            display_name="Show partner logos",
+            visibility=Visibility.HIDDEN,
+            default_value=Option.ENABLED
+        ),
         # "Hidden" settings with no UI interaction
-        SettingsEntry(category=Category.SYSTEM,
-                      attr=Setting.QR_BRIGHTNESS,
-                      abbreviated_name="qr_brightness",
-                      display_name="QR background color",
-                      type=Type.SELECT_1,
-                      selection_options=QrDisplayBrightness.all(),
-                      visibility=Visibility.HIDDEN,
-                      default_value=QrDisplayBrightness.DEFAULT),
+        SettingsEntry(
+            category=Category.SYSTEM,
+            attr=Setting.QR_BRIGHTNESS,
+            abbreviated_name="qr_brightness",
+            display_name="QR background color",
+            type=Type.SELECT_1,
+            selection_options=QrDisplayBrightness.all(),
+            visibility=Visibility.HIDDEN,
+            default_value=QrDisplayBrightness.DEFAULT
+        ),
     ]
 
     @classmethod

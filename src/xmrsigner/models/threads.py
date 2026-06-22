@@ -25,19 +25,19 @@ class BaseThread(Thread):
 
 class ThreadsafeCounter:
     def __init__(self, initial_value: int = 0):
-        self.count = initial_value
+        self.count: int = initial_value
         self._lock = Lock()
 
     @property
-    def cur_count(self):
+    def cur_count(self) -> int:
         # Reads don't require the lock
         return self.count
 
-    def increment(self, step: int = 1):
+    def increment(self, step: int = 1) -> None:
         # Updates must be locked
         with self._lock:
             self.count += step
 
-    def set_value(self, value: int):
+    def set_value(self, value: int) -> None:
         with self._lock:
             self.count = value

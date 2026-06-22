@@ -1,12 +1,14 @@
+from ots.ots import Ots
 from ots.seed_jar import SeedJar
 from ots.transaction import TxDescription
-from ots.seed import Seed
+from ots.seed import Seed, Network
 
 import logging
 import traceback
 
 from PIL.Image import Image
-from time import sleep
+from datetime import date, datetime, timedelta
+from time import sleep, time
 from sys import exit
 from enum import Enum
 
@@ -75,12 +77,14 @@ class Controller(Singleton):
     settings: Settings = None
     renderer: Renderer = None
 
-    block_height: int|None = None  # helper var
+    _timestamp: int|None = None
+    _date: date|None = None
+    _last_set_ts: int|None = None
 
     pending_seed: PendingSeed|None = None
     selected_seed: Seed|None = None
-    transaction: bytes|None = None
     outputs: bytes|None = None
+    transaction: bytes|None = None
     tx_description: TxDescription|None = None
 
     unverified_address = None
@@ -88,9 +92,9 @@ class Controller(Singleton):
     image_entropy_preview_frames: list[Image]|None = None
     image_entropy_final_image: Image|None = None
 
-    # Destination placeholder for when we need to jump out to a side flow but intend to
-    # return navigation to the main flow (e.g. TX flow, load something,
-    # then resume TX flow).
+    # Destination placeholder for when we need to jump out to a side
+    # flow but intend to  return navigation to the main flow (e.g. TX flow,
+    # load something, then resume TX flow).
     resume_main_flow: Flow|None = None
     back_stack: BackStack|None = None
     screensaver: ScreensaverScreen|None = None
@@ -137,12 +141,6 @@ class Controller(Singleton):
         controller.microsd = MicroSD.get_instance()
         controller.microsd.start_detection()
 
-        # Store one working incomming data in memory
-        controller.outputs = None
-        controller.transaction = None
-        controller.selected_seed: Seed|None = None
-        controller.tx_description = None
-
         # Configure the Renderer
         Renderer.configure_instance()
 
@@ -151,29 +149,58 @@ class Controller(Singleton):
         controller.screensaver_activation_ms = 2 * MICROSECONDS_PER_MINUTE
         return cls._instance
 
+    @property
+    def timestamp_set(self) -> bool:
+        return self._last_set_ts is not None
+
+    @property
+    def tdiff(self) -> int:
+        return int(time()) - self._last_set_ts if self._last_set_ts else 0
+
+    @property
+    def date(self) -> date:
+        if self._date is None:
+            return datetime.fromtimestamp(self.timestamp).date()
+        if self.tdiff < 86400:
+            return self._date
+        return datetime.fromtimestamp(self._timestamp + self.tdiff).date()
+
+    @date.setter
+    def date(self, d: date) -> None:
+        self._date = d
+        self._timestamp = None
+        self._last_set_ts = int(time())
+
+    @date.deleter
+    def date(self) -> None:
+        self._date = None
+        self._timestamp = None
+        self._last_set_ts = None
+
+    @property
+    def timestamp(self) -> int:
+        if self._timestamp is not None:
+            return self._timestamp + self.tdiff
+        if self._date is not None:
+            return int(datetime.fromisoformat(self.date.isoformat()).timestamp())
+        return 0
+
+    @timestamp.setter
+    def timestamp(self, ts: int) -> None:
+        self._timestamp = ts
+        self._date = None
+        self._last_set_ts = int(time())
+
+    @timestamp.deleter
+    def timestamp(self) -> None:
+        self._timestamp = None
+        self._date = None
+        self._last_set_ts = None
 
     @property
     def camera(self):
         from .hardware.camera import Camera
         return Camera.get_instance()
-
-    @property
-    def seeds(self) -> list[Seed]|None:
-        return SeedJar.seeds()
-
-    def has_seed(self, seed: Seed) -> bool:
-        return seed in SeedJar.seeds()
-
-    def get_seed_num(self, seed: Seed) -> int|None:
-        idx = SeedJar.seeds.index(seed)
-        if idx >= 0:
-            return idx
-        return None
-
-    def get_seed(self, seed_num: int) -> Seed:
-        if seed_num < len(SeedJar.count()):
-            return SeedJar.forIndex(seed_num)
-        raise Exception(f"There is no seed_num {seed_num}; only {len(self.jar.seeds)} in memory.")
 
     def pop_prev_from_back_stack(self):
         if len(self.back_stack) > 0:

@@ -1,8 +1,10 @@
+from xmrsigner.gui.constants import Padding
 from xmrsigner.gui.components import (
-    GUIConstants,
-    FontAwesomeIconConstants,
+    Theme,
+    FontAwesome,
     IconConstants
 )
+from xmrsigner.models.settings_definition import SelectionOption
 
 
 class ButtonData:
@@ -50,6 +52,7 @@ class ButtonData:
 
     @classmethod
     def fromTuple(cls, data: tuple) -> 'ButtonData':
+        print(f'data: {data}')
         bd = cls(data[0])
         if len(data) > 1:
             bd.icon_name = data[1]
@@ -67,7 +70,9 @@ class ButtonData:
             return data
         if type(data) == str:
             return cls.fromString(data)
-        return cls.fromTuple(data)
+        if type(data) == tuple:
+            return cls.fromTuple(data)
+        raise Exception(f'Not recognized button data({type(data)}): {data}')
 
     def button_kwargs(
         self,
@@ -84,18 +89,18 @@ class ButtonData:
         out: dict = {
             'text': self.label,
             'icon_name': self.icon_name,
-            'icon_color': self.icon_color or GUIConstants.BUTTON_FONT_COLOR,
+            'icon_color': self.icon_color or Theme.BUTTON_FONT_COLOR,
             'is_icon_inline': True,
             'right_icon_name': self.right_icon_name,
-            'screen_x': GUIConstants.EDGE_PADDING,
-            'screen_y': button_list_y + self.position * (button_height + GUIConstants.LIST_ITEM_PADDING),
+            'screen_x': Padding.EDGE,
+            'screen_y': button_list_y + self.position * (button_height + Padding.LIST_ITEM),
             'scroll_y': scroll_y_initial_offset or 0,
-            'width': canvas_width - (2 * GUIConstants.EDGE_PADDING),
+            'width': canvas_width - (2 * Padding.EDGE),
             'height': button_height,
             'is_text_centered': text_centered,
             'font_name': font_name,
             'font_size': font_size,
-            'font_color': self.label_color or GUIConstants.BUTTON_FONT_COLOR,
+            'font_color': self.label_color or Theme.BUTTON_FONT_COLOR,
             'selected_color': selected_color,
         }
         if is_checked:
@@ -132,7 +137,7 @@ class ButtonData:
 
     @classmethod
     def DISCARD(cls) -> 'ButtonData':
-        return cls('Discard').with_label_color(GUIConstants.RED)
+        return cls('Discard').with_label_color(Theme.DISCARD_COLOR)
 
 
 class FingerprintButtonData(ButtonData):
@@ -146,7 +151,7 @@ class FingerprintButtonData(ButtonData):
         super().__init__(
             fingerprint,
             IconConstants.FINGERPRINT,
-            GUIConstants.FINGERPRINT_POLYSEED_COLOR if is_polyseed else GUIConstants.FINGERPRINT_MONERO_SEED_COLOR if not is_legacy else GUIConstants.FINGERPRINT_MY_MONERO_SEED_COLOR,
+            Theme.FINGERPRINT_POLYSEED_COLOR if is_polyseed else Theme.FINGERPRINT_MONERO_SEED_COLOR if not is_legacy else Theme.FINGERPRINT_LEGACY_SEED_COLOR,
             None,
             None
         )

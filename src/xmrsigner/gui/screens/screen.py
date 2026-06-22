@@ -3,14 +3,15 @@ from time import sleep, time_ns, time
 from dataclasses import dataclass
 from PIL import Image, ImageDraw, ImageColor
 
+from xmrsigner.gui.constants import Padding
 from xmrsigner.gui.components import (
-    GUIConstants,
+    Theme,
     BaseComponent,
     Button,
     Icon,
     IconButton,
     LargeIconButton,
-    FontAwesomeIconConstants,
+    FontAwesome,
     IconConstants,
     TopNav,
     TextArea,
@@ -22,14 +23,16 @@ from xmrsigner.models.threads import BaseThread, ThreadsafeCounter
 from xmrsigner.models.base_encoder import BaseQrEncoder
 from xmrsigner.models.settings import (
     Settings,
-    SettingsConstants,
+    Setting,
+    Option,
     Network
 )
+from xmrsigner.models.settings_definition import QrDisplayBrightness
 from xmrsigner.hardware.buttons import HardwareButtonsConstants, HardwareButtons
 
 
-# Must be huge numbers to avoid conflicting with the selected_button returned by the
-#   screens with buttons.
+# Must be huge numbers to avoid conflicting with the
+# selected_button returned by the screens with buttons.
 RET_CODE__BACK_BUTTON = 1000
 RET_CODE__SETTINGS_BUTTON = 1001
 
@@ -42,16 +45,19 @@ class BaseScreen(BaseComponent):
 
         self.hw_inputs = HardwareButtons.get_instance()
 
-        # Implementation classes can add their own BaseThread to run in parallel with the
-        # main execution thread.
+        # Implementation classes can add their own BaseThread to run
+        # in parallel with the main execution thread.
         self.threads: list[BaseThread] = []
-        # Implementation classes can add additional BaseComponent-derived objects to the
-        # list. They'll be called to `render()` themselves in BaseScreen._render().
+        # Implementation classes can add additional BaseComponent-derived
+        # objects to the list. They'll be called to `render()` themselves
+        # in BaseScreen._render().
         self.components: list[BaseComponent] = []
-        # Implementation classes can add PIL.Image objs here. Format is a tuple of the
+        # Implementation classes can add PIL.Image objs here. Format is a
+        # tuple of the
         # Image and its (x,y) paste coords.
         self.paste_images: list[tuple] = []
-        # Tracks position on scrollable pages, determines which elements are visible.
+        # Tracks position on scrollable pages, determines which elements
+        # are visible.
         self.scroll_y = 0
 
     def display(self) -> any:
@@ -145,8 +151,8 @@ class LoadingScreenThread(AnimatedScreenThread):
         self.arc_sweep = 45
 
     def initial_render(self) -> None:
-        center_image = load_image(GUIConstants.LOADING_SCREEN_LOGO_IMAGE)
-        orbit_gap = 2 * GUIConstants.COMPONENT_PADDING
+        center_image = load_image(Theme.LOADING_SCREEN_LOGO_IMAGE)
+        orbit_gap = 2 * Padding.COMPONENT
         self.bounding_box = (
             int((self.renderer.canvas_width - center_image.width) / 2 - orbit_gap),
             int((self.renderer.canvas_height - center_image.height) / 2 - orbit_gap),
@@ -156,12 +162,12 @@ class LoadingScreenThread(AnimatedScreenThread):
 
         # Need to flush the screen
         with self.renderer.lock:
-            self.renderer.draw.rectangle((0, 0, self.renderer.canvas_width, self.renderer.canvas_height), fill=GUIConstants.BACKGROUND_COLOR)
+            self.renderer.draw.rectangle((0, 0, self.renderer.canvas_width, self.renderer.canvas_height), fill=Theme.BACKGROUND_COLOR)
             self.renderer.canvas.paste(center_image, (self.bounding_box[0] + orbit_gap, self.bounding_box[1] + orbit_gap))
             if self.text:
                 TextArea(
                     text=self.text,
-                    font_size=GUIConstants.TOP_NAV_TITLE_FONT_SIZE,
+                    font_size=Theme.TOP_NAV_TITLE_FONT_SIZE,
                     screen_y=int((self.renderer.canvas_height - self.bounding_box[3]) / 2),
                 ).render()
 
@@ -172,24 +178,24 @@ class LoadingScreenThread(AnimatedScreenThread):
                 self.bounding_box,
                 start=self.position,
                 end=self.position + self.arc_sweep,
-                fill=GUIConstants.LOADING_SCREEN_ARC_COLOR,
-                width=GUIConstants.COMPONENT_PADDING
+                fill=Theme.LOADING_SCREEN_ARC_COLOR,
+                width=Padding.COMPONENT
             )
             # Render trailing arc
             self.renderer.draw.arc(
                 self.bounding_box,
                 start=self.position - self.arc_sweep,
                 end=self.position,
-                fill=GUIConstants.LOADING_SCREEN_ARC_TRAILING_COLOR,
-                width=GUIConstants.COMPONENT_PADDING
+                fill=Theme.LOADING_SCREEN_ARC_TRAILING_COLOR,
+                width=Padding.COMPONENT
             )
             # Erase previous trailing arc leading arc
             self.renderer.draw.arc(
                 self.bounding_box,
                 start=self.position - 2 * self.arc_sweep,
                 end=self.position - self.arc_sweep,
-                fill=GUIConstants.BACKGROUND_COLOR,
-                width=GUIConstants.COMPONENT_PADDING
+                fill=Theme.BACKGROUND_COLOR,
+                width=Padding.COMPONENT
             )
             self.renderer.show_image()
         self.position += self.arc_sweep
@@ -219,9 +225,9 @@ class EtaLoadingScreenThread(LoadingScreenThread):
         with self.renderer.lock:
             TextArea(
                 text=eta_text,
-                font_size=GUIConstants.TOP_NAV_TITLE_FONT_SIZE,
-                screen_y=int(self.renderer.canvas_height - (self.renderer.canvas_height - self.bounding_box[3]) / 2 - GUIConstants.TOP_NAV_TITLE_FONT_SIZE - self.timer_margin),
-                # screen_y=int(self.renderer.canvas_height - GUIConstants.TOP_NAV_TITLE_FONT_SIZE - self.timer_margin),
+                font_size=Theme.TOP_NAV_TITLE_FONT_SIZE,
+                screen_y=int(self.renderer.canvas_height - (self.renderer.canvas_height - self.bounding_box[3]) / 2 - Theme.TOP_NAV_TITLE_FONT_SIZE - self.timer_margin),
+                # screen_y=int(self.renderer.canvas_height - Theme.TOP_NAV_TITLE_FONT_SIZE - self.timer_margin),
             ).render()
 
 
@@ -230,7 +236,7 @@ class BaseTopNavScreen(BaseScreen):
     top_nav_icon_name: str|None = None
     top_nav_icon_color: str|None = None
     title: str = "Screen Title"
-    title_font_size: int = GUIConstants.TOP_NAV_TITLE_FONT_SIZE
+    title_font_size: int = Theme.TOP_NAV_TITLE_FONT_SIZE
     show_back_button: bool = True
     show_power_button: bool = False
 
@@ -242,7 +248,7 @@ class BaseTopNavScreen(BaseScreen):
             text=self.title,
             font_size=self.title_font_size,
             width=self.canvas_width,
-            height=GUIConstants.TOP_NAV_HEIGHT,
+            height=Theme.TOP_NAV_HEIGHT,
             show_back_button=self.show_back_button,
             show_power_button=self.show_power_button,
         )
@@ -289,9 +295,9 @@ class ButtonListScreen(BaseTopNavScreen):
     selected_button: int = 0
     is_button_text_centered: bool = True
     is_bottom_list: bool = False
-    button_font_name: str = GUIConstants.BUTTON_FONT_NAME
-    button_font_size: int = GUIConstants.BUTTON_FONT_SIZE
-    button_selected_color: str = GUIConstants.ACCENT_COLOR
+    button_font_name: str = Theme.BUTTON_FONT_NAME
+    button_font_size: int = Theme.BUTTON_FONT_SIZE
+    button_selected_color: str = Theme.ACCENT_COLOR
 
     # Params for version of list used for Settings
     Button_cls = Button
@@ -302,11 +308,11 @@ class ButtonListScreen(BaseTopNavScreen):
 
     def __post_init__(self):
         super().__post_init__()
-        button_height = GUIConstants.BUTTON_HEIGHT
-        button_list_height = (len(self.button_data) * button_height) + (GUIConstants.COMPONENT_PADDING * max((len(self.button_data) - 1), 0))
+        button_height = Theme.BUTTON_HEIGHT
+        button_list_height = (len(self.button_data) * button_height) + (Padding.COMPONENT * max((len(self.button_data) - 1), 0))
 
         if self.is_bottom_list:
-            button_list_y = self.canvas_height - (button_list_height + GUIConstants.EDGE_PADDING)
+            button_list_y = self.canvas_height - (button_list_height + Padding.EDGE)
         else:
             button_list_y = self.top_nav.height + int((self.canvas_height - self.top_nav.height - button_list_height) / 2)
 
@@ -336,18 +342,18 @@ class ButtonListScreen(BaseTopNavScreen):
         if self.has_scroll_arrows:
             self.arrow_half_width = 10
             self.cur_scroll_y = self.scroll_y_initial_offset or 0
-            self.up_arrow_img = Image.new('RGBA', size=(2 * self.arrow_half_width, 8), color=GUIConstants.ARROW_COLOR)
+            self.up_arrow_img = Image.new('RGBA', size=(2 * self.arrow_half_width, 8), color=Theme.ARROW_COLOR)
             self.up_arrow_img_y = self.top_nav.height - 12
             arrow_draw = ImageDraw.Draw(self.up_arrow_img)
-            arrow_draw.line((self.arrow_half_width, 1, 0, 7), fill=GUIConstants.BUTTON_FONT_COLOR)
-            arrow_draw.line((self.arrow_half_width, 1, 2 * self.arrow_half_width, 7), fill=GUIConstants.BUTTON_FONT_COLOR)
+            arrow_draw.line((self.arrow_half_width, 1, 0, 7), fill=Theme.BUTTON_FONT_COLOR)
+            arrow_draw.line((self.arrow_half_width, 1, 2 * self.arrow_half_width, 7), fill=Theme.BUTTON_FONT_COLOR)
 
-            self.down_arrow_img = Image.new('RGBA', size=(2 * self.arrow_half_width, 8), color=GUIConstants.ARROW_COLOR)
+            self.down_arrow_img = Image.new('RGBA', size=(2 * self.arrow_half_width, 8), color=Theme.ARROW_COLOR)
             self.down_arrow_img_y = self.canvas_height - 16 + 2
             arrow_draw = ImageDraw.Draw(self.down_arrow_img)
             center_x = int(self.canvas_width / 2)
-            arrow_draw.line((self.arrow_half_width, 7, 0, 1), fill=GUIConstants.BUTTON_FONT_COLOR)
-            arrow_draw.line((self.arrow_half_width, 7, 2 * self.arrow_half_width, 1), fill=GUIConstants.BUTTON_FONT_COLOR)
+            arrow_draw.line((self.arrow_half_width, 7, 0, 1), fill=Theme.BUTTON_FONT_COLOR)
+            arrow_draw.line((self.arrow_half_width, 7, 2 * self.arrow_half_width, 1), fill=Theme.BUTTON_FONT_COLOR)
         cur_selected_button = self.buttons[self.selected_button]
         cur_selected_button.is_selected = True
 
@@ -495,7 +501,7 @@ class SelectNetworkScreen(ButtonListScreen):
 
     def __post_init__(self):
         settings: Settings = Settings.get_instance()
-        networks: list[Network] = settings.get_value(SettingsConstants.SETTING__NETWORKS)
+        networks: list[Network] = settings.get_value(Setting.NETWORKS)
         self.button_data: list[ButtonData] = [ButtonData(network.display) for network in networks]
         super().__post_init__()
         self.components.append(TextArea(
@@ -507,9 +513,9 @@ class SelectNetworkScreen(ButtonListScreen):
 @dataclass
 class LargeButtonScreen(BaseTopNavScreen):
     button_data: list[str|tuple]|None = None  # List can be a mix of str or tuple(label: str, icon_name: str)
-    button_font_name: str = GUIConstants.BUTTON_FONT_NAME
+    button_font_name: str = Theme.BUTTON_FONT_NAME
     button_font_size: int = 20
-    button_selected_color: str = GUIConstants.ACCENT_COLOR
+    button_selected_color: str = Theme.ACCENT_COLOR
     selected_button: int = 0
 
     def __post_init__(self):
@@ -517,13 +523,13 @@ class LargeButtonScreen(BaseTopNavScreen):
         if not 1 < len(self.button_data) < 5:
             raise Exception("LargeButtonScreen only supports between 2 and 4 buttons")
         # Maximize 2-across width; calc height with a 4:3 aspect ratio
-        button_width = int((self.canvas_width - (2 * GUIConstants.EDGE_PADDING) - GUIConstants.COMPONENT_PADDING) / 2)
+        button_width = int((self.canvas_width - (2 * Padding.EDGE) - Padding.COMPONENT) / 2)
         button_height = int(button_width * 0.75)
         # Vertically center the buttons
         if len(self.button_data) == 2:
-            button_start_y = self.top_nav.height + int((self.canvas_height - (self.top_nav.height + GUIConstants.COMPONENT_PADDING) - button_height) / 2)
+            button_start_y = self.top_nav.height + int((self.canvas_height - (self.top_nav.height + Padding.COMPONENT) - button_height) / 2)
         else:
-            button_start_y = self.top_nav.height + int((self.canvas_height - (self.top_nav.height + GUIConstants.COMPONENT_PADDING) - (2 * button_height) - GUIConstants.COMPONENT_PADDING) / 2)
+            button_start_y = self.top_nav.height + int((self.canvas_height - (self.top_nav.height + Padding.COMPONENT) - (2 * button_height) - Padding.COMPONENT) / 2)
         self.buttons = []
         for i, button_label in enumerate(self.button_data):
             if type(button_label) == tuple:
@@ -531,9 +537,9 @@ class LargeButtonScreen(BaseTopNavScreen):
             else:
                 icon_name = None
             if i % 2 == 0:
-                button_start_x = GUIConstants.EDGE_PADDING
+                button_start_x = Padding.EDGE
             else:
-                button_start_x = GUIConstants.EDGE_PADDING + button_width + GUIConstants.COMPONENT_PADDING
+                button_start_x = Padding.EDGE + button_width + Padding.COMPONENT
             button_args = {
                 "text": button_label,
                 "screen_x": button_start_x,
@@ -547,14 +553,14 @@ class LargeButtonScreen(BaseTopNavScreen):
             }
             if icon_name:
                 button_args["icon_name"] = icon_name
-                button_args["text_y_offset"] = int(48 / 240 * self.renderer.canvas_height) + GUIConstants.COMPONENT_PADDING
+                button_args["text_y_offset"] = int(48 / 240 * self.renderer.canvas_height) + Padding.COMPONENT
                 button = LargeIconButton(**button_args)
             else:
                 button = Button(**button_args)
             self.buttons.append(button)
             self.components.append(button)
             if i == 1:
-                button_start_y += button_height + GUIConstants.COMPONENT_PADDING
+                button_start_y += button_height + Padding.COMPONENT
         self.buttons[self.selected_button].is_selected = True
 
     def _run(self):
@@ -653,7 +659,7 @@ class QRDisplayScreen(BaseScreen):
         def add_brightness_tips(self, image: Image.Image) -> None:
             # Instantiate a temp Image and ImageDraw object to draw on
             rectangle_width = image.width
-            rectangle_height = GUIConstants.COMPONENT_PADDING * 2 + GUIConstants.BODY_FONT_SIZE * 2 + GUIConstants.BODY_LINE_SPACING
+            rectangle_height = Padding.COMPONENT * 2 + Theme.BODY_FONT_SIZE * 2 + Theme.BODY_LINE_SPACING
             rectangle = Image.new('RGBA', (rectangle_width, rectangle_height), (0, 0, 0, 0))
             img_draw = ImageDraw.Draw(rectangle)
 
@@ -665,10 +671,10 @@ class QRDisplayScreen(BaseScreen):
             chevron_up_icon = Icon(
                 image_draw=img_draw,
                 canvas=rectangle,
-                screen_x=GUIConstants.EDGE_PADDING*2 + 1,
-                screen_y=GUIConstants.COMPONENT_PADDING + 4,  # +4 fudge factor to account for where the chevron is drawn relative to baseline
+                screen_x=Padding.EDGE*2 + 1,
+                screen_y=Padding.COMPONENT + 4,  # +4 fudge factor to account for where the chevron is drawn relative to baseline
                 icon_name=IconConstants.CHEVRON_UP,
-                icon_size=GUIConstants.BODY_FONT_SIZE,
+                icon_size=Theme.BODY_FONT_SIZE,
             )
             chevron_up_icon.render()
 
@@ -676,7 +682,7 @@ class QRDisplayScreen(BaseScreen):
                 image_draw=img_draw,
                 canvas=rectangle,
                 screen_x=chevron_up_icon.screen_x,
-                screen_y=chevron_up_icon.screen_y + chevron_up_icon.icon_size + GUIConstants.BODY_LINE_SPACING,
+                screen_y=chevron_up_icon.screen_y + chevron_up_icon.icon_size + Theme.BODY_LINE_SPACING,
                 icon_name=IconConstants.CHEVRON_DOWN,
                 icon_size=chevron_up_icon.icon_size,
             )
@@ -686,14 +692,14 @@ class QRDisplayScreen(BaseScreen):
                 image_draw=img_draw,
                 canvas=rectangle,
                 text="Brighter",
-                font_size=GUIConstants.BODY_FONT_SIZE,
-                font_name=GUIConstants.BUTTON_FONT_NAME,
+                font_size=Theme.BODY_FONT_SIZE,
+                font_name=Theme.BUTTON_FONT_NAME,
                 background_color=(0, 0, 0, overlay_opacity),
                 edge_padding=0,
                 is_text_centered=False,
                 auto_line_break=False,
                 width=int(rectangle_width/2),
-                screen_x=chevron_up_icon.screen_x + GUIConstants.ICON_INLINE_FONT_SIZE,
+                screen_x=chevron_up_icon.screen_x + Theme.ICON_INLINE_FONT_SIZE,
                 screen_y=chevron_up_icon.screen_y - 2,  # -2 to account for Icon's positioning
                 allow_text_overflow=False
             ).render()
@@ -702,14 +708,14 @@ class QRDisplayScreen(BaseScreen):
                 image_draw=img_draw,
                 canvas=rectangle,
                 text="Darker",
-                font_size=GUIConstants.BODY_FONT_SIZE,
-                font_name=GUIConstants.BUTTON_FONT_NAME,
+                font_size=Theme.BODY_FONT_SIZE,
+                font_name=Theme.BUTTON_FONT_NAME,
                 background_color=(0, 0, 0, overlay_opacity),
                 edge_padding=0,
                 is_text_centered=False,
                 auto_line_break=False,
                 width=int(rectangle_width/2),
-                screen_x=chevron_down_icon.screen_x + GUIConstants.ICON_INLINE_FONT_SIZE,
+                screen_x=chevron_down_icon.screen_x + Theme.ICON_INLINE_FONT_SIZE,
                 screen_y=chevron_down_icon.screen_y - 2,  # -2 to account for Icon's positioning
                 allow_text_overflow=False
             ).render()
@@ -719,13 +725,13 @@ class QRDisplayScreen(BaseScreen):
 
         def run(self):
             settings = Settings.get_instance()
-            cur_brightness_setting = settings.get_value(SettingsConstants.SETTING__QR_BRIGHTNESS_TIPS)
-            show_brightness_tips = cur_brightness_setting == SettingsConstants.OPTION__ENABLED
+            show_brightness_tips = settings.get_value(Setting.QR_BRIGHTNESS_TIPS) == Option.ENABLED
 
             # Loop whether the QR is a single frame or animated; each loop might adjust
             # brightness setting.
             while self.keep_running:
                 # convert the self.qr_brightness integer (31-255) into hex triplets
+                print(f'qr_brightness: {self.qr_brightness.cur_count}')
                 hex_color = (hex(self.qr_brightness.cur_count).split('x')[1]) * 3
                 image = self.qr_encoder.next_part_image(240, 240, border=2, background_color=hex_color)
 
@@ -744,16 +750,23 @@ class QRDisplayScreen(BaseScreen):
         super().__post_init__()
         # Shared coordination var so the display thread can detect success
         settings = Settings.get_instance()
+        print(f'inital qr brightness: {settings.get_value(Setting.QR_BRIGHTNESS).value}')
         self.qr_brightness = ThreadsafeCounter(
-            initial_value=settings.get_value(SettingsConstants.SETTING__QR_BRIGHTNESS))
-        self.tips_start_time = ThreadsafeCounter(initial_value=time_ns())
-
-        self.threads.append(QRDisplayScreen.QRDisplayThread(
-            qr_encoder=self.qr_encoder,
-            qr_brightness=self.qr_brightness,
-            renderer=self.renderer,
-            tips_start_time=self.tips_start_time
-        ))
+            initial_value=settings.get_value(
+                Setting.QR_BRIGHTNESS
+            ).value
+        )
+        self.tips_start_time = ThreadsafeCounter(
+            initial_value=time_ns()
+        )
+        self.threads.append(
+            QRDisplayScreen.QRDisplayThread(
+                qr_encoder=self.qr_encoder,
+                qr_brightness=self.qr_brightness,
+                renderer=self.renderer,
+                tips_start_time=self.tips_start_time
+            )
+        )
 
     def _run(self):
         while True:
@@ -781,18 +794,18 @@ class QRDisplayScreen(BaseScreen):
                 while self.threads[-1].is_alive():
                     sleep(0.01)
                 break
-        Settings.get_instance().set_value(SettingsConstants.SETTING__QR_BRIGHTNESS, self.qr_brightness.cur_count)
+        Settings.get_instance().set_value(Setting.QR_BRIGHTNESS, QrDisplayBrightness(self.qr_brightness.cur_count))
 
 
 @dataclass
 class LargeIconStatusScreen(ButtonListScreen):
     title: str = 'Success!'
     status_icon_name: str = IconConstants.SUCCESS
-    status_icon_size: int = GUIConstants.ICON_PRIMARY_SCREEN_SIZE
-    status_color: str = GUIConstants.SUCCESS_COLOR
+    status_icon_size: int = Theme.ICON_PRIMARY_SCREEN_SIZE
+    status_color: str = Theme.SUCCESS_COLOR
     status_headline: str = 'Success!'  # The colored text under the large icon
     text: str = ''                          # The body text of the screen
-    text_edge_padding: int = GUIConstants.EDGE_PADDING
+    text_edge_padding: int = Padding.EDGE
     button_data: list|None = None
     allow_text_overflow: bool = False
 
@@ -807,11 +820,11 @@ class LargeIconStatusScreen(ButtonListScreen):
             icon_size=self.status_icon_size,
             icon_color=self.status_color,
         )
-        self.status_icon.screen_y = self.top_nav.height - int(GUIConstants.COMPONENT_PADDING/2)
+        self.status_icon.screen_y = self.top_nav.height - int(Padding.COMPONENT/2)
         self.status_icon.screen_x = int((self.canvas_width - self.status_icon.width) / 2)
         self.components.append(self.status_icon)
 
-        next_y = self.status_icon.screen_y + self.status_icon.height + int(GUIConstants.COMPONENT_PADDING/2)
+        next_y = self.status_icon.screen_y + self.status_icon.height + int(Padding.COMPONENT/2)
         if self.status_headline:
             self.warning_headline_textarea = TextArea(
                 text=self.status_headline,
@@ -869,7 +882,7 @@ class WarningEdgesThread(BaseThread):
                         g = max(0, rgb[1] - 34*n - inhale_scalar)
                         b = max(0, rgb[2] - 34*n - inhale_scalar)
                         # `index` shrinks the border at each step
-                        render_border((r, g, b), GUIConstants.EDGE_PADDING - 2 - index)
+                        render_border((r, g, b), Padding.EDGE - 2 - index)
                     # Write the screen updates
                     screen.renderer.show_image()
                 if inhale_factor == inhale_max:
@@ -892,8 +905,8 @@ class WarningEdgesThread(BaseThread):
 
 @dataclass
 class WarningEdgesMixin:
-    status_color: str = GUIConstants.WARNING_COLOR
-    text_edge_padding: int = 2 * GUIConstants.EDGE_PADDING
+    status_color: str = Theme.WARNING_COLOR
+    text_edge_padding: int = 2 * Padding.EDGE
 
     def __post_init__(self):
         super().__post_init__()
@@ -904,7 +917,7 @@ class WarningEdgesMixin:
 class WarningScreen(WarningEdgesMixin, LargeIconStatusScreen):
     title: str = 'Caution'
     status_icon_name: str = IconConstants.WARNING
-    status_color: str = GUIConstants.WARNING_COLOR
+    status_color: str = Theme.WARNING_COLOR
     status_headline: str = 'Privacy Leak!'     # The colored text under the alert icon
 
     def __post_init__(self):
@@ -916,7 +929,7 @@ class WarningScreen(WarningEdgesMixin, LargeIconStatusScreen):
 @dataclass
 class DireWarningScreen(WarningScreen):
     status_headline: str = 'Classified Info!'     # The colored text under the alert icon
-    status_color: str = GUIConstants.DIRE_WARNING_COLOR
+    status_color: str = Theme.DIRE_WARNING_COLOR
 
 
 @dataclass
@@ -952,8 +965,8 @@ class KeyboardScreen(BaseTopNavScreen):
     """
     rows: int|None = None
     cols: int|None = None
-    keyboard_font_name: str = GUIConstants.FIXED_WIDTH_EMPHASIS_FONT_NAME
-    keyboard_font_size: int = GUIConstants.TOP_NAV_TITLE_FONT_SIZE + 2
+    keyboard_font_name: str = Theme.FIXED_WIDTH_EMPHASIS_FONT_NAME
+    keyboard_font_size: int = Theme.TOP_NAV_TITLE_FONT_SIZE + 2
     key_height: int|None = None
     keys_charset: str|None = None
     keys_to_values: dict|None = None
@@ -967,30 +980,30 @@ class KeyboardScreen(BaseTopNavScreen):
         # Set up the keyboard params
         if self.show_save_button:
             right_panel_buttons_width = 60
-            hw_button_x = self.canvas_width - right_panel_buttons_width + GUIConstants.COMPONENT_PADDING
-            hw_button_y = int(self.canvas_height - GUIConstants.BUTTON_HEIGHT) / 2 + 60
-            self.keyboard_width = self.canvas_width - (GUIConstants.EDGE_PADDING + GUIConstants.COMPONENT_PADDING + right_panel_buttons_width - GUIConstants.COMPONENT_PADDING)
+            hw_button_x = self.canvas_width - right_panel_buttons_width + Padding.COMPONENT
+            hw_button_y = int(self.canvas_height - Theme.BUTTON_HEIGHT) / 2 + 60
+            self.keyboard_width = self.canvas_width - (Padding.EDGE + Padding.COMPONENT + right_panel_buttons_width - Padding.COMPONENT)
             # Render the right button panel (only has a Key3 "Save" button)
             self.save_button = IconButton(
                 icon_name=IconConstants.CHECK,
-                icon_color=GUIConstants.SUCCESS_COLOR,
+                icon_color=Theme.SUCCESS_COLOR,
                 width=right_panel_buttons_width,
                 screen_x=hw_button_x,
                 screen_y=hw_button_y,
             )
             self.components.append(self.save_button)
         else:
-            self.keyboard_width = self.canvas_width - 2*GUIConstants.EDGE_PADDING
+            self.keyboard_width = self.canvas_width - 2*Padding.EDGE
         text_entry_display_y = self.top_nav.height
         text_entry_display_height = 30
-        keyboard_start_y = text_entry_display_y + text_entry_display_height + GUIConstants.COMPONENT_PADDING
+        keyboard_start_y = text_entry_display_y + text_entry_display_height + Padding.COMPONENT
         if self.key_height is None:
-            self.key_height = int((self.canvas_height - GUIConstants.EDGE_PADDING - text_entry_display_y - text_entry_display_height - GUIConstants.COMPONENT_PADDING - (self.rows - 1) * 2) / self.rows)
+            self.key_height = int((self.canvas_height - Padding.EDGE - text_entry_display_y - text_entry_display_height - Padding.COMPONENT - (self.rows - 1) * 2) / self.rows)
         if self.keyboard_font_size:
             font_size = self.keyboard_font_size
         else:
             # Scale with button height
-            font_size = self.key_height - GUIConstants.COMPONENT_PADDING
+            font_size = self.key_height - Padding.COMPONENT
         self.keyboard = Keyboard(
             draw=self.renderer.draw,
             charset=self.keys_charset,
@@ -999,9 +1012,9 @@ class KeyboardScreen(BaseTopNavScreen):
             rows=self.rows,
             cols=self.cols,
             rect=(
-                GUIConstants.EDGE_PADDING,
+                Padding.EDGE,
                 keyboard_start_y,
-                GUIConstants.EDGE_PADDING + self.keyboard_width,
+                Padding.EDGE + self.keyboard_width,
                 keyboard_start_y + self.rows * self.key_height + (self.rows - 1) * 2
             ),
             auto_wrap=[Keyboard.WRAP_LEFT, Keyboard.WRAP_RIGHT],
@@ -1011,9 +1024,9 @@ class KeyboardScreen(BaseTopNavScreen):
         self.text_entry_display = TextEntryDisplay(
             canvas=self.renderer.canvas,
             rect=(
-                GUIConstants.EDGE_PADDING,
+                Padding.EDGE,
                 text_entry_display_y,
-                self.canvas_width - GUIConstants.EDGE_PADDING,
+                self.canvas_width - Padding.EDGE,
                 text_entry_display_y + text_entry_display_height
             ),
             cursor_mode=TextEntryDisplay.CURSOR_MODE__BAR,
@@ -1086,8 +1099,8 @@ class KeyboardScreen(BaseTopNavScreen):
                 if self.update_title():
                     TextArea(
                         text=self.title,
-                        font_name=GUIConstants.TOP_NAV_TITLE_FONT_NAME,
-                        font_size=GUIConstants.TOP_NAV_TITLE_FONT_SIZE,
+                        font_name=Theme.TOP_NAV_TITLE_FONT_NAME,
+                        font_size=Theme.TOP_NAV_TITLE_FONT_SIZE,
                         height=self.top_nav.height,
                     ).render()
                     self.top_nav.render_buttons()

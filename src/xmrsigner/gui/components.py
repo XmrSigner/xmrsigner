@@ -20,221 +20,25 @@ from xmrsigner.models.settings import Settings
 from xmrsigner.models.settings_definition import XmrDenomination
 from xmrsigner.models.singleton import Singleton
 from xmrsigner.resources import get as res
+from .theme import (
+    Theme,
+    Color,
+    Font,
+    FontAwesome,
+    Padding,
+    IconConstants
+)
 
 
-class GUIConstants:
-    EDGE_PADDING = 8
-    COMPONENT_PADDING = 8
-    LIST_ITEM_PADDING = 4
-
-    BLACK = '#000000'
-    BLACK_FADED = '#2C2C2C'
-    WHITE = '#FFFFFF'
-    WHITE_FADED = '#FCFCFC'
-    WHITE_DARK = '#E8E8E8'
-    YELLOW = '#FFD60A'
-    RED = '#FF0000'
-    RED_FADED = '#FF453A'
-    GREEN = '#30D158'
-    GREEN_PASTEL = '#00F1CA'
-    BLUE = '#0000FF'
-    BLUE_PASTEL = '#00CAF1'
-    PURPLE = '#FF00FF'
-    MONERO_ORANGE = '#ED5F00'
-    MONERO_ORANGE_FADED = "#F06D36"
-    GRAY = '#777777'
-    GRAY_DARKER = '#666666'
-    GRAY_LIGHT = '#909090'
-    GRAY_LIGHTER = '#C0C0C0'
-    GRAY_DARK = '#303030'
-
-    BACKGROUND_COLOR = BLACK
-    WARNING_COLOR = YELLOW
-    DIRE_WARNING_COLOR = RED_FADED
-    SUCCESS_COLOR = GREEN
-    ACCENT_COLOR = MONERO_ORANGE
-    ACCENT_COLOR_FADED = MONERO_ORANGE_FADED
-    MAINNET_COLOR = ACCENT_COLOR
-    TESTNET_COLOR = GREEN_PASTEL
-    STAGENET_COLOR = BLUE_PASTEL
-    INFO_COLOR = BLUE
-    VERSION_COLOR = ACCENT_COLOR
-
-    ICON_FONT_NAME__FONT_AWESOME = "Font_Awesome_6_Free-Solid-900"
-    ICON_FONT_NAME__XMRSIGNER = "xmrsigner-icons"
-    ICON_FONT_SIZE = 22
-    ICON_INLINE_FONT_SIZE = 24
-    ICON_LARGE_BUTTON_SIZE = 36
-    ICON_PRIMARY_SCREEN_SIZE = 50
-
-    TOP_NAV_TITLE_FONT_NAME = "OpenSans-SemiBold"
-    TOP_NAV_TITLE_FONT_SIZE = 20
-    TOP_NAV_HEIGHT = 48
-    TOP_NAV_BUTTON_SIZE = 32
-
-    BODY_FONT_NAME = "OpenSans-Regular"
-    BODY_FONT_SIZE = 17
-    BODY_FONT_MAX_SIZE = TOP_NAV_TITLE_FONT_SIZE
-    BODY_FONT_MIN_SIZE = 15
-    BODY_FONT_COLOR = WHITE_FADED
-    BODY_LINE_SPACING = COMPONENT_PADDING
-
-    FIXED_WIDTH_FONT_NAME = "Inconsolata-Regular"
-    FIXED_WIDTH_EMPHASIS_FONT_NAME = "Inconsolata-SemiBold"
-
-    LABEL_FONT_SIZE = BODY_FONT_MIN_SIZE
-    LABEL_FONT_COLOR = GRAY
-
-    BUTTON_FONT_NAME = "OpenSans-SemiBold"
-    BUTTON_FONT_SIZE = 18
-    BUTTON_FONT_COLOR = WHITE_FADED
-    BUTTON_BACKGROUND_COLOR = BLACK_FADED
-    BUTTON_HEIGHT = 32
-    BUTTON_SELECTED_FONT_COLOR = BACKGROUND_COLOR
-
-    FINGERPRINT_MONERO_SEED_COLOR = BLUE
-    FINGERPRINT_POLYSEED_COLOR = PURPLE
-    FINGERPRINT_MY_MONERO_SEED_COLOR = RED
-    LOADING_SCREEN_LOGO_IMAGE = 'xmr_logo_60x60.png'
-    LOADING_SCREEN_ARC_COLOR = ACCENT_COLOR
-    LOADING_SCREEN_ARC_TRAILING_COLOR = ACCENT_COLOR_FADED
-    BRIGHTNESS_TEXT_COLOR = BLACK
-    ARROW_COLOR = BLACK
-    QRCODE_FILL_COLOR = BLACK
-    # LOADING_SCREEN_ARC_COLOR = '#ff9416'
-    # LOADING_SCREEN_ARC_TRAILING_COLOR = '#80490b'
-    XMRSIGNER_DOMAIN = 'xmrsigner.org'
-    XMRSIGNER_DONATION_TEXT = f'XmrSigner is 100% free & open source, funded solely by the Monero community.\n\nDonate onchain at: {XMRSIGNER_DOMAIN}/donate'
-
-    XMRSIGNER_UPDATE_URL = f'{XMRSIGNER_DOMAIN}/download'
-
-    KEYBOARD_OUTLINE_COLOR = GRAY_DARK
-    KEYBOARD_HIGHLIGHT_COLOR = ACCENT_COLOR
-    KEYBOARD_KEY_BACKGROUND_COLOR = BUTTON_BACKGROUND_COLOR
-    KEYBOARD_KEY_BACKGROUND_COLOR_DEACTIVATED = BACKGROUND_COLOR
-    KEYBOARD_KEY_COLOR = BLACK
-    KEYBOARD_KEY_COLOR_DEACTIVATED = GRAY_DARK
-    KEYBOARD_ADDITONAL_KEY_COLOR = GRAY_LIGHT
-    KEYBOARD_OTHER_KEY_COLOR = WHITE_DARK
-    KEYBOARD_CURSOR_COLOR = GRAY_DARKER
-    KEYBOARD_CURSOR_BAR_COLOR = GRAY_LIGHTER
-
-    @classmethod
-    @property
-    def XMRSIGNER_ABOUT_TEXT(cls) -> str:
-        from xmrsigner.controller import Controller
-        version = Controller.VERSION
-        return f'XmrSigner Version {Controller.VERSION}\n\nYou can find the newest version always at: {cls.XMRSIGNER_UPDATE_URL}'
-
-
-class FontAwesomeIconConstants:
-    ANGLE_DOWN = '\uf107'
-    ANGLE_LEFT = '\uf104'
-    ANGLE_RIGHT = '\uf105'
-    ANGLE_UP = '\uf106'
-    CAMERA = '\uf030'
-    CARET_DOWN = '\uf0d7'
-    CARET_LEFT = '\uf0d9'
-    CARET_RIGHT = '\uf0da'
-    CARET_UP = '\uf0d8'
-    SOLID_CIRCLE_CHECK = '\uf058'
-    CIRCLE = '\uf111'
-    CIRCLE_CHEVRON_RIGHT = '\uf138'
-    DICE = '\uf522'
-    DICE_ONE = '\uf525'
-    DICE_TWO = '\uf528'
-    DICE_THREE = '\uf527'
-    DICE_FOUR = '\uf524'
-    DICE_FIVE = '\uf523'
-    DICE_SIX = '\uf526'
-    GEAR = '\uf013'
-    KEY = '\uf084'
-    KEYBOARD = '\uf11c'
-    LOCK = '\uf023'
-    MAP = '\uf279'
-    PAPER_PLANE = '\uf1d8'
-    PEN = '\uf304'
-    PLUS = '+'
-    POWER_OFF = '\uf011'
-    ROTATE_RIGHT = '\uf2f9'
-    SCREWDRIVER_WRENCH = '\uf7d9'
-    SQUARE = '\uf0c8'
-    SQUARE_CARET_DOWN = '\uf150'
-    SQUARE_CARET_LEFT = '\uf191'
-    SQUARE_CARET_RIGHT = '\uf152'
-    SQUARE_CARET_UP = '\uf151'
-    SQUARE_CHECK = '\uf14a'
-    TRIANGLE_EXCLAMATION = '\uf071'
-    UNLOCK = '\uf09c'
-    QRCODE = '\uf029'
-    X = '\u0058'
-    WALLET = '\uf555'
-    TRASH_CAN = '\uf2ed'
-    VAULT = '\ue2c5'
-    LIST = '\uf03a'
-    SEEDLING = '\uf4d8'
-    EYE = '\uf06e'
-    EYE_LIGHT = '\uf06e'
-    COINS = '\uf51e'
-    CONVERT = '\uf30b'
-    CHEVRON_UP = '\uf077'
-    CHEVRON_DOWN = '\uf078'
-
-
-class IconConstants:
-    # Menu icons
-    SCAN = '\ue900'
-    SEEDS = '\ue901'
-    SETTINGS = '\ue902'
-    TOOLS = '\ue903'
-
-    # Utility icons
-    BACK = '\ue904'
-    CHECK = '\ue905'
-    CHECKBOX = '\ue906'
-    CHECKBOX_SELECTED = '\ue907'
-    CHEVRON_DOWN = '\ue908'
-    CHEVRON_LEFT = '\ue909'
-    CHEVRON_RIGHT = '\ue90a'
-    CHEVRON_UP = '\ue90b'
-    CLOSE = '\ue90c'
-    PAGE_DOWN = '\ue90d'
-    PAGE_UP = '\ue90e'
-    PLUS = '\ue90f'
-    POWER = '\ue910'
-    RESTART = '\ue911'
-
-    # Messaging icons
-    ERROR = '\ue912'
-    SUCCESS = '\ue913'
-    WARNING = '\ue914'
-
-    # Informational icons
-    ADDRESS = '\ue915'
-    CHANGE = '\ue916'
-    DERIVATION = '\ue917'
-    FEE = '\ue918'
-    FINGERPRINT = '\ue919'
-    PASSPHRASE = '\ue91a'
-
-    # Misc icons
-    MONERO = '\ue91b'  # TODO: don't need BTC, need XMR glyph is still Bitcoin
-    MONERO_ALT = '\ue91c'  # TODO: don't need BTC, need XMR glyph is still Bitcoin
-    BRIGHTNESS = '\ue91d'
-    MICROSD = '\ue91e'
-    QRCODE = '\ue91f'
-
-    MIN_VALUE = SCAN
-    MAX_VALUE = QRCODE
-
-
-def calc_text_centering(font: ImageFont,
-                        text: str,
-                        is_text_centered: bool,
-                        total_width: int,
-                        total_height: int,
-                        start_x: int = 0,
-                        start_y: int = 0) -> tuple[int, int]:
+def calc_text_centering(
+    font: ImageFont,
+    text: str,
+    is_text_centered: bool,
+    total_width: int,
+    total_height: int,
+    start_x: int = 0,
+    start_y: int = 0
+) -> tuple[int, int]:
     # see: https://pillow.readthedocs.io/en/stable/handbook/text-anchors.html#text-anchors
     # Gap between the starting coordinate and the first marking.
     offset_x, offset_y = font.getoffset(text)
@@ -245,45 +49,48 @@ def calc_text_centering(font: ImageFont,
     if is_text_centered:
         text_x = int((total_width - (box_right - offset_x)) / 2) - offset_x
     else:
-        text_x = GUIConstants.COMPONENT_PADDING
+        text_x = Padding.COMPONENT
     text_y = int((total_height - (ascent - offset_y)) / 2) - offset_y
     return (start_x + text_x, start_y + text_y)
 
-def load_icon(icon_name: str, load_selected_variant: bool = False):
-    icon_url = Path(path.dirname(path.dirname(__file__)), 'resources', 'icons', icon_name).resolve()
-    icon = Image.open(BytesIO(res('icons', image_name))).convert("RGB")
+def load_icon(
+        icon_name: str,
+        load_selected_variant: bool = False
+) -> Image.Image|tuple[Image.Image, Image.Image]:
+    icon: Image.Image = Image.open(BytesIO(res('icons', image_name))).convert("RGB")
     if not load_selected_variant:
         return icon
-    else:
-        icon_selected = Image.open(BytesIO(res('icons', image_name + '_selected.png'))).convert("RGB")
-        return (icon, icon_selected)
+    icon_selected: Image.Image = Image.open(BytesIO(res('icons', image_name + '_selected.png'))).convert("RGB")
+    return (icon, icon_selected)
 
 def load_image(image_name: str) -> Image.Image:
-    image = Image.open(BytesIO(res('img', image_name))).convert("RGB")
-    return image
+    return Image.open(BytesIO(res('img', image_name))).convert("RGB")
 
 
 class Fonts(Singleton):
-    font_path = Path(path.dirname(__file__), 'resources', 'fonts')
     fonts = {}
 
     @classmethod
-    def get_font(cls, font_name, size, file_extension: str = "ttf") -> ImageFont.FreeTypeFont:
+    def get_font(
+        cls,
+        font: Font,
+        size: int,
+        file_extension: str = "ttf"
+    ) -> ImageFont.FreeTypeFont:
         # Cache already-loaded fonts
-        if font_name not in cls.fonts:
-            cls.fonts[font_name] = {}
-        if font_name in [GUIConstants.ICON_FONT_NAME__FONT_AWESOME, GUIConstants.ICON_FONT_NAME__XMRSIGNER]:
+        if font not in cls.fonts:
+            cls.fonts[font] = {}
+        if font in [Font.AWESOME, Font.ICON]:
             file_extension = "otf"
-        if size not in cls.fonts[font_name]:
+        if size not in cls.fonts[font]:
             try:
-                # cls.fonts[font_name][size] = ImageFont.truetype(path.join(cls.font_path, f"{font_name}.{file_extension}"), size)
-                cls.fonts[font_name][size] = ImageFont.truetype(BytesIO(res('fonts', f'{font_name}.{file_extension}')), size)
+                cls.fonts[font][size] = ImageFont.truetype(BytesIO(res('fonts', f'{font}.{file_extension}')), size)
             except OSError as e:
                 if "cannot open resource" in str(e):
-                    raise Exception(f"Font {font_name}.ttf not found: {repr(e)}")
+                    raise Exception(f"Font {font}.ttf not found: {repr(e)}")
                 else:
                     raise e
-        return cls.fonts[font_name][size]
+        return cls.fonts[font][size]
 
 
 class TextDoesNotFitException(Exception):
@@ -298,20 +105,20 @@ class BaseComponent:
     def __post_init__(self):
         from xmrsigner.gui import Renderer
         self.renderer: Renderer = Renderer.get_instance()
-        self.canvas_width = self.renderer.canvas_width
-        self.canvas_height = self.renderer.canvas_height
+        self.canvas_width: int = self.renderer.canvas_width
+        self.canvas_height: int = self.renderer.canvas_height
         if not self.image_draw:
             self.set_image_draw(self.renderer.draw)
         if not self.canvas:
             self.set_canvas(self.renderer.canvas)
 
-    def set_image_draw(self, image_draw: ImageDraw):
+    def set_image_draw(self, image_draw: ImageDraw) -> None:
         self.image_draw = image_draw
 
-    def set_canvas(self, canvas: Image.Image):
+    def set_canvas(self, canvas: Image.Image) -> None:
         self.canvas = canvas
 
-    def render(self):
+    def render(self) -> None:
         raise Exception("render() not implemented in the child class!")
 
 
@@ -335,17 +142,16 @@ class TextArea(BaseComponent):
     screen_x: int = 0
     screen_y: int = 0
     min_text_x: int = 0  # Text can not start at x any less than this
-    background_color: str = GUIConstants.BACKGROUND_COLOR
-    font_name: str = GUIConstants.BODY_FONT_NAME
-    font_size: int = GUIConstants.BODY_FONT_SIZE
-    font_color: str = GUIConstants.BODY_FONT_COLOR
-    edge_padding: int = GUIConstants.EDGE_PADDING
+    background_color: str = Theme.BACKGROUND_COLOR
+    font_name: str = Theme.BODY_FONT_NAME
+    font_size: int = Theme.BODY_FONT_SIZE
+    font_color: str = Theme.BODY_FONT_COLOR
+    edge_padding: int = Padding.EDGE
     is_text_centered: bool = True
     supersampling_factor: int = 1
     auto_line_break: bool = True
     allow_text_overflow: bool = False
     height_ignores_below_baseline: bool = False  # If True, characters that render below the baseline (e.g. "pqgy") will not affect the final height calculation
-
 
     def __post_init__(self):
         super().__post_init__()
@@ -353,7 +159,7 @@ class TextArea(BaseComponent):
             self.width = self.canvas_width
         if self.screen_x + self.width > self.canvas_width:
             self.width = self.canvas_width - self.screen_x
-        self.line_spacing = GUIConstants.BODY_LINE_SPACING
+        self.line_spacing = Theme.BODY_LINE_SPACING
         # We have to figure out if and where to make line breaks in the text so that it
         #   fits in its bounding rect (plus accounting for edge padding) using its given
         #   font.
@@ -403,7 +209,7 @@ class TextArea(BaseComponent):
                 # Vertically center the text's starting point
                 self.text_y += int(self.height - total_text_height) / 2
 
-    def render(self):
+    def render(self) -> None:
         # Render to a temp img scaled up by self.supersampling_factor, then resize down
         #   with bicubic resampling.
         # Add a `resample_padding` above and below when supersampling to avoid edge
@@ -461,20 +267,20 @@ class Icon(BaseComponent):
     screen_x: int = 0
     screen_y: int = 0
     icon_name: str = IconConstants.MONERO
-    icon_size: int = GUIConstants.ICON_FONT_SIZE
-    icon_color: str = GUIConstants.BODY_FONT_COLOR
+    icon_size: int = Theme.ICON_FONT_SIZE
+    icon_color: str = Theme.BODY_FONT_COLOR
 
     def __post_init__(self):
         super().__post_init__()
         if IconConstants.MIN_VALUE <= self.icon_name and self.icon_name <= IconConstants.MAX_VALUE:
-            self.icon_font = Fonts.get_font(GUIConstants.ICON_FONT_NAME__XMRSIGNER, self.icon_size, file_extension="otf")
+            self.icon_font = Fonts.get_font(Theme.ICON_FONT_NAME__XMRSIGNER, self.icon_size, file_extension="otf")
         else:
-            self.icon_font = Fonts.get_font(GUIConstants.ICON_FONT_NAME__FONT_AWESOME, self.icon_size, file_extension="otf")
+            self.icon_font = Fonts.get_font(Theme.ICON_FONT_NAME__FONT_AWESOME, self.icon_size, file_extension="otf")
         # Set width/height based on exact pixels that are rendered
         (left, top, self.width, bottom) = self.icon_font.getbbox(self.icon_name, anchor="ls")
         self.height = -1 * top
 
-    def render(self):
+    def render(self) -> None:
         self.image_draw.text(
             (self.screen_x, self.screen_y + self.height),
             text=self.icon_name,
@@ -491,12 +297,12 @@ class IconTextLine(BaseComponent):
     """
     height: int = None
     icon_name: str = None
-    icon_size: int = GUIConstants.ICON_FONT_SIZE
-    icon_color: str = GUIConstants.BODY_FONT_COLOR
+    icon_size: int = Theme.ICON_FONT_SIZE
+    icon_color: str = Theme.BODY_FONT_COLOR
     label_text: str = None
     value_text: str = "73c5da0a"
-    font_name: str = GUIConstants.BODY_FONT_NAME
-    font_size: int = GUIConstants.BODY_FONT_SIZE
+    font_name: str = Theme.BODY_FONT_NAME
+    font_size: int = Theme.BODY_FONT_SIZE
     is_text_centered: bool = False
     auto_line_break: bool = False
     allow_text_overflow: bool = False
@@ -517,7 +323,7 @@ class IconTextLine(BaseComponent):
                 icon_size=self.icon_size,
                 icon_color=self.icon_color
             )
-            self.icon_horizontal_spacer = int(GUIConstants.COMPONENT_PADDING/2)
+            self.icon_horizontal_spacer = int(Padding.COMPONENT/2)
             text_screen_x = self.screen_x + self.icon.width + self.icon_horizontal_spacer
         else:
             text_screen_x = self.screen_x
@@ -526,8 +332,8 @@ class IconTextLine(BaseComponent):
                 image_draw=self.image_draw,
                 canvas=self.canvas,
                 text=self.label_text,
-                font_size=GUIConstants.BODY_FONT_SIZE - 2,
-                font_color=GUIConstants.LABEL_FONT_COLOR,
+                font_size=Theme.BODY_FONT_SIZE - 2,
+                font_color=Theme.LABEL_FONT_COLOR,
                 edge_padding=0,
                 is_text_centered=self.is_text_centered if not self.icon_name else False,
                 auto_line_break=False,
@@ -539,7 +345,7 @@ class IconTextLine(BaseComponent):
             self.label_textarea = None
         value_textarea_screen_y = self.screen_y
         if self.label_text:
-            label_padding_y = int(GUIConstants.COMPONENT_PADDING / 2)
+            label_padding_y = int(Padding.COMPONENT / 2)
             value_textarea_screen_y += self.label_textarea.height + label_padding_y
         self.value_textarea = TextArea(
             image_draw=self.image_draw,
@@ -576,7 +382,7 @@ class IconTextLine(BaseComponent):
             self.value_textarea.screen_x = self.icon.screen_x + self.icon.width + self.icon_horizontal_spacer
         self.width = self.canvas_width
 
-    def render(self):
+    def render(self) -> None:
         if self.label_textarea:
             self.label_textarea.render()
         self.value_textarea.render()
@@ -608,17 +414,17 @@ class FormattedAddress(BaseComponent):
     screen_y: int = 0
     address: str = None
     max_lines: int = None
-    font_name: str = GUIConstants.FIXED_WIDTH_FONT_NAME
+    font_name: str = Theme.FIXED_WIDTH_FONT_NAME
     font_size: int = 24
-    font_accent_color: str = GUIConstants.ACCENT_COLOR
-    font_base_color: str = GUIConstants.LABEL_FONT_COLOR
+    font_accent_color: str = Theme.ACCENT_COLOR
+    font_base_color: str = Theme.LABEL_FONT_COLOR
 
     def __post_init__(self):
         super().__post_init__()
         if self.width == 0:
             self.width = self.renderer.canvas_width
         self.font = Fonts.get_font(self.font_name, self.font_size)
-        self.accent_font = Fonts.get_font(GUIConstants.FIXED_WIDTH_EMPHASIS_FONT_NAME, self.font_size)
+        self.accent_font = Fonts.get_font(Theme.FIXED_WIDTH_EMPHASIS_FONT_NAME, self.font_size)
         # Fixed width font means we only have to measure one max-height character
         char_width, char_height = get_font_size(self.font, 'Q')
         n = 7
@@ -737,7 +543,7 @@ class FormattedAddress(BaseComponent):
                 cur_y += char_height
         self.height = cur_y
 
-    def render(self):
+    def render(self) -> None:
         for p in self.text_params:
             self.image_draw.text((p[0][0], p[0][1] + self.screen_y), text=p[1], fill=p[2], font=p[3])
 
@@ -770,16 +576,16 @@ class XmrAmount(BaseComponent):
         xmr_unit = "XMR"
         atomic_units_unit = "pXMR"
         if self.network == Network.MAIN:
-            xmr_color = GUIConstants.MAINNET_COLOR
+            xmr_color = Theme.MAINNET_COLOR
         elif self.network == Network.TEST:
-            xmr_color = GUIConstants.TESTNET_COLOR
+            xmr_color = Theme.TESTNET_COLOR
         elif self.network == Network.STAGE:
-            xmr_color = GUIConstants.STAGENET_COLOR
-        digit_font = Fonts.get_font(font_name=GUIConstants.BODY_FONT_NAME, size=self.font_size)
-        smaller_digit_font = Fonts.get_font(font_name=GUIConstants.BODY_FONT_NAME, size=self.font_size - 2)
-        unit_font_size = GUIConstants.BUTTON_FONT_SIZE + 2
+            xmr_color = Theme.STAGENET_COLOR
+        digit_font = Fonts.get_font(Theme.BODY_FONT_NAME, size=self.font_size)
+        smaller_digit_font = Fonts.get_font(Theme.BODY_FONT_NAME, size=self.font_size - 2)
+        unit_font_size = Theme.BUTTON_FONT_SIZE + 2
         # Render to a temp surface
-        self.paste_image = Image.new(mode="RGB", size=(self.canvas_width, self.icon_size), color=GUIConstants.BACKGROUND_COLOR)
+        self.paste_image = Image.new(mode="RGB", size=(self.canvas_width, self.icon_size), color=Theme.BACKGROUND_COLOR)
         draw = ImageDraw.Draw(self.paste_image)
         # Render the circular Monero icon  # TODO: 2024-08-02, change to Monero icon
         xmr_icon = Icon(
@@ -792,7 +598,7 @@ class XmrAmount(BaseComponent):
             screen_y=0,
         )
         # xmr_icon.render()  # TODO: 2024-07-28, render only with Monero Logo
-        cur_x = xmr_icon.width + int(GUIConstants.COMPONENT_PADDING / 4)
+        cur_x = xmr_icon.width + int(Padding.COMPONENT / 4)
         print(f'denomination: {denomination}')
         print(f'total_atomic_units: {self.total_atomic_units}')
         if denomination == XmrDenomination.XMR or \
@@ -825,7 +631,7 @@ class XmrAmount(BaseComponent):
                 ),
                 font=font,
                 text=xmr_text,
-                fill=GUIConstants.BODY_FONT_COLOR,
+                fill=Theme.BODY_FONT_COLOR,
                 anchor="ls",
             )
             cur_x += text_width
@@ -848,7 +654,7 @@ class XmrAmount(BaseComponent):
                 ),
                 font=font,
                 text=atomic_units_text,
-                fill=GUIConstants.BODY_FONT_COLOR,
+                fill=Theme.BODY_FONT_COLOR,
                 anchor="ls",
             )
             cur_x += text_width
@@ -869,7 +675,7 @@ class XmrAmount(BaseComponent):
                 screen_y=0,
             )
             # xmr_icon.render()  # TODO: 2024-07-28, render only with Monero Logo
-            cur_x = xmr_icon.width + int(GUIConstants.COMPONENT_PADDING/4)
+            cur_x = xmr_icon.width + int(Padding.COMPONENT/4)
             (left, top, text_width, bottom) = smaller_digit_font.getbbox(xmr_text, anchor="ls")
             text_height = -1 * top + bottom
             text_y = self.paste_image.height - int((self.paste_image.height - text_height)/2)
@@ -880,12 +686,12 @@ class XmrAmount(BaseComponent):
                 ),
                 font=smaller_digit_font,
                 text=xmr_text,
-                fill=GUIConstants.BODY_FONT_COLOR,
+                fill=Theme.BODY_FONT_COLOR,
                 anchor="ls",
             )
-            cur_x += text_width - int(GUIConstants.COMPONENT_PADDING/2)
+            cur_x += text_width - int(Padding.COMPONENT/2)
             # Draw the pipe separator
-            pipe_font = Fonts.get_font(font_name=GUIConstants.BODY_FONT_NAME, size=self.icon_size - 4)
+            pipe_font = Fonts.get_font(Theme.BODY_FONT_NAME, size=self.icon_size - 4)
             (left, top, text_width, bottom) = pipe_font.getbbox("|", anchor="ls")
             draw.text(
                 xy=(
@@ -897,7 +703,7 @@ class XmrAmount(BaseComponent):
                 fill=xmr_color,
                 anchor="ls",
             )
-            cur_x += text_width - int(GUIConstants.COMPONENT_PADDING/2)
+            cur_x += text_width - int(Padding.COMPONENT/2)
             # Draw the atomic_units side
             (left, top, text_width, bottom) = smaller_digit_font.getbbox(atomic_units_text, anchor="ls")
             draw.text(
@@ -907,22 +713,22 @@ class XmrAmount(BaseComponent):
                 ),
                 font=smaller_digit_font,
                 text=atomic_units_text,
-                fill=GUIConstants.BODY_FONT_COLOR,
+                fill=Theme.BODY_FONT_COLOR,
                 anchor="ls",
             )
             cur_x += text_width
             unit_text = atomic_units_unit
         # Draw the unit
-        unit_font = Fonts.get_font(font_name=GUIConstants.BODY_FONT_NAME, size=unit_font_size)
+        unit_font = Fonts.get_font(Theme.BODY_FONT_NAME, size=unit_font_size)
         (left, top, unit_text_width, bottom) = unit_font.getbbox(unit_text, anchor="ls")
         unit_font_height = -1 * top
         unit_textarea = TextArea(
             image_draw=draw,
             canvas=self.paste_image,
             text=f" {unit_text}",
-            font_name=GUIConstants.BODY_FONT_NAME,
+            font_name=Theme.BODY_FONT_NAME,
             font_size=unit_font_size,
-            font_color=GUIConstants.BODY_FONT_COLOR,
+            font_color=Theme.BODY_FONT_COLOR,
             supersampling_factor=2,
             is_text_centered=False,
             edge_padding=0,
@@ -930,7 +736,7 @@ class XmrAmount(BaseComponent):
             screen_y=text_y - unit_font_height,
         )
         unit_textarea.render()
-        final_x = cur_x + GUIConstants.COMPONENT_PADDING + unit_text_width
+        final_x = cur_x + Padding.COMPONENT + unit_text_width
         self.paste_image = self.paste_image.crop((0, 0, final_x, self.paste_image.height))
         self.paste_coords = (
             int((self.canvas_width - final_x)/2),
@@ -939,7 +745,7 @@ class XmrAmount(BaseComponent):
         self.width = self.canvas_width
         self.height = self.paste_image.height
 
-    def render(self):
+    def render(self) -> None:
         self.canvas.paste(self.paste_image, self.paste_coords)
 
 
@@ -955,21 +761,21 @@ class Button(BaseComponent):
     width: int = None
     height: int = None
     icon_name: str|None = None   # Optional icon to accompany the text
-    icon_size: int = GUIConstants.ICON_INLINE_FONT_SIZE
-    icon_color: str = GUIConstants.BUTTON_FONT_COLOR
-    selected_icon_color: str = GUIConstants.BLACK
+    icon_size: int = Theme.ICON_INLINE_FONT_SIZE
+    icon_color: str = Theme.BUTTON_FONT_COLOR
+    selected_icon_color: str = Theme.BACKGROUND_COLOR
     icon_y_offset: int = 0
     is_icon_inline: bool = True    # True = render next to text; False = render centered above text
     right_icon_name: str|None = None    # Optional icon rendered right-justified
-    right_icon_size: int = GUIConstants.ICON_INLINE_FONT_SIZE
-    right_icon_color: str = GUIConstants.BUTTON_FONT_COLOR
+    right_icon_size: int = Theme.ICON_INLINE_FONT_SIZE
+    right_icon_color: str = Theme.BUTTON_FONT_COLOR
     text_y_offset: int = 0
-    background_color: str = GUIConstants.BUTTON_BACKGROUND_COLOR
-    selected_color: str = GUIConstants.ACCENT_COLOR
-    font_name: str = GUIConstants.BUTTON_FONT_NAME
-    font_size: int = GUIConstants.BUTTON_FONT_SIZE
-    font_color: str = GUIConstants.BUTTON_FONT_COLOR
-    selected_font_color: str = GUIConstants.BUTTON_SELECTED_FONT_COLOR
+    background_color: str = Theme.BUTTON_BACKGROUND_COLOR
+    selected_color: str = Theme.ACCENT_COLOR
+    font_name: str = Theme.BUTTON_FONT_NAME
+    font_size: int = Theme.BUTTON_FONT_SIZE
+    font_color: str = Theme.BUTTON_FONT_COLOR
+    selected_font_color: str = Theme.BUTTON_SELECTED_FONT_COLOR
     outline_color: str = None
     selected_outline_color: str = None
     is_text_centered: bool = True
@@ -978,26 +784,26 @@ class Button(BaseComponent):
     def __post_init__(self):
         super().__post_init__()
         if not self.width:
-            self.width = self.canvas_width - 2 * GUIConstants.EDGE_PADDING
+            self.width = self.canvas_width - 2 * Padding.EDGE
         if not self.height:
-            self.height = GUIConstants.BUTTON_HEIGHT
+            self.height = Theme.BUTTON_HEIGHT
         if not self.icon_color:
-            self.icon_color = GUIConstants.BUTTON_FONT_COLOR
+            self.icon_color = Theme.BUTTON_FONT_COLOR
         self.font = Fonts.get_font(self.font_name, self.font_size)
         if self.text is not None:
             (left, top, self.text_width, bottom) = self.font.getbbox(self.text, anchor="ls")
             icon_qty: int = (1 if self.icon_name is not None else 0) + (1 if self.right_icon_name is not None else 0)
             # make sure the text fits horizontal into the space
-            while icon_qty > 0 and self.is_icon_inline and self.text_width >= (self.width - (self.icon_size + 2 * GUIConstants.COMPONENT_PADDING) * icon_qty):
+            while icon_qty > 0 and self.is_icon_inline and self.text_width >= (self.width - (self.icon_size + 2 * Padding.COMPONENT) * icon_qty):
                 # Calc true pixel height (any anchor from "baseline" will work)
                 (left, top, self.text_width, bottom) = self.font.getbbox(self.text, anchor="ls")
-                if self.text_width >= (self.width - (self.icon_size + 2 * GUIConstants.COMPONENT_PADDING) * icon_qty):
+                if self.text_width >= (self.width - (self.icon_size + 2 * Padding.COMPONENT) * icon_qty):
                     self.text = self.text[0:-1]
             if self.is_text_centered:
                 self.text_x = int(self.width / 2)
                 self.text_anchor = "ms"  # centered horizontally, baseline
             else:
-                self.text_x = GUIConstants.COMPONENT_PADDING
+                self.text_x = Padding.COMPONENT
                 self.text_anchor = "ls"  # left, baseline
             # print(f"left: {left} |  top: {top} | right: {self.text_width} | bottom: {bottom}")
             # Note: "top" is negative when measured from a "baseline" anchor. Intentionally
@@ -1010,7 +816,7 @@ class Button(BaseComponent):
                 self.text_y = self.height - int((self.height - self.text_height) / 2)
         # Preload the icon and its "_selected" variant
         if self.icon_name:
-            icon_padding = GUIConstants.COMPONENT_PADDING
+            icon_padding = Padding.COMPONENT
             self.icon = Icon(icon_name=self.icon_name, icon_size=self.icon_size, icon_color=self.icon_color)
             self.icon_selected = Icon(icon_name=self.icon_name, icon_size=self.icon_size, icon_color=self.selected_icon_color)
             if self.is_icon_inline:
@@ -1024,7 +830,7 @@ class Button(BaseComponent):
                 else:
                     if self.text:
                         self.text_x += self.icon.width + icon_padding
-                    self.icon_x = GUIConstants.COMPONENT_PADDING
+                    self.icon_x = Padding.COMPONENT
             else:
                 self.icon_x = int((self.width - self.icon.width) / 2)
             if self.icon_y_offset:
@@ -1042,7 +848,7 @@ class Button(BaseComponent):
                 icon_size=self.right_icon_size,
                 icon_color=self.selected_icon_color
             )
-            self.right_icon_x = self.width - self.right_icon.width - GUIConstants.COMPONENT_PADDING
+            self.right_icon_x = self.width - self.right_icon.width - Padding.COMPONENT
             self.right_icon_y = ceil((self.height - self.right_icon.height) / 2)
 
     def render(self):
@@ -1097,7 +903,7 @@ class CheckedSelectionButton(Button):
     def __post_init__(self):
         self.is_text_centered = False
         self.icon_name = IconConstants.CHECK
-        self.icon_color = GUIConstants.SUCCESS_COLOR
+        self.icon_color = Theme.SUCCESS_COLOR
         super().__post_init__()
         if not self.is_checked:
             # Remove the checkmark icon but leave the text_x spacing as-is
@@ -1114,10 +920,10 @@ class CheckboxButton(Button):
         self.is_text_centered = False
         if self.is_checked:
             self.icon_name = IconConstants.CHECKBOX_SELECTED
-            self.icon_color = GUIConstants.SUCCESS_COLOR
+            self.icon_color = Theme.SUCCESS_COLOR
         else:
             self.icon_name = IconConstants.CHECKBOX
-            self.icon_color = GUIConstants.BODY_FONT_COLOR
+            self.icon_color = Theme.BODY_FONT_COLOR
         super().__post_init__()
 
 
@@ -1126,7 +932,7 @@ class IconButton(Button):
     """
     A button that is just an icon (e.g. the BACK arrow)
     """
-    icon_size: int = GUIConstants.ICON_INLINE_FONT_SIZE
+    icon_size: int = Theme.ICON_INLINE_FONT_SIZE
     text: str = None
     is_icon_inline: bool = False
     is_text_centered: bool = True
@@ -1138,21 +944,21 @@ class LargeIconButton(IconButton):
     A button that is primarily a big icon (e.g. the Home screen buttons) w/text below
     the icon.
     """
-    icon_size: int = GUIConstants.ICON_LARGE_BUTTON_SIZE
-    icon_y_offset: int = GUIConstants.COMPONENT_PADDING
+    icon_size: int = Theme.ICON_LARGE_BUTTON_SIZE
+    icon_y_offset: int = Padding.COMPONENT
 
 
 @dataclass
 class TopNav(BaseComponent):
     text: str = "Screen Title"
     width: int = None
-    height: int = GUIConstants.TOP_NAV_HEIGHT
-    background_color: str = GUIConstants.BACKGROUND_COLOR
+    height: int = Theme.TOP_NAV_HEIGHT
+    background_color: str = Theme.BACKGROUND_COLOR
     icon_name: str = None
-    icon_color: str = GUIConstants.BODY_FONT_COLOR
-    font_name: str = GUIConstants.TOP_NAV_TITLE_FONT_NAME
-    font_size: int = GUIConstants.TOP_NAV_TITLE_FONT_SIZE
-    font_color: str = GUIConstants.BODY_FONT_COLOR
+    icon_color: str = Theme.BODY_FONT_COLOR
+    font_name: str = Theme.TOP_NAV_TITLE_FONT_NAME
+    font_size: int = Theme.TOP_NAV_TITLE_FONT_SIZE
+    font_color: str = Theme.BODY_FONT_COLOR
     show_back_button: bool = True
     show_power_button: bool = False
     is_selected: bool = False
@@ -1165,25 +971,25 @@ class TopNav(BaseComponent):
         if self.show_back_button:
             self.left_button = IconButton(
                 icon_name=IconConstants.BACK,
-                icon_size=GUIConstants.ICON_INLINE_FONT_SIZE,
-                screen_x=GUIConstants.EDGE_PADDING,
-                screen_y=GUIConstants.EDGE_PADDING - 1,  # Text can't perfectly vertically center relative to the button; shifting it down 1px looks better.
-                width=GUIConstants.TOP_NAV_BUTTON_SIZE,
-                height=GUIConstants.TOP_NAV_BUTTON_SIZE,
+                icon_size=Theme.ICON_INLINE_FONT_SIZE,
+                screen_x=Padding.EDGE,
+                screen_y=Padding.EDGE - 1,  # Text can't perfectly vertically center relative to the button; shifting it down 1px looks better.
+                width=Theme.TOP_NAV_BUTTON_SIZE,
+                height=Theme.TOP_NAV_BUTTON_SIZE,
             )
         if self.show_power_button:
             self.right_button = IconButton(
                 icon_name=IconConstants.SETTINGS,
-                icon_size=GUIConstants.ICON_INLINE_FONT_SIZE,
-                screen_x=self.width - GUIConstants.TOP_NAV_BUTTON_SIZE - GUIConstants.EDGE_PADDING,
-                screen_y=GUIConstants.EDGE_PADDING,
-                width=GUIConstants.TOP_NAV_BUTTON_SIZE,
-                height=GUIConstants.TOP_NAV_BUTTON_SIZE,
+                icon_size=Theme.ICON_INLINE_FONT_SIZE,
+                screen_x=self.width - Theme.TOP_NAV_BUTTON_SIZE - Padding.EDGE,
+                screen_y=Padding.EDGE,
+                width=Theme.TOP_NAV_BUTTON_SIZE,
+                height=Theme.TOP_NAV_BUTTON_SIZE,
             )
         min_text_x = 0
         if self.show_back_button:
             # Don't let the title intrude on the BACK button
-            min_text_x = self.left_button.screen_x + self.left_button.width + GUIConstants.COMPONENT_PADDING
+            min_text_x = self.left_button.screen_x + self.left_button.width + Padding.COMPONENT
         if self.icon_name:
             self.title = IconTextLine(
                 screen_x=0,
@@ -1191,7 +997,7 @@ class TopNav(BaseComponent):
                 height=self.height,
                 icon_name=self.icon_name,
                 icon_color=self.icon_color,
-                icon_size=GUIConstants.ICON_FONT_SIZE + 4,
+                icon_size=Theme.ICON_FONT_SIZE + 4,
                 value_text=self.text,
                 is_text_centered=True,
                 font_name=self.font_name,
@@ -1268,8 +1074,8 @@ def calc_bezier_curve(p1: tuple[int,int], p2: tuple[int,int], p3: tuple[int,int]
 
 def reflow_text_for_width(text: str,
                           width: int,
-                          font_name=GUIConstants.BODY_FONT_NAME,
-                          font_size=GUIConstants.BODY_FONT_SIZE,
+                          font_name=Theme.BODY_FONT_NAME,
+                          font_size=Theme.BODY_FONT_SIZE,
                           allow_text_overflow: bool=False) -> list[dict]:
     """
     Reflows text to fit within `width` by breaking long lines up.
@@ -1282,7 +1088,7 @@ def reflow_text_for_width(text: str,
     #   fits in its bounding rect (plus accounting for edge padding) using its given
     #   font.
     start = time()
-    font = Fonts.get_font(font_name=font_name, size=font_size)
+    font = Fonts.get_font(font_name, font_size)
     # Measure from left baseline ("ls")
     (left, top, full_text_width, bottom) = font.getbbox(text, anchor="ls")
     # Stores each line of text and its rendering starting x-coord
@@ -1341,9 +1147,9 @@ def reflow_text_for_width(text: str,
 def reflow_text_into_pages(text: str,
                            width: int,
                            height: int,
-                           font_name=GUIConstants.BODY_FONT_NAME,
-                           font_size=GUIConstants.BODY_FONT_SIZE,
-                           line_spacer: int = GUIConstants.BODY_LINE_SPACING,
+                           font_name=Theme.BODY_FONT_NAME,
+                           font_size=Theme.BODY_FONT_SIZE,
+                           line_spacer: int = Theme.BODY_LINE_SPACING,
                            allow_text_overflow: bool=False) -> list[str]:
     """
     Invokes `reflow_text_for_width` above to convert long text into width-limited
@@ -1360,7 +1166,7 @@ def reflow_text_into_pages(text: str,
     for line_dict in reflowed_lines_dicts:
         lines.append(line_dict["text"])
         print(f"""{line_dict["text_width"]:3}: {line_dict["text"]}""")
-    font = Fonts.get_font(font_name=font_name, size=font_size)
+    font = Fonts.get_font(font_name, font_size)
     # Measure the font's height above baseline and how for below it certain characters
     # (e.g. lowercase "g") can render.
     (left, top, right, bottom) = font.getbbox("Agjpqy", anchor="ls")

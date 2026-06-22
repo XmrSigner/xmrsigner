@@ -9,7 +9,7 @@ from xmrsigner.models.settings_definition import (
     Network,
     CameraRotation,
     Visibility,
-    SettingsConstants,
+    PersistentSettings,
     SettingsDefinition,
     SelectionOption,
     MicroSdAction
@@ -199,7 +199,7 @@ class Settings(Singleton):
                 # Restore persistent settings back to defaults
                 entry = SettingsDefinition.get_settings_entry(Setting.PERSISTENT_SETTINGS)
                 entry.selection_options = Option.enabled_disabled()
-                entry.help_text = SettingsConstants.PERSISTENT_SETTINGS__SD_INSERTED__HELP_TEXT
+                entry.help_text = PersistentSettings.SD_INSERTED_HELP_TEXT
                 # - Overwrite settings on the SD?
                 # - Load settings from SD?
                 # if Settings file exists (meaning persistent settings was previously enabled), write out current settings to disk
@@ -215,5 +215,5 @@ class Settings(Singleton):
                 # set persistent settings to only have disabled as an option, adding additional help text that microSD is removed
                 entry = SettingsDefinition.get_settings_entry(Setting.PERSISTENT_SETTINGS)
                 entry.selection_options = [Option.DISABLED]
-                entry.help_text = SettingsConstants.PERSISTENT_SETTINGS__SD_REMOVED__HELP_TEXT
+                entry.help_text = PersistentSettings.SD_REMOVED_HELP_TEXT
                 return

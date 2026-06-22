@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from PIL import Image, ImageDraw, ImageFilter
 from xmrsigner.helpers.pillow import get_font_size
 from time import sleep
-from datetime import date, timedelta
+from datetime import date, timedelta, datetime
 from calendar import monthrange
 
 from ots.enums import Network
@@ -20,22 +20,31 @@ from xmrsigner.gui.screens.screen import (
     WarningScreen,
     BaseTopNavScreen
 )
+from xmrsigner.gui.constants import Padding
 from xmrsigner.gui.components import (
     XmrAmount,
     BaseComponent,
     Button,
     CheckboxButton,
     Icon,
-    FontAwesomeIconConstants,
+    FontAwesome,
     IconTextLine,
     FormattedAddress,
-    GUIConstants,
+    Theme,
     Fonts,
     IconConstants,
     TextArea,
     calc_bezier_curve,
     linear_interp
 )
+
+
+def date_to_timestamp(d: date) -> int:
+    return int(
+        datetime.fromisoformat(
+            d.isoformat()
+        ).timestamp()
+    )
 
 
 @dataclass
@@ -62,7 +71,7 @@ class TxOverviewScreen(ButtonListScreen):
 
         # Prep the headline amount being spent in large callout
         # icon_text_lines_y = self.components[-1].screen_y + self.components[-1].height
-        icon_text_lines_y = self.top_nav.height + GUIConstants.COMPONENT_PADDING
+        icon_text_lines_y = self.top_nav.height + Padding.COMPONENT
 
         if not self.destination_addresses:
             # This is a self-transfer
@@ -80,8 +89,8 @@ class TxOverviewScreen(ButtonListScreen):
 
         # Prep the transaction flow chart
         self.chart_x = 0
-        self.chart_y = self.components[-1].screen_y + self.components[-1].height + int(GUIConstants.COMPONENT_PADDING/2)
-        chart_height = self.buttons[0].screen_y - self.chart_y - GUIConstants.COMPONENT_PADDING
+        self.chart_y = self.components[-1].screen_y + self.components[-1].height + int(Padding.COMPONENT/2)
+        chart_height = self.buttons[0].screen_y - self.chart_y - Padding.COMPONENT
 
         # We need to supersample the whole panel so that small/thin elements render
         # clearly.
@@ -91,12 +100,12 @@ class TxOverviewScreen(ButtonListScreen):
         image = Image.new(
             "RGB",
             (self.canvas_width * ssf, chart_height * ssf),
-            GUIConstants.BACKGROUND_COLOR
+            Theme.BACKGROUND_COLOR
         )
         draw = ImageDraw.Draw(image)
 
-        font_size = GUIConstants.BODY_FONT_MIN_SIZE * ssf
-        font = Fonts.get_font(GUIConstants.BODY_FONT_NAME, font_size)
+        font_size = Theme.BODY_FONT_MIN_SIZE * ssf
+        font = Fonts.get_font(Theme.BODY_FONT_NAME, font_size)
 
         (left, top, right, bottom) = font.getbbox(text="abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890[]", anchor="lt")
         chart_text_height = bottom
@@ -129,17 +138,17 @@ class TxOverviewScreen(ButtonListScreen):
             max_inputs_text_width = max(tw, max_inputs_text_width)
 
         # Given how wide we want our curves on each side to be...
-        curve_width = 4*GUIConstants.COMPONENT_PADDING*ssf
+        curve_width = 4*Padding.COMPONENT*ssf
 
         # ...and the minimum center divider width...
-        center_bar_width = 2*GUIConstants.COMPONENT_PADDING*ssf
+        center_bar_width = 2*Padding.COMPONENT*ssf
 
         # We can calculate how wide the destination col can be
-        max_destination_col_width = image.width - (GUIConstants.EDGE_PADDING*ssf + max_inputs_text_width + \
-            int(GUIConstants.COMPONENT_PADDING*ssf/4) + curve_width + \
+        max_destination_col_width = image.width - (Padding.EDGE*ssf + max_inputs_text_width + \
+            int(Padding.COMPONENT*ssf/4) + curve_width + \
                 center_bar_width + \
-                    curve_width + int(GUIConstants.COMPONENT_PADDING*ssf/4) + \
-                        GUIConstants.EDGE_PADDING*ssf)
+                    curve_width + int(Padding.COMPONENT*ssf/4) + \
+                        Padding.EDGE*ssf)
         # if self.num_inputs == 1:
         #     # Use up more of the space on the input side
         #     max_destination_col_width += curve_width
@@ -186,13 +195,13 @@ class TxOverviewScreen(ButtonListScreen):
                 destination_text_width = new_width
                 destination_column = new_col_text
 
-        destination_col_x = image.width - (destination_text_width + GUIConstants.EDGE_PADDING*ssf)
+        destination_col_x = image.width - (destination_text_width + Padding.EDGE*ssf)
 
         # Now we can finalize our center bar values
-        center_bar_x = GUIConstants.EDGE_PADDING*ssf + max_inputs_text_width + int(GUIConstants.COMPONENT_PADDING*ssf/4) + curve_width
+        center_bar_x = Padding.EDGE*ssf + max_inputs_text_width + int(Padding.COMPONENT*ssf/4) + curve_width
 
         # Center bar stretches to fill any excess width
-        center_bar_width = destination_col_x - int(GUIConstants.COMPONENT_PADDING*ssf/4) - curve_width - center_bar_x
+        center_bar_width = destination_col_x - int(Padding.COMPONENT*ssf/4) - curve_width - center_bar_x
 
         # Position each input row
         num_rendered_inputs = len(inputs_column)
@@ -210,7 +219,7 @@ class TxOverviewScreen(ButtonListScreen):
             inputs_y_spacing += 1
 
         inputs_conjunction_x = center_bar_x
-        inputs_x = GUIConstants.EDGE_PADDING*ssf
+        inputs_x = Padding.EDGE*ssf
 
         input_curves = []
         for input in inputs_column:
@@ -228,7 +237,7 @@ class TxOverviewScreen(ButtonListScreen):
             # Render the association line to the conjunction point
             # First calculate a bezier curve to an inflection point
             start_pt = (
-                inputs_x + max_inputs_text_width + int(GUIConstants.COMPONENT_PADDING*ssf/4),
+                inputs_x + max_inputs_text_width + int(Padding.COMPONENT*ssf/4),
                 inputs_y + int(chart_text_height/2)
             )
             conjunction_pt = (inputs_conjunction_x, vertical_center)
@@ -388,7 +397,7 @@ class TxOverviewScreen(ButtonListScreen):
 
 
         def run(self):
-            pulse_color = GUIConstants.ACCENT_COLOR
+            pulse_color = Theme.ACCENT_COLOR
             reset_color = "#666"
             line_width = 3
 
@@ -514,25 +523,25 @@ class TxMathScreen(ButtonListScreen):
             self.change_amount = " " * (longest_amount - len(self.change_amount)) + self.change_amount
 
         # Render the info to temp Image
-        body_width = self.canvas_width - 2 * GUIConstants.EDGE_PADDING
-        body_height = self.buttons[0].screen_y - self.top_nav.height - 2 * GUIConstants.COMPONENT_PADDING
+        body_width = self.canvas_width - 2 * Padding.EDGE
+        body_height = self.buttons[0].screen_y - self.top_nav.height - 2 * Padding.COMPONENT
         ssf = 2  # Super-sampling factor
         image = Image.new("RGB", (body_width*ssf, body_height*ssf))
         draw = ImageDraw.Draw(image)
 
-        body_font = Fonts.get_font(GUIConstants.BODY_FONT_NAME, (GUIConstants.BODY_FONT_SIZE) * ssf)
-        fixed_width_font = Fonts.get_font(GUIConstants.FIXED_WIDTH_FONT_NAME, (GUIConstants.BODY_FONT_SIZE + 6) * ssf)
+        body_font = Fonts.get_font(Theme.BODY_FONT_NAME, (Theme.BODY_FONT_SIZE) * ssf)
+        fixed_width_font = Fonts.get_font(Theme.FIXED_WIDTH_FONT_NAME, (Theme.BODY_FONT_SIZE + 6) * ssf)
         digits_width, digits_height = get_font_size(fixed_width_font, self.input_amount + "+")
 
         # Draw each line of the equation
         cur_y = 0
 
-        def render_amount(cur_y, amount_str, info_text, info_text_color=GUIConstants.BODY_FONT_COLOR):
+        def render_amount(cur_y, amount_str, info_text, info_text_color=Theme.BODY_FONT_COLOR):
             secondary_digit_color = "#888"
             tertiary_digit_color = "#666"
             digit_group_spacing = 2 * ssf
-            # secondary_digit_color = GUIConstants.BODY_FONT_COLOR
-            # tertiary_digit_color = GUIConstants.BODY_FONT_COLOR
+            # secondary_digit_color = Theme.BODY_FONT_COLOR
+            # tertiary_digit_color = Theme.BODY_FONT_COLOR
             # digit_group_spacing = 0
             if denomination == 'xmr':
                 display_str = amount_str
@@ -541,11 +550,11 @@ class TxMathScreen(ButtonListScreen):
                 end_zone = display_str[-3:]
                 main_zone_width, th = get_font_size(fixed_width_font, main_zone)
                 mid_zone_width, th = get_font_size(fixed_width_font, end_zone)
-                draw.text((0, cur_y), text=main_zone, font=fixed_width_font, fill=GUIConstants.BODY_FONT_COLOR)
+                draw.text((0, cur_y), text=main_zone, font=fixed_width_font, fill=Theme.BODY_FONT_COLOR)
                 draw.text((main_zone_width + digit_group_spacing, cur_y), text=mid_zone, font=fixed_width_font, fill=secondary_digit_color)
                 draw.text((main_zone_width + digit_group_spacing + mid_zone_width + digit_group_spacing, cur_y), text=end_zone, font=fixed_width_font, fill=tertiary_digit_color)
             else:
-                draw.text((0, cur_y), text=amount_str, font=fixed_width_font, fill=GUIConstants.BODY_FONT_COLOR)
+                draw.text((0, cur_y), text=amount_str, font=fixed_width_font, fill=Theme.BODY_FONT_COLOR)
             draw.text((digits_width + 2*digit_group_spacing, cur_y), text=info_text, font=body_font, fill=info_text_color)
 
         render_amount(
@@ -574,7 +583,7 @@ class TxMathScreen(ButtonListScreen):
         )
 
         cur_y += int(digits_height * 1.2) + 4 * ssf
-        draw.line((0, cur_y, image.width, cur_y), fill=GUIConstants.BODY_FONT_COLOR, width=1)
+        draw.line((0, cur_y, image.width, cur_y), fill=Theme.BODY_FONT_COLOR, width=1)
         cur_y += 8 * ssf
 
         render_amount(
@@ -586,7 +595,7 @@ class TxMathScreen(ButtonListScreen):
 
         # Resize to target and sharpen final image
         image = image.resize((body_width, body_height), Image.LANCZOS)
-        self.paste_images.append((image.filter(ImageFilter.SHARPEN), (GUIConstants.EDGE_PADDING, self.top_nav.height + GUIConstants.COMPONENT_PADDING)))
+        self.paste_images.append((image.filter(ImageFilter.SHARPEN), (Padding.EDGE, self.top_nav.height + Padding.COMPONENT)))
 
 
 
@@ -605,23 +614,23 @@ class TxAddressDetailsScreen(ButtonListScreen):
 
         # Figuring out how to vertically center the sats and the address is
         # difficult so we just render to a temp image and paste it in place.
-        center_img = Image.new("RGB", (self.canvas_width, center_img_height), GUIConstants.BACKGROUND_COLOR)
+        center_img = Image.new("RGB", (self.canvas_width, center_img_height), Theme.BACKGROUND_COLOR)
         draw = ImageDraw.Draw(center_img)
 
         xmr_amount = XmrAmount(
             image_draw=draw,
             canvas=center_img,
             total_atomic_units=self.amount,
-            screen_y=int(GUIConstants.COMPONENT_PADDING/2),
+            screen_y=int(Padding.COMPONENT/2),
             font_size=20
         )
 
         formatted_address = FormattedAddress(
             image_draw=draw,
             canvas=center_img,
-            width=self.canvas_width - 2*GUIConstants.EDGE_PADDING,
-            screen_x=GUIConstants.EDGE_PADDING,
-            screen_y=xmr_amount.height + GUIConstants.COMPONENT_PADDING,
+            width=self.canvas_width - 2*Padding.EDGE,
+            screen_x=Padding.EDGE,
+            screen_y=xmr_amount.height + Padding.COMPONENT,
             font_size=24,
             address=self.address,
         )
@@ -635,7 +644,7 @@ class TxAddressDetailsScreen(ButtonListScreen):
             self.canvas_width,
             formatted_address.screen_y + formatted_address.height
         ))
-        body_img_y = self.top_nav.height + int((center_img_height - self.body_img.height - GUIConstants.COMPONENT_PADDING)/2)
+        body_img_y = self.top_nav.height + int((center_img_height - self.body_img.height - Padding.COMPONENT)/2)
         self.paste_images.append((self.body_img, (0, body_img_y)))
 
 
@@ -646,7 +655,7 @@ class TxChangeDetailsScreen(ButtonListScreen):
     address: str = None
     fingerprint: str = None
     is_polyseed: bool = False
-    is_my_monero: bool = False
+    is_legacy: bool = False
     is_change_derivation_path: bool = True
     derivation_path_addr_index: int = 0
     is_change_addr_verified: bool = False
@@ -657,31 +666,31 @@ class TxChangeDetailsScreen(ButtonListScreen):
         super().__post_init__()
         self.components.append(XmrAmount(
             total_atomic_units=self.amount,
-            screen_y=self.top_nav.height + GUIConstants.COMPONENT_PADDING,
+            screen_y=self.top_nav.height + Padding.COMPONENT,
             font_size=20
         ))
         self.components.append(FormattedAddress(
-            screen_y=self.components[-1].screen_y + self.components[-1].height + GUIConstants.COMPONENT_PADDING,
+            screen_y=self.components[-1].screen_y + self.components[-1].height + Padding.COMPONENT,
             address=self.address,
             max_lines=1,
         ))
-        screen_y = self.components[-1].screen_y + self.components[-1].height + 2 * GUIConstants.COMPONENT_PADDING
+        screen_y = self.components[-1].screen_y + self.components[-1].height + 2 * Padding.COMPONENT
         self.components.append(IconTextLine(
             icon_name=IconConstants.FINGERPRINT,
-            icon_color=GUIConstants.FINGERPRINT_POLYSEED_COLOR if self.is_polyseed else GUIConstants.FINGERPRINT_MONERO_SEED_COLOR if not self.is_my_monero else GUIConstants.FINGERPRINT_MY_MONERO_SEED_COLOR,
+            icon_color=Theme.FINGERPRINT_POLYSEED_COLOR if self.is_polyseed else Theme.FINGERPRINT_MONERO_SEED_COLOR if not self.is_legacy else Theme.FINGERPRINT_LEGACY_SEED_COLOR,
             value_text=f"""{self.fingerprint}: {"Change" if self.is_change_derivation_path else "Addr"} #{self.derivation_path_addr_index}""",
             is_text_centered=False,
-            screen_x=GUIConstants.EDGE_PADDING,
+            screen_x=Padding.EDGE,
             screen_y=screen_y,
         ))
         if self.is_change_addr_verified:
             self.components.append(IconTextLine(
                 icon_name=IconConstants.SUCCESS,
-                icon_color=GUIConstants.SUCCESS_COLOR,
+                icon_color=Theme.SUCCESS_COLOR,
                 value_text="Address verified!",
                 is_text_centered=False,
-                screen_x=GUIConstants.EDGE_PADDING,
-                screen_y=self.components[-1].screen_y + self.components[-1].height + GUIConstants.COMPONENT_PADDING,
+                screen_x=Padding.EDGE,
+                screen_y=self.components[-1].screen_y + self.components[-1].height + Padding.COMPONENT,
             ))
 
 
@@ -695,36 +704,46 @@ class TxFinalizeScreen(ButtonListScreen):
         super().__post_init__()
 
         icon = Icon(
-            icon_name=FontAwesomeIconConstants.PAPER_PLANE,
-            icon_color=GUIConstants.INFO_COLOR,
-            icon_size=GUIConstants.ICON_LARGE_BUTTON_SIZE,
-            screen_y=self.top_nav.height + GUIConstants.COMPONENT_PADDING
+            icon_name=FontAwesome.PAPER_PLANE,
+            icon_color=Theme.INFO_COLOR,
+            icon_size=Theme.ICON_LARGE_BUTTON_SIZE,
+            screen_y=self.top_nav.height + Padding.COMPONENT
         )
         icon.screen_x = int((self.canvas_width - icon.width) / 2)
         self.components.append(icon)
-
         self.components.append(TextArea(
             text="Click to authorize this transaction",
-            screen_y=icon.screen_y + icon.height + GUIConstants.COMPONENT_PADDING
+            screen_y=icon.screen_y + icon.height + Padding.COMPONENT
         ))
 
 
 @dataclass
 class DateOrBlockHeightScreen(BaseTopNavScreen):
 
-    network: Network = Network.MAIN
-    is_block_height: bool = False
+    network: Network|None = None
+    is_block_height: bool|None = None
     focus: BaseComponent|None = None
     focusable_elements: list[BaseComponent] = None
-    current_height: int = 0
-    current_date: date = date.today()
+    current_height: int|None = None
+    current_date: date|None = None
 
     def __post_init__(self):
         self.title = 'Block Height'
-        if not self.is_block_height and self.current_height != 0:
+        if self.network is None:
+            self.network = Network.MAIN
+        if self.is_block_height is None:
+            self.is_block_height = False
+        if self.is_block_height:
+            if self.block_height is None:
+                self.block_height = 0
             self.current_date = date.fromtimestamp(Ots.timestampFromHeight(self.current_height, self.network))
-        if self.is_block_height and  self.current_date != date.today():
-            self.current_height = Ots.heightFromTimestamp(int(self.current_date), self.network)
+        else:
+            if self.current_date is None:
+                self.current_date = date.today()
+            self.current_height = Ots.heightFromTimestamp(
+                date_to_timestamp(self.current_date),
+                self.network
+            )
         super().__post_init__()
 
     def _render(self):
@@ -855,7 +874,10 @@ class DateOrBlockHeightScreen(BaseTopNavScreen):
     def key_press(self) -> str|None:
         if self.focus == self.btn_accept or self.focus in self.btn_block_height or self.focus in [self.year, self.month, self.day]:
             if not self.is_block_height:
-                self.current_height = Ots.heightFromTimestamp(int(self.current_date - timedelta(days=30)), self.network)
+                self.current_height = Ots.heightFromTimestamp(
+                    int(date_to_timestamp(self.current_date - timedelta(days=30))),
+                    self.network
+                )
             return f'{self.current_height:08d}'
         if self.focus in [self.btn_height, self.btn_date]:
             self.set_block_height_selection(self.focus == self.btn_height)
@@ -889,7 +911,10 @@ class DateOrBlockHeightScreen(BaseTopNavScreen):
     def set_block_height_selection(self, block_height: bool) -> None:
         self.is_block_height = block_height
         if block_height:
-            self.current_height = Ots.heightFromTimestamp(int(self.current_date), self.network)
+            self.current_height = Ots.heightFromTimestamp(
+                date_to_timestamp(self.current_date),
+                self.network
+            )
             self.focus = self.btn_block_height[0]
         else:
             self.current_date = date.fromtimestamp(Ots.timestampFromHeight(self.current_height, self.network))
@@ -898,44 +923,44 @@ class DateOrBlockHeightScreen(BaseTopNavScreen):
     def create_common(self) -> None:
         self.btn_date = Button(
             text='Date',
-            screen_x=GUIConstants.EDGE_PADDING,
-            screen_y=self.top_nav.height + GUIConstants.EDGE_PADDING,
-            width=int(self.canvas_width // 2) - GUIConstants.EDGE_PADDING - GUIConstants.COMPONENT_PADDING,
+            screen_x=Padding.EDGE,
+            screen_y=self.top_nav.height + Padding.EDGE,
+            width=int(self.canvas_width // 2) - Padding.EDGE - Padding.COMPONENT,
         )
         self.btn_height = Button(
             text='Height',
-            screen_x=int(self.canvas_width // 2) + (GUIConstants.COMPONENT_PADDING // 2),
-            screen_y=self.top_nav.height + GUIConstants.EDGE_PADDING,
-            width=int(self.canvas_width // 2) - GUIConstants.EDGE_PADDING - (GUIConstants.COMPONENT_PADDING // 2),
+            screen_x=int(self.canvas_width // 2) + (Padding.COMPONENT // 2),
+            screen_y=self.top_nav.height + Padding.EDGE,
+            width=int(self.canvas_width // 2) - Padding.EDGE - (Padding.COMPONENT // 2),
         )
         self.arrow_up = Icon(
-            icon_name=FontAwesomeIconConstants.CARET_UP,
-            icon_color=GUIConstants.ACCENT_COLOR,
-            icon_size=GUIConstants.ICON_FONT_SIZE,
+            icon_name=FontAwesome.CARET_UP,
+            icon_color=Theme.ACCENT_COLOR,
+            icon_size=Theme.ICON_FONT_SIZE,
             screen_y=0
         )
         self.arrow_down = Icon(
-            icon_name=FontAwesomeIconConstants.CARET_DOWN,
-            icon_color=GUIConstants.ACCENT_COLOR,
-            icon_size=GUIConstants.ICON_FONT_SIZE,
+            icon_name=FontAwesome.CARET_DOWN,
+            icon_color=Theme.ACCENT_COLOR,
+            icon_size=Theme.ICON_FONT_SIZE,
             screen_y=0,
             screen_x=0
         )
         self.btn_accept = Button(
             text='Accept',
-            screen_x=GUIConstants.EDGE_PADDING,
+            screen_x=Padding.EDGE,
             screen_y=0,
-            width=self.canvas_width - GUIConstants.EDGE_PADDING * 2
+            width=self.canvas_width - Padding.EDGE * 2
         )
-        self.btn_accept.screen_y=self.canvas_height - GUIConstants.EDGE_PADDING - self.btn_accept.height
+        self.btn_accept.screen_y=self.canvas_height - Padding.EDGE - self.btn_accept.height
 
     def create_block_height(self) -> None:
-        self.btn_block_height_width = int((self.canvas_width - GUIConstants.EDGE_PADDING * 2 - GUIConstants.COMPONENT_PADDING * 7) // 8)
+        self.btn_block_height_width = int((self.canvas_width - Padding.EDGE * 2 - Padding.COMPONENT * 7) // 8)
         self.btn_block_height: list[Button] = []
         for pos in range(8):
             self.btn_block_height.append(Button(
                 text='0',
-                screen_x=GUIConstants.EDGE_PADDING + pos * (self.btn_block_height_width + GUIConstants.COMPONENT_PADDING),
+                screen_x=Padding.EDGE + pos * (self.btn_block_height_width + Padding.COMPONENT),
                 screen_y=int(self.canvas_height // 2),
                 width=self.btn_block_height_width
             ))
@@ -948,18 +973,18 @@ class DateOrBlockHeightScreen(BaseTopNavScreen):
 
     def render_common(self) -> None:
         self.btn_date.is_selected = self.focus == self.btn_date
-        self.btn_date.outline_color = GUIConstants.ACCENT_COLOR if not self.is_block_height else None
+        self.btn_date.outline_color = Theme.ACCENT_COLOR if not self.is_block_height else None
         self.components.append(self.btn_date)
         self.btn_height.is_selected = self.focus == self.btn_height
-        self.btn_height.outline_color = GUIConstants.ACCENT_COLOR if self.is_block_height else None
+        self.btn_height.outline_color = Theme.ACCENT_COLOR if self.is_block_height else None
         self.components.append(self.btn_height)
         self.btn_accept.is_selected = self.focus == self.btn_accept
         self.components.append(self.btn_accept)
         if self.focus in self.btn_block_height or self.focus in [self.year, self.month, self.day]:
-            self.arrow_up.screen_y = self.focus.screen_y - self.arrow_up.height + GUIConstants.COMPONENT_PADDING // 4
+            self.arrow_up.screen_y = self.focus.screen_y - self.arrow_up.height + Padding.COMPONENT // 4
             self.arrow_up.screen_x = int(self.focus.screen_x + self.focus.width / 2 - self.arrow_up.width / 2 + 0.5)
             self.components.append(self.arrow_up)
-            self.arrow_down.screen_y = self.focus.screen_y + self.focus.height + self.arrow_up.height - GUIConstants.COMPONENT_PADDING
+            self.arrow_down.screen_y = self.focus.screen_y + self.focus.height + self.arrow_up.height - Padding.COMPONENT
             self.arrow_down.screen_x = int(self.focus.screen_x + self.focus.width / 2 - self.arrow_down.width / 2 + 0.5)
             self.components.append(self.arrow_down)
 
@@ -968,25 +993,25 @@ class DateOrBlockHeightScreen(BaseTopNavScreen):
         for button in self.btn_block_height:
             button.text = digits[self.btn_block_height.index(button)]
             button.is_selected = (button == self.focus)
-            button.outline_color = GUIConstants.ACCENT_COLOR if button == self.focus else None
+            button.outline_color = Theme.ACCENT_COLOR if button == self.focus else None
             self.components.append(button)
 
     def create_date(self) -> None:
         self.year = Button(
             text=f'{self.current_date.year:04d}',
-            screen_x=GUIConstants.EDGE_PADDING,
+            screen_x=Padding.EDGE,
             screen_y=int(self.canvas_height // 2),
-            width=(self.canvas_width - GUIConstants.EDGE_PADDING * 2 - GUIConstants.COMPONENT_PADDING * 2) // 2,
+            width=(self.canvas_width - Padding.EDGE * 2 - Padding.COMPONENT * 2) // 2,
         )
         self.month = Button(
             text=f'{self.current_date.month:02d}',
-            screen_x=GUIConstants.EDGE_PADDING + self.year.width + GUIConstants.COMPONENT_PADDING,
+            screen_x=Padding.EDGE + self.year.width + Padding.COMPONENT,
             screen_y=int(self.canvas_height // 2),
-            width=(self.canvas_width - GUIConstants.EDGE_PADDING * 2 - GUIConstants.COMPONENT_PADDING * 2) // 4,
+            width=(self.canvas_width - Padding.EDGE * 2 - Padding.COMPONENT * 2) // 4,
         )
         self.day = Button(
             text=f'{self.current_date.day:02d}',
-            screen_x=GUIConstants.EDGE_PADDING + self.year.width + GUIConstants.COMPONENT_PADDING * 2 + self.month.width,
+            screen_x=Padding.EDGE + self.year.width + Padding.COMPONENT * 2 + self.month.width,
             screen_y=int(self.canvas_height // 2),
             width=self.month.width,
         )
@@ -994,13 +1019,13 @@ class DateOrBlockHeightScreen(BaseTopNavScreen):
     def render_date(self) -> None:
         self.year.text = f'{self.current_date.year:04d}'
         self.year.is_selected = (self.focus == self.year)
-        self.year.outline_color = GUIConstants.ACCENT_COLOR if self.focus == self.year else None
+        self.year.outline_color = Theme.ACCENT_COLOR if self.focus == self.year else None
         self.month.text = f'{self.current_date.month:02d}'
         self.month.is_selected = (self.focus == self.month)
-        self.month.outline_color = GUIConstants.ACCENT_COLOR if self.focus == self.month else None
+        self.month.outline_color = Theme.ACCENT_COLOR if self.focus == self.month else None
         self.day.text = f'{self.current_date.day:02d}'
         self.day.is_selected = (self.focus == self.day)
-        self.day.outline_color=GUIConstants.ACCENT_COLOR if self.focus == self.day else None
+        self.day.outline_color=Theme.ACCENT_COLOR if self.focus == self.day else None
         self.components.append(self.year)
         self.components.append(self.month)
         self.components.append(self.day)

@@ -1,4 +1,4 @@
-from xmrsigner.gui.components import GUIConstants
+from xmrsigner.gui.components import Theme
 from qrcode import QRCode
 from qrcode.constants import ERROR_CORRECT_L
 from qrcode.image.styledpil import StyledPilImage
@@ -20,7 +20,7 @@ class QrStyle(Enum):
 class Qr:
 
     def __init__(self) -> None:
-        return
+        pass
 
     def qrimage(
             self,
@@ -40,28 +40,28 @@ class Qr:
         qr.add_data(data)
         qr.make(fit=True)
         if style == QrStyle.DEFAULT:
-            return qr.make_image(fill_color=GUIConstants.QRCODE_FILL_COLOR, back_color=background_color).resize((width,height)).convert('RGBA')
+            return qr.make_image(
+                fill_color=Theme.QRCODE_FILL_COLOR,
+                back_color=background_color
+            ).resize((width,height)).convert('RGBA')
         if style == QrStyle.ROUNDED:
             return qr.make_image(
-                fill_color=GUIConstants.QRCODE_FILL_COLOR,
+                fill_color=Theme.QRCODE_FILL_COLOR,
                 back_color=background_color,
                 image_factory=StyledPilImage,
                 module_drawer=CircleModuleDrawer()
             ).resize((width,height)).convert('RGBA')
         if style == QrStyle.GRID:
             return qr.make_image(
-                fill_color=GUIConstants.QRCODE_FILL_COLOR,
+                fill_color=Theme.QRCODE_FILL_COLOR,
                 back_color=background_color,
                 image_factory=StyledPilImage,
                 module_drawer=GappedSquareModuleDrawer()
             ).resize((width,height)).convert('RGBA')
 
+    # TODO: why??? Remove, is there is not a very good reason for it...
     def qrimage_io(self, data, width=240, height=240, border=3, background_color="808080"):
-        if 1 <= border <= 10:
-            border_str = str(border)
-        else:
-            border_str = "3"
-        cmd = f"""qrencode -m {border_str} -s 3 -l L --foreground=000000 --background={background_color} -t PNG -o "/tmp/qrcode.png" "{str(data)}" """  # TODO: WTF, implement in python? Check what was the reason or if i makes any sense.
+        cmd = f"""qrencode -m {str(border) if 1 <= border <= 10 else '3'} -s 3 -l L --foreground=000000 --background={background_color} -t PNG -o "/tmp/qrcode.png" "{str(data)}" """  # TODO: WTF, implement in python? Check what was the reason or if i makes any sense.
         rv = call(cmd, shell=True)
         # if qrencode fails, fall back to only encoder
         if rv != 0:

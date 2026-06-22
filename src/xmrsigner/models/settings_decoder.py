@@ -6,9 +6,9 @@ class SettingsQrDecoder(BaseSingleFrameQrDecoder):
 
     def __init__(self):
         super().__init__()
-        self.data = None
+        self.data: str|None = None
 
-    def add(self, segment, qr_type=QrType.SETTINGS):
+    def add(self, segment: str, qr_type=QrType.SETTINGS):
         """
             * Ignores unrecognized settings options.
             * Raises an Exception if a settings value is invalid.
@@ -22,7 +22,6 @@ class SettingsQrDecoder(BaseSingleFrameQrDecoder):
         # Leave any other parsing or validation up to the Settings class itself.
         # SettingsQR are just ascii data to hand it over as-is.
         self.data = segment
-
         self.complete = True
         self.collected_segments = 1
         return DecodeQRStatus.COMPLETE

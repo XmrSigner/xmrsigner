@@ -1,16 +1,10 @@
 from math import ceil
 
 
+from ots.seed import SeedIndices
+
+
 class CompactSeed:
-
-    def __init__(self, wordlist: list[str]):
-        self.wordlist: list[str] = wordlist
-
-    def bytes(self, words: list[str]) -> bytes:
-        return self.idx2bytes([self.wordlist.index(word) for word in words])
-
-    def words(self, cs: bytes) -> list[str]:
-        return [self.wordlist[idx] for idx in self.bytes2idx(cs)]
 
     @staticmethod
     def length(cs: bytes) -> int:
@@ -35,11 +29,10 @@ class CompactSeed:
             idx_list.append(int(idxbin[i:i+11], 2))
         return idx_list
 
-    def test_length(self, words: list[str]) -> bool:
-        return self.length(self.bytes(words)) == len(words)
+    @classmethod
+    def seedIndices2bytes(cls, seedIndices: SeedIndices) -> bytes:
+        return cls.idx2bytes(seedIndices.values)
 
-    def test_bytes(self, words: list[str]) -> bool:
-        return self.words(self.bytes(words)) == words
-
-    def test(self, words: list[str]) -> bool:
-        return self.test_length(words) and self.test_bytes(words)
+    @classmethod
+    def bytes2seedIndices(cls, data: bytes) -> SeedIndices:
+        return SeedIndices.fromValues(cls.bytes2idx(data))

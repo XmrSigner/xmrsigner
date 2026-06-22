@@ -2,13 +2,14 @@ from time import sleep
 from dataclasses import dataclass
 from PIL.ImageOps import autocontrast
 
+from xmrsigner.gui.constants import Padding
 from xmrsigner.gui.components import (
     Button,
     CheckboxButton,
     CheckedSelectionButton,
-    FontAwesomeIconConstants,
+    FontAwesome,
     Fonts,
-    GUIConstants,
+    Theme,
     Icon,
     IconButton,
     IconTextLine,
@@ -44,21 +45,25 @@ class SettingsEntryUpdateSelectionScreen(ButtonListScreen):
         else:
             self.Button_cls = CheckedSelectionButton
         super().__post_init__()
-        self.components.append(TextArea(
-            text=self.display_name,
-            font_size=GUIConstants.BODY_FONT_MAX_SIZE,
-            is_text_centered=True,
-            auto_line_break=False,
-            screen_y=self.top_nav.height + GUIConstants.COMPONENT_PADDING
-        ))
+        self.components.append(
+            TextArea(
+                text=self.display_name,
+                font_size=Theme.BODY_FONT_MAX_SIZE,
+                is_text_centered=True,
+                auto_line_break=False,
+                screen_y=self.top_nav.height + Padding.COMPONENT
+            )
+        )
         if self.help_text:
             prev_component_bottom = self.components[-1].screen_y + self.components[-1].height
-            self.components.append(TextArea(
-                text=self.help_text,
-                font_color=GUIConstants.LABEL_FONT_COLOR,
-                is_text_centered=True,
-                screen_y=prev_component_bottom + GUIConstants.COMPONENT_PADDING,
-            ))
+            self.components.append(
+                TextArea(
+                    text=self.help_text,
+                    font_color=Theme.LABEL_FONT_COLOR,
+                    is_text_centered=True,
+                    screen_y=prev_component_bottom + Padding.COMPONENT,
+                )
+            )
 
 
 @dataclass
@@ -72,90 +77,93 @@ class IOTestScreen(BaseTopNavScreen):
         self.instructions_text = None
         super().__post_init__()
         # D-pad pictogram
-        input_button_width = GUIConstants.BUTTON_HEIGHT + 2
+        input_button_width = Theme.BUTTON_HEIGHT + 2
         input_button_height = input_button_width + 2
-        dpad_center_x = GUIConstants.EDGE_PADDING + input_button_width + GUIConstants.COMPONENT_PADDING
+        dpad_center_x = Padding.EDGE + input_button_width + Padding.COMPONENT
         dpad_center_y = int((self.canvas_height - input_button_height)/2)
         self.joystick_click_button = IconButton(
-            icon_name=FontAwesomeIconConstants.CIRCLE,
-            icon_size=GUIConstants.ICON_INLINE_FONT_SIZE - 6,
+            icon_name=FontAwesome.CIRCLE,
+            icon_size=Theme.ICON_INLINE_FONT_SIZE - 6,
             width=input_button_width,
             height=input_button_height,
             screen_x=dpad_center_x,
             screen_y=dpad_center_y,
-            outline_color=GUIConstants.ACCENT_COLOR,
+            outline_color=Theme.ACCENT_COLOR,
         )
         self.components.append(self.joystick_click_button)
         self.joystick_up_button = IconButton(
-            icon_name=FontAwesomeIconConstants.ANGLE_UP,
-            icon_size=GUIConstants.ICON_INLINE_FONT_SIZE,
+            icon_name=FontAwesome.ANGLE_UP,
+            icon_size=Theme.ICON_INLINE_FONT_SIZE,
             width=input_button_width,
             height=input_button_height,
             screen_x=dpad_center_x,
-            screen_y=dpad_center_y - input_button_height - GUIConstants.COMPONENT_PADDING,
-            outline_color=GUIConstants.ACCENT_COLOR,
+            screen_y=dpad_center_y - input_button_height - Padding.COMPONENT,
+            outline_color=Theme.ACCENT_COLOR,
         )
         self.components.append(self.joystick_up_button)
         self.joystick_down_button = IconButton(
-            icon_name=FontAwesomeIconConstants.ANGLE_DOWN,
-            icon_size=GUIConstants.ICON_INLINE_FONT_SIZE,
+            icon_name=FontAwesome.ANGLE_DOWN,
+            icon_size=Theme.ICON_INLINE_FONT_SIZE,
             width=input_button_width,
             height=input_button_height,
             screen_x=dpad_center_x,
-            screen_y=dpad_center_y + input_button_height + GUIConstants.COMPONENT_PADDING,
-            outline_color=GUIConstants.ACCENT_COLOR,
+            screen_y=dpad_center_y + input_button_height + Padding.COMPONENT,
+            outline_color=Theme.ACCENT_COLOR,
         )
         self.components.append(self.joystick_down_button)
         self.joystick_left_button = IconButton(
-            text=FontAwesomeIconConstants.ANGLE_LEFT,
-            font_name=GUIConstants.ICON_FONT_NAME__FONT_AWESOME,
-            font_size=GUIConstants.ICON_INLINE_FONT_SIZE,
+            text=FontAwesome.ANGLE_LEFT,
+            font_name=Theme.ICON_FONT_NAME__FONT_AWESOME,
+            font_size=Theme.ICON_INLINE_FONT_SIZE,
             width=input_button_width,
             height=input_button_height,
-            screen_x=dpad_center_x - input_button_width - GUIConstants.COMPONENT_PADDING,
+            screen_x=dpad_center_x - input_button_width - Padding.COMPONENT,
             screen_y=dpad_center_y,
-            outline_color=GUIConstants.ACCENT_COLOR,
+            outline_color=Theme.ACCENT_COLOR,
         )
         self.components.append(self.joystick_left_button)
 
         self.joystick_right_button = IconButton(
-            icon_name=FontAwesomeIconConstants.ANGLE_RIGHT,
-            icon_size=GUIConstants.ICON_INLINE_FONT_SIZE,
+            icon_name=FontAwesome.ANGLE_RIGHT,
+            icon_size=Theme.ICON_INLINE_FONT_SIZE,
             width=input_button_width,
             height=input_button_height,
-            screen_x=dpad_center_x + input_button_width + GUIConstants.COMPONENT_PADDING,
+            screen_x=dpad_center_x + input_button_width + Padding.COMPONENT,
             screen_y=dpad_center_y,
-            outline_color=GUIConstants.ACCENT_COLOR,
+            outline_color=Theme.ACCENT_COLOR,
         )
         self.components.append(self.joystick_right_button)
         # Hardware keys UI
-        font = Fonts.get_font(GUIConstants.BUTTON_FONT_NAME, GUIConstants.BUTTON_FONT_SIZE)
+        font = Fonts.get_font(
+            Theme.BUTTON_FONT_NAME,
+            Theme.BUTTON_FONT_SIZE
+        )
         (left, top, text_width, bottom) = font.getbbox(text="Clear", anchor="ls")
         icon = Icon(
-            icon_name=FontAwesomeIconConstants.CAMERA,
-            icon_size=GUIConstants.ICON_INLINE_FONT_SIZE,
+            icon_name=FontAwesome.CAMERA,
+            icon_size=Theme.ICON_INLINE_FONT_SIZE,
         )
-        key_button_width = text_width + 2 * GUIConstants.COMPONENT_PADDING + GUIConstants.EDGE_PADDING
-        key_button_height = icon.height + int(1.5 * GUIConstants.COMPONENT_PADDING)
+        key_button_width = text_width + 2 * Padding.COMPONENT + Padding.EDGE
+        key_button_height = icon.height + int(1.5 * Padding.COMPONENT)
         key2_y = int(self.canvas_height / 2) - int(key_button_height / 2)
         self.key2_button = Button(
             text="Clear",   # Initialize with text to set vertical centering
             width=key_button_width,
             height=key_button_height,
-            screen_x=self.canvas_width - key_button_width + GUIConstants.EDGE_PADDING,
+            screen_x=self.canvas_width - key_button_width + Padding.EDGE,
             screen_y=key2_y,
-            outline_color=GUIConstants.ACCENT_COLOR,
+            outline_color=Theme.ACCENT_COLOR,
         )
         self.key2_button.text = ' '  # but default state is empty
         self.components.append(self.key2_button)
 
         self.key1_button = IconButton(
-            icon_name=FontAwesomeIconConstants.CAMERA,
+            icon_name=FontAwesome.CAMERA,
             width=key_button_width,
             height=key_button_height,
-            screen_x=self.canvas_width - key_button_width + GUIConstants.EDGE_PADDING,
-            screen_y=key2_y - 3 * GUIConstants.COMPONENT_PADDING - key_button_height,
-            outline_color=GUIConstants.ACCENT_COLOR,
+            screen_x=self.canvas_width - key_button_width + Padding.EDGE,
+            screen_y=key2_y - 3 * Padding.COMPONENT - key_button_height,
+            outline_color=Theme.ACCENT_COLOR,
         )
         self.components.append(self.key1_button)
 
@@ -163,19 +171,19 @@ class IOTestScreen(BaseTopNavScreen):
             text='Exit',
             width=key_button_width,
             height=key_button_height,
-            screen_x=self.canvas_width - key_button_width + GUIConstants.EDGE_PADDING,
-            screen_y=key2_y + 3*GUIConstants.COMPONENT_PADDING + key_button_height,
-            outline_color=GUIConstants.ACCENT_COLOR,
+            screen_x=self.canvas_width - key_button_width + Padding.EDGE,
+            screen_y=key2_y + 3*Padding.COMPONENT + key_button_height,
+            outline_color=Theme.ACCENT_COLOR,
         )
         self.components.append(self.key3_button)
 
 
     def _run(self):
         cur_selected_button = self.key1_button
-        msg_height = GUIConstants.ICON_LARGE_BUTTON_SIZE + 2*GUIConstants.COMPONENT_PADDING
+        msg_height = Theme.ICON_LARGE_BUTTON_SIZE + 2*Padding.COMPONENT
         camera_message = TextArea(
             text='Capturing image...',
-            font_size=GUIConstants.TOP_NAV_TITLE_FONT_SIZE,
+            font_size=Theme.TOP_NAV_TITLE_FONT_SIZE,
             is_text_centered=True,
             height=msg_height,
             screen_y=int((self.canvas_height - msg_height)/ 2),
@@ -191,10 +199,12 @@ class IOTestScreen(BaseTopNavScreen):
                     # Render edges around message box
                     self.image_draw.rectangle(
                         (
-                            -1, int((self.canvas_height - msg_height)/ 2) - 1,
-                            self.canvas_width + 1, int((self.canvas_height + msg_height)/ 2) + 1
+                            -1,
+                            int((self.canvas_height - msg_height)/ 2) - 1,
+                            self.canvas_width + 1,
+                            int((self.canvas_height + msg_height)/ 2) + 1
                         ),
-                        outline=GUIConstants.ACCENT_COLOR,
+                        outline=Theme.ACCENT_COLOR,
                         width=1,
                     )
                     self.renderer.show_image()
@@ -266,22 +276,25 @@ class IOTestScreen(BaseTopNavScreen):
 
 @dataclass
 class DonateScreen(BaseTopNavScreen):
+
     def __post_init__(self):
         self.title = 'Donate'
         super().__post_init__()
         self.components.append(
             TextArea(
-                text=GUIConstants.XMRSIGNER_DONATION_TEXT,
-                screen_y=self.top_nav.height + 3*GUIConstants.COMPONENT_PADDING,
+                text=Theme.XMRSIGNER_DONATION_TEXT,
+                screen_y=self.top_nav.height + 3*Padding.COMPONENT,
             )
         )
-        self.components.append(TextArea(
-            text=GUIConstants.XMRSIGNER_DOMAIN,
-            font_size=GUIConstants.TOP_NAV_TITLE_FONT_SIZE + 8,
-            font_color=GUIConstants.ACCENT_COLOR,
-            supersampling_factor=1,
-            screen_y=self.components[-1].screen_y + self.components[-1].height + GUIConstants.COMPONENT_PADDING
-        ))
+        self.components.append(
+            TextArea(
+                text=Theme.XMRSIGNER_DOMAIN,
+                font_size=Theme.TOP_NAV_TITLE_FONT_SIZE + 4,
+                font_color=Theme.ACCENT_COLOR,
+                supersampling_factor=1,
+                screen_y=self.components[-1].screen_y + self.components[-1].height + Padding.COMPONENT
+            )
+        )
 
 
 @dataclass
@@ -291,17 +304,19 @@ class AboutScreen(BaseTopNavScreen):
         super().__post_init__()
         self.components.append(
             TextArea(
-                text=GUIConstants.XMRSIGNER_ABOUT_TEXT,
-                screen_y=self.top_nav.height + 3 * GUIConstants.COMPONENT_PADDING,
+                text=Theme.XMRSIGNER_ABOUT_TEXT(),
+                screen_y=self.top_nav.height + 3 * Padding.COMPONENT,
             )
         )
-        self.components.append(TextArea(
-            text=GUIConstants.XMRSIGNER_DOMAIN,
-            font_size=GUIConstants.TOP_NAV_TITLE_FONT_SIZE + 8,
-            font_color=GUIConstants.ACCENT_COLOR,
-            supersampling_factor=1,
-            screen_y=self.components[-1].screen_y + self.components[-1].height + GUIConstants.COMPONENT_PADDING
-        ))
+        self.components.append(
+            TextArea(
+                text=Theme.XMRSIGNER_DOMAIN,
+                font_size=Theme.TOP_NAV_TITLE_FONT_SIZE + 4,
+                font_color=Theme.ACCENT_COLOR,
+                supersampling_factor=1,
+                screen_y=self.components[-1].screen_y + self.components[-1].height + Padding.COMPONENT
+            )
+        )
 
 
 @dataclass
@@ -328,9 +343,11 @@ class SettingsQRConfirmationScreen(ButtonListScreen):
             )
             self.components.append(self.config_name_textarea)
             start_y = self.config_name_textarea.screen_y + 50
-        self.components.append(TextArea(
-            text=self.status_message,
-            is_text_centered=True,
-            auto_line_break=True,
-            screen_y=start_y
-        ))
+        self.components.append(
+            TextArea(
+                text=self.status_message,
+                is_text_centered=True,
+                auto_line_break=True,
+                screen_y=start_y
+            )
+        )

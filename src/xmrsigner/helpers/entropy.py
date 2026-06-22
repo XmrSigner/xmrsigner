@@ -21,10 +21,10 @@ class Entropy:
 
     def millis_entropy(self) -> bytes:
         # Build in modest entropy via millis since power on
-        t: int = int(str(time).replace('.', ''))
+        t: int = int(str(time()).replace('.', ''))
         return b''.join([
             int.to_bytes(t>>i & 255)
-            for i in range(i.bit_length() // 8)
+            for i in range(t.bit_length() // 8)
         ])
 
     def sha256_chain(self, data: bytes) -> bytes:

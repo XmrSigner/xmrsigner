@@ -67,13 +67,15 @@ XmrSigner is currently in active development, with a strong focus on security an
 
 ## 📚 Related Projects
 
-- [XmrSigner Website](https://github.com/XmrSigner/XmrSigner.github.io) - Project Homepage
+- [XmrSigner Website](https://XmrSigner.github.io) - Project Homepage
+- [XmrSigner](https://github.com/XmrSigner/xmrsigner) - acctual XmrSigner python source
 - [XmrSigner OS](https://github.com/XmrSigner/XmrSigner-os) - Custom operating system
 - [XmrSigner Buildroot](https://github.com/XmrSigner/XmrSigner-buildroot) - Buildroot fork from -> seedsigner-os -> buildroot
 - [XmrSigner Emulator](https://github.com/XmrSigner/XmrSigner-emulator) - Development testing environment
 - [XmrSigner Companion](https://github.com/XmrSigner/XmrSigner-companion) - Desktop integration app
 - [XmrSigner Docs](https://xmrsigner.github.io/docs/) - General docs about XmrSigner
 
+- [MoneroSDK OTS](https://github.com/MoneroSDK/ots) - C/C++ Monero OTS (Offline Transaction Signing) library, should be merged into [Monero Source](https://github.com/monero-project/monero) after pull request
 - [MoneroSDK ots-buildroot2](https://github.com/MoneroSDK/ots-buildroot2) - C/C++ Monero OTS (Offline Transaction Signing) library buildroot2 package
 - [MoneroSDK ots-python](https://github.com/MoneroSDK/ots-python) - Monero OTS (Offline Transaction Signing) library python 3 wrapper (cffi)
 - [MoneroSDK ots-python-buildroot2](https://github.com/MoneroSDK/ots-python-buildroot2) - Monero OTS (Offline Transaction Signing) library python 3 wrapper buildroot2 package
@@ -82,7 +84,7 @@ XmrSigner is currently in active development, with a strong focus on security an
 
 This project stands on the shoulders of giants:
 - [SeedSigner](https://github.com/SeedSigner/seedsigner) - The original inspiration
-- [Monero Project](https://github.com/monero-project/monero) - The privacy foundation
+-  buildroot2 package - The privacy foundation
 - Community contributors who make this project possible
 
 ## 📜 License

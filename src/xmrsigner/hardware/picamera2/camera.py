@@ -15,7 +15,7 @@ class Camera(CameraInterface):
             cls._instance = cls.__new__(cls)
             cls._instance._video_stream = None
             cls._instance._picamera = Picamera2()
-        cls._instance._camera_rotation = int(Settings.get_instance().get_value(Settings.CAMERA_ROTATION))
+        cls._instance._camera_rotation = int(Settings.get_instance().get_value(Setting.CAMERA_ROTATION))
         return cls._instance
 
     def start_video_stream_mode(

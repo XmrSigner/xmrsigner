@@ -1,5 +1,5 @@
 from PIL.Image import Image
-from numpy import array as NumpyArray
+from numpy import ndarray as NumpyArray
 
 from xmrsigner.models.singleton import Singleton
 

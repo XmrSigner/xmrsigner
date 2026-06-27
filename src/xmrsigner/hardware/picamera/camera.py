@@ -1,5 +1,5 @@
 from io import BytesIO
-from numpy import array as NumpyArray
+from numpy import ndarray as NumpyArray
 from picamera import PiCamera
 from PIL.Image import Image
 from PIL.Image import fromarray as image_from_array

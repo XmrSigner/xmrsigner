@@ -1,4 +1,4 @@
-from numpy import array as NumpyArray
+from numpy import ndarray as NumpyArray
 from PIL.Image import Image
 
 from xmrsigner.hardware.interfaces import CameraInterface

@@ -1,6 +1,6 @@
 from picamera2 import Picamera2
 from PIL.Image import Image
-from numpy import array as NumpyArray
+from numpy import ndarray as NumpyArray
 from xmrsigner.hardware.interfaces import CameraInterface
 from xmrsigner.models.settings import Settings, Setting
 from xmrsigner.hardware.picamera2.pivideostream import PiVideoStream2

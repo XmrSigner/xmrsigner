@@ -875,7 +875,7 @@ class DateOrBlockHeightScreen(BaseTopNavScreen):
         if self.focus == self.btn_accept or self.focus in self.btn_block_height or self.focus in [self.year, self.month, self.day]:
             if not self.is_block_height:
                 self.current_height = Ots.heightFromTimestamp(
-                    int(date_to_timestamp(self.current_date - timedelta(days=30))),
+                    max(int(date_to_timestamp(self.current_date - timedelta(days=30))), 0),  # make sure timestamp is always >= 0
                     self.network
                 )
             return f'{self.current_height:08d}'

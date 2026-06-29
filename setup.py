@@ -5,7 +5,7 @@ with open('README.md', 'r', encoding='utf-8') as fh:
 
 setuptools.setup(
     name='XmrSigner',
-    version='0.10.0',
+    version='0.10.1',
     author='XmrSigner',
     author_email='no@spam',
     description='Build an offline, airgapped Monero signing device for less than $50!',
